@@ -318,13 +318,37 @@ src/features/pension-cases/
 
 ### 4.3 Layout base
 
+El layout autenticado sigue un patrón **TopNavbar full-width + Sidebar lateral + Main + Footer**, con un container de toasts fijo en la esquina superior derecha. La información del usuario logueado (avatar + nombre + rol) y la opción de logout viven dentro de un **dropdown desplegable** en la TopNavbar, no en el Sidebar.
+
+```mermaid
+graph TB
+    subgraph AppLayout["AppLayout — grid CSS (100vh)"]
+        TN["TopNavbar (full-width, 56px)<br/>logo + breadcrumb + search + lang + UserDropdown"]
+        SB["Sidebar (color #16202E)<br/>navegación filtrada por rol"]
+        MC["Main content area<br/>&lt;Outlet/&gt; React Router"]
+        FT["Footer slim (32px)"]
+    end
+
+    TC["ToastContainer<br/>position: fixed top-right<br/>z-index: 9999"]
+
+    TN -.dropdown click.-> UD["UserDropdown<br/>avatar + nombre + email + rol<br/>acciones: Perfil / Config / Logout"]
+    TN -.toast trigger.-> TC
+    SB --> MC
+    MC --> FT
+```
+
+**Estructura de carpetas actualizada**:
+
 ```
 src/layout/
-├── AppLayout.tsx           # Layout autenticado: header + sidebar + main + footer
+├── AppLayout.tsx           # Grid: TopNavbar (full-width) + Sidebar + Main + Footer
 ├── PublicLayout.tsx        # Layout para login/recuperar/404 público
 ├── components/
-│   ├── Sidebar.tsx         # Navegación lateral filtrada por rol
-│   ├── TopBar.tsx          # Header con user, logout, idioma
+│   ├── TopNavbar.tsx       # Header full-width con logo + breadcrumb + search + lang + UserDropdown
+│   │   ├── UserDropdown.tsx    # Menú desplegable: avatar + nombre + rol + acciones (Perfil/Config/Logout)
+│   │   ├── LanguageSwitcher.tsx # Selector de idioma (es-CU/es-ES/en-US)
+│   │   └── GlobalSearch.tsx    # Búsqueda global opcional (Cmd+K)
+│   ├── Sidebar.tsx         # Navegación lateral filtrada por rol (fondo #16202E)
 │   ├── Breadcrumb.tsx
 │   ├── PageContainer.tsx   # Wrapper de página con título + acciones
 │   ├── EmptyState.tsx
@@ -332,11 +356,489 @@ src/layout/
 │   ├── LoadingState.tsx    # Skeletons y spinners
 │   ├── Forbidden.tsx       # 403
 │   ├── NotFound.tsx       # 404
-│   └── OfflineBanner.tsx
+│   ├── OfflineBanner.tsx
+│   └── ToastContainer.tsx # Container de toasts en top-right (fixed, z-9999)
 └── sidebar-config.tsx      # Definición de entradas del sidebar por permiso
 ```
 
-### 4.4 Capas transversales
+**CSS Grid del AppLayout** (definido en `src/index.css` con clases TailwindCSS):
+
+```css
+/* AppLayout — grid responsivo */
+.app-layout {
+  display: grid;
+  grid-template-areas:
+    "topnavbar topnavbar"
+    "sidebar  main"
+    "sidebar  footer";
+  grid-template-rows: 56px 1fr 32px;
+  grid-template-columns: auto 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+.app-layout__topnavbar { grid-area: topnavbar; }
+.app-layout__sidebar   { grid-area: sidebar; background-color: #16202E; }
+.app-layout__main      { grid-area: main; overflow-y: auto; padding: 1.5rem; }
+.app-layout__footer    { grid-area: footer; }
+
+/* Toasts fijos en top-right */
+.toast-container {
+  position: fixed;
+  top: 64px;             /* justo debajo de TopNavbar */
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 400px;
+}
+```
+
+**Componente `TopNavbar`** (esquema):
+
+```typescript
+// src/layout/components/TopNavbar.tsx
+import { UserDropdown } from './UserDropdown';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { Breadcrumb } from '../Breadcrumb';
+import { SidebarToggle } from './SidebarToggle';
+import { useUIStore } from '@/store/ui-store';
+import { SgpLogo } from '@/assets/icons';
+
+export function TopNavbar() {
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+
+  return (
+    <header className="app-layout__topnavbar flex items-center justify-between bg-white border-b px-4 h-14">
+      {/* Izquierda: toggle sidebar + logo + breadcrumb */}
+      <div className="flex items-center gap-3">
+        <SidebarToggle onClick={toggleSidebar} />
+        <SgpLogo className="h-8 w-auto" />
+        <Breadcrumb className="hidden md:flex" />
+      </div>
+
+      {/* Centro: búsqueda global (opcional, futura) */}
+      <div className="flex-1 max-w-md hidden lg:flex">
+        <GlobalSearch placeholder="Buscar expedientes, personas, pensionados..." />
+      </div>
+
+      {/* Derecha: idioma + user dropdown */}
+      <div className="flex items-center gap-2">
+        <LanguageSwitcher />
+        <UserDropdown />
+      </div>
+    </header>
+  );
+}
+```
+
+**Componente `UserDropdown`** (menú desplegable con información del usuario + logout):
+
+```typescript
+// src/layout/components/UserDropdown.tsx
+import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/auth-store';
+import { http } from '@/lib/http';
+import { useToast } from '@/components/ui/Toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
+import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+
+export function UserDropdown() {
+  const { user, roles, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const { success } = useToast();
+
+  // Iniciales para el avatar fallback
+  const initials = `${user?.name?.[0] ?? ''}${user?.email?.[0] ?? ''}`.toUpperCase();
+  const primaryRole = roles?.[0] ?? '—';
+
+  // Mutación de logout — llama al backend y limpia estado local
+  const logoutMutation = useMutation({
+    mutationFn: () => http.post('/api/v1/auth/logout'),
+    onSuccess: () => {
+      logout();
+      navigate('/login', { replace: true });
+      success('Sesión cerrada correctamente');
+    },
+    onError: () => {
+      // Aunque el backend falle, limpiamos el estado local para no dejar colgado al usuario
+      logout();
+      navigate('/login', { replace: true });
+    },
+  });
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-100 transition-colors">
+        <Avatar className="w-8 h-8 border">
+          <AvatarImage src={user?.avatar_url} alt={user?.name} />
+          <AvatarFallback className="bg-[#418AD1] text-white text-xs font-medium">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <div className="text-left hidden sm:block">
+          <p className="text-sm font-medium leading-tight">{user?.name}</p>
+          <p className="text-xs text-gray-500 leading-tight">{primaryRole}</p>
+        </div>
+        <ChevronDown className="w-4 h-4 text-gray-400" />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <p className="font-medium leading-tight">{user?.name}</p>
+          <p className="text-xs text-gray-500 leading-tight">{user?.email}</p>
+          <p className="text-xs text-[#418AD1] mt-1 font-medium uppercase tracking-wide">
+            {primaryRole}
+          </p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate('/perfil')}>
+          <User className="w-4 h-4 mr-2" /> Mi perfil
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/configuracion')}>
+          <Settings className="w-4 h-4 mr-2" /> Configuración
+        </DropdownMenuSeparator>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => logoutMutation.mutate()}
+          disabled={logoutMutation.isPending}
+          className="text-red-600 focus:text-red-600 focus:bg-red-50"
+        >
+          <LogOut className="w-4 h-4 mr-2" /> Cerrar sesión
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+```
+
+> **Notas de diseño**:
+> - El `TopNavbar` es **sticky top-0** y siempre visible durante el scroll vertical del `main`.
+> - En mobile (< 768px), el breadcrumb se oculta y el sidebar colapsa a overlay.
+> - El `UserDropdown` usa iconos **Lucide** (`User`, `Settings`, `LogOut`, `ChevronDown`).
+> - El avatar fallback tiene color de fondo `#418AD1` (azul primario del design system).
+> - El logout siempre limpia el estado local incluso si el backend responde con error (no dejar al usuario "colgado" en una sesión inválida).
+
+### 4.4 Design System: base-nova, Lucide, colores y toasts
+
+El SGP adopta el estilo **base-nova** como base del design system, combinando la paleta `base` de shadcn/ui (neutros cálidos para backgrounds, foregrounds, borders y muted) con el acento `nova` (colores semánticos saturados para acciones primarias y feedback). Sobre esta base, se aplican tres colores de marca específicos del SGP definidos por el cliente:
+
+| Token | Color | Uso |
+|---|---|---|
+| `--sidebar-bg` | `#16202E` | Fondo del Sidebar lateral (azul oscuro casi negro) |
+| `--primary` | `#418AD1` | Botones primarios, links activos, avatar fallback, accent de foco |
+| `--sidebar-fg` | `#FFFFFF` | Texto e iconos sobre el sidebar |
+| `--sidebar-muted` | `rgba(255,255,255,0.65)` | Texto secundario en sidebar (subtítulos, rol en UserDropdown) |
+| `--sidebar-active` | `#418AD1` | Item activo del sidebar (barra lateral izquierda + texto azul) |
+
+#### 4.4.1 Paleta completa `base-nova` (tokens CSS)
+
+Definidos en `src/styles/theme.css` (importado por `src/index.css`):
+
+```css
+:root {
+  /* === Marca SGP (sobreescritos por cliente) === */
+  --sidebar-bg: #16202E;
+  --sidebar-fg: #FFFFFF;
+  --sidebar-muted: rgba(255, 255, 255, 0.65);
+  --sidebar-active: #418AD1;
+  --primary: #418AD1;
+  --primary-foreground: #FFFFFF;
+
+  /* === Base shadcn/ui (neutros cálidos) === */
+  --background: #FAFAFA;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --muted: #F1F1F0;
+  --muted-foreground: #6B6B6B;
+  --border: #E4E4E2;
+  --input: #E4E4E2;
+  --ring: #418AD1;
+
+  /* === Nova accent (semánticos) === */
+  --secondary: #E8F1FA;
+  --secondary-foreground: #1E4E7E;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --success: #16A34A;
+  --success-foreground: #FFFFFF;
+  --warning: #F59E0B;
+  --warning-foreground: #1A1A1A;
+  --info: #0EA5E9;
+  --info-foreground: #FFFFFF;
+
+  /* === Radios y sombras === */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --shadow-toast: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Modo oscuro opcional (no MVP) */
+.dark {
+  --background: #0E1419;
+  --foreground: #FAFAFA;
+  --card: #16202E;
+  --card-foreground: #FAFAFA;
+  /* ... resto de tokens */
+}
+```
+
+Estos tokens se mapean a TailwindCSS via `tailwind.config.ts`:
+
+```typescript
+// tailwind.config.ts (extracto)
+export default {
+  theme: {
+    extend: {
+      colors: {
+        // Mapeo de tokens CSS → utilidades Tailwind
+        // Permite usar: bg-sidebar, text-sidebar-fg, bg-primary, etc.
+        sidebar: {
+          DEFAULT: 'var(--sidebar-bg)',
+          fg: 'var(--sidebar-fg)',
+          muted: 'var(--sidebar-muted)',
+          active: 'var(--sidebar-active)',
+        },
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
+        },
+        // ...otros tokens
+      },
+      borderRadius: {
+        DEFAULT: 'var(--radius)',
+        sm: 'var(--radius-sm)',
+        lg: 'var(--radius-lg)',
+      },
+    },
+  },
+};
+```
+
+#### 4.4.2 Aplicación de colores al Sidebar
+
+```typescript
+// src/layout/components/Sidebar.tsx (extracto)
+import { usePermiso } from '@/hooks/use-permiso';
+import { sidebarConfig } from '../sidebar-config';
+import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+
+export function Sidebar() {
+  const tienePermiso = usePermiso();
+  const items = sidebarConfig.filter((item) => tienePermiso(item.permiso));
+
+  return (
+    <aside className="app-layout__sidebar w-64 text-sidebar-fg flex flex-col">
+      {/* Header del sidebar (logo o título) */}
+      <div className="px-4 py-4 border-b border-white/10">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-sidebar-muted">
+          Módulos
+        </h2>
+      </div>
+
+      {/* Items de navegación */}
+      <nav className="flex-1 overflow-y-auto py-2">
+        {items.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+                'hover:bg-white/5 border-l-2 border-transparent',
+                isActive && 'bg-white/10 border-sidebar-active text-white font-medium',
+                !isActive && 'text-sidebar-muted hover:text-white'
+              )
+            }
+          >
+            <item.icon className="w-4 h-4 shrink-0" />
+            <span className="truncate">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Footer del sidebar (versión, ayuda) */}
+      <div className="px-4 py-2 border-t border-white/10 text-xs text-sidebar-muted">
+        SGP v1.0.0
+      </div>
+    </aside>
+  );
+}
+```
+
+#### 4.4.3 Botones primarios con `#418AD1`
+
+```typescript
+// src/components/ui/Button.tsx (variantes principales)
+import { cva } from 'class-variance-authority';
+
+export const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+  'disabled:opacity-50 disabled:pointer-events-none',
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline: 'border border-input bg-background hover:bg-muted',
+        ghost: 'hover:bg-muted',
+        link: 'text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        sm: 'h-8 px-3 text-xs',
+        md: 'h-10 px-4',
+        lg: 'h-11 px-6',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: { variant: 'primary', size: 'md' },
+  }
+);
+
+// Uso: <Button variant="primary" onClick={...}>Guardar</Button>
+//      <Button variant="destructive">Eliminar</Button>
+//      <Button variant="outline" size="sm">Cancelar</Button>
+```
+
+#### 4.4.4 Iconos Lucide
+
+Toda la iconografía usa la librería **`lucide-react`** (tree-shakeable, SVG, ya incluida en el stack ADR-FE-04). Convenciones:
+
+```typescript
+// Importar iconos individualmente (tree-shaking)
+import {
+  Plus, Pencil, Trash2,           // CRUD actions
+  Search, Filter, ArrowUpDown,    // Tabla y filtros
+  ChevronDown, ChevronRight,      // Navegación
+  User, Settings, LogOut,         // UserDropdown
+  LayoutDashboard, FolderKanban,  // Sidebar módulos
+  Check, X, AlertTriangle, Info,  // Estados y toasts
+} from 'lucide-react';
+
+// Uso estándar: <Plus className="w-4 h-4" />
+// Tamaños consistentes: w-3 h-3 (xs), w-4 h-4 (sm/md), w-5 h-5 (lg), w-6 h-6 (xl)
+```
+
+El sidebar y los menús usan iconos con `className="w-4 h-4 shrink-0"` consistentemente. Los toasts usan `w-5 h-5` para mejor visibilidad.
+
+#### 4.4.5 Sistema de Toasts (top-right, fixed)
+
+El SGP usa el componente `<ToastContainer/>` de shadcn/ui (basado en `react-hot-toast` con custom styling) que se renderiza **una sola vez** en el `AppLayout` y queda fijo en la esquina superior derecha. El hook `useToast()` expone métodos `success`, `error`, `warning`, `info` que se invocan desde cualquier parte de la app (incluyendo el patrón CRUD).
+
+```typescript
+// src/components/ui/Toast.tsx
+import { toast, Toaster } from 'react-hot-toast';
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+
+type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+
+const variantStyles: Record<ToastVariant, { icon: LucideIcon; className: string; iconClass: string }> = {
+  success: { icon: CheckCircle, className: 'bg-white border-l-4 border-success', iconClass: 'text-success' },
+  error:   { icon: XCircle,     className: 'bg-white border-l-4 border-destructive', iconClass: 'text-destructive' },
+  warning: { icon: AlertTriangle, className: 'bg-white border-l-4 border-warning', iconClass: 'text-warning' },
+  info:    { icon: Info,        className: 'bg-white border-l-4 border-info', iconClass: 'text-info' },
+};
+
+export const ToastContainer = () => (
+  <Toaster
+    position="top-right"
+    containerStyle={{
+      top: 64,           // Debajo del TopNavbar (56px + 8px gap)
+      right: 16,
+      zIndex: 9999,
+    }}
+    toastOptions={{
+      duration: 5000,    // Auto-dismiss a los 5 s
+      style: {
+        minWidth: 320,
+        maxWidth: 400,
+        boxShadow: 'var(--shadow-toast)',
+        borderRadius: 'var(--radius)',
+        padding: '12px 16px',
+      },
+      // Custom render con iconos Lucide y botón de cerrar
+      success: { icon: <CheckCircle className="w-5 h-5 text-success" /> },
+      error:   { icon: <XCircle className="w-5 h-5 text-destructive" />, duration: 7000 },
+      warning: { icon: <AlertTriangle className="w-5 h-5 text-warning" /> },
+      info:    { icon: <Info className="w-5 h-5 text-info" /> },
+    }}
+  />
+);
+
+export function useToast() {
+  return {
+    success: (msg: string) => toast.success(msg),
+    error:   (msg: string) => toast.error(msg, { duration: 7000 }),
+    warning: (msg: string) => toast(msg, { icon: <AlertTriangle className="w-5 h-5 text-warning" /> }),
+    info:    (msg: string) => toast(msg, { icon: <Info className="w-5 h-5 text-info" /> }),
+    // Para errores con detalle (multiple lines)
+    errorDetail: (msg: string, detail: string) =>
+      toast.error(
+        <div>
+          <p className="font-medium">{msg}</p>
+          <p className="text-xs text-muted-foreground mt-1">{detail}</p>
+        </div>,
+        { duration: 7000 }
+      ),
+    dismiss: (id?: string) => toast.dismiss(id),
+  };
+}
+```
+
+**Integración en AppLayout**:
+
+```typescript
+// src/layout/AppLayout.tsx
+import { Outlet } from 'react-router-dom';
+import { TopNavbar } from './components/TopNavbar';
+import { Sidebar } from './components/Sidebar';
+import { ToastContainer } from '@/components/ui/Toast';
+import { OfflineBanner } from './components/OfflineBanner';
+
+export function AppLayout() {
+  return (
+    <div className="app-layout">
+      <TopNavbar />
+      <Sidebar />
+      <main className="app-layout__main">
+        <OfflineBanner />
+        <Outlet />
+      </main>
+      <footer className="app-layout__footer flex items-center justify-center text-xs text-muted-foreground">
+        SGP v1.0.0 — Ministerio de Trabajo de Cuba
+      </footer>
+      {/* Toasts en top-right, fijos, siempre disponibles */}
+      <ToastContainer />
+    </div>
+  );
+}
+```
+
+**Reglas del sistema de toasts**:
+
+1. **Posición**: top-right fija, debajo del TopNavbar (top: 64px), z-index 9999.
+2. **Auto-dismiss**: 5 s para success/info/warning, 7 s para error (más tiempo para leer el problema).
+3. **Límite**: máximo 3 toasts visibles simultáneamente; los más antiguos se apilan abajo.
+4. **Botón de cerrar**: cada toast tiene un icono `X` para cierre manual.
+5. **Iconos Lucide**: cada variante tiene su icono consistente (`CheckCircle`, `XCircle`, `AlertTriangle`, `Info`).
+6. **Accesibilidad**: `role="alert"` para error/warning, `role="status"` para success/info. `aria-live="polite"` en el container.
+7. **i18n**: los mensajes se internacionalizan en el hook `useCrudResource` vía `t('create.success')`, `t('delete.error')`, etc.
+8. **Auto-triggered from CRUD**: el hook `useCrudResource` dispara toasts automáticamente en `onSuccess` y `onError` de cada mutación — los consumidores no necesitan gestionarlos.
+
+### 4.5 Capas transversales
 
 ```
 src/
@@ -886,6 +1388,22 @@ export function useCrudResource<T, C, U>(config: CrudConfig<T, C, U>) {
   return { useList, useDetail, useCreate, useUpdate, useDelete, canView, canCreate, canEdit, canDelete };
 }
 ```
+
+**Notas críticas de comportamiento automático del hook**:
+
+> **1. Toasts automáticos (top-right)**: el hook invoca `success(...)` y `error(...)` del hook `useToast()` en los `onSuccess` / `onError` de cada mutación. Los toasts aparecen en la esquina superior derecha del layout (debajo del TopNavbar, posición fija, z-index 9999) sin que el consumidor tenga que gestionarlos. La duración es 5 s para éxito y 7 s para error. Ver sección 4.4.5 para el sistema de toasts completo.
+>
+> **2. Auto-refresh de listados**: tras cada mutación exitosa (create/update/delete), el hook invoca `queryClient.invalidateQueries({ queryKey: [config.resource, 'list'] })` automáticamente. Esto provoca que **todas las instancias activas de `useList` se refetchen en background** de forma transparente. El componente `<ResourceListPage>` (y cualquier otra página que use `useList` con la misma `CrudConfig`) muestra el dato fresco sin código adicional. Si se necesita invalidación cruzada (ej. crear municipio invalida listado de agencias), usar el override `config.invalidateOn.create`.
+>
+> **3. Optimistic refresh del detalle**: en `useUpdate`, además de invalidar el listado, se hace `queryClient.setQueryData([config.resource, 'detail', id, config.context], resource)` para reflejar el cambio en el cache del detalle sin esperar refetch — útil si el usuario está viendo el detalle del recurso actualizado.
+>
+> **4. Manejo de 422 silencioso**: cuando el backend responde 422 (validation error), el hook **no muestra toast** — los errores van al formulario vía `form.setError(field, messages[0])` desde el `onError` del componente `ResourceFormModal`. Esto evita duplicar el feedback al usuario.
+>
+> **5. Manejo de 409 con toast específico**: para conflictos de negocio (soft delete con referencias activas, edición con `If-Match` fallido), el hook muestra un toast `error` con mensaje i18n específico (`delete.has_references`, `update.conflict`).
+>
+> **6. Manejo de 429 con backoff**: el hook no reintenta 4xx excepto 429 (rate limiting), que se reintenta hasta 3 veces con backoff exponencial (1 s, 2 s, 4 s). Si los reintentos fallan, se muestra toast `errors.rate_limited`.
+>
+> **7. Idempotency-Key**: si `config.idempotencyKey === true`, el hook genera un `crypto.randomUUID()` por cada llamada a `useCreate` y lo envía en el header `Idempotency-Key`. Esto permite que un doble-click del usuario (o un retry tras timeout) no cree dos recursos — el backend reconoce el mismo key y devuelve la respuesta original.
 
 #### 6.9.5 Componentes base
 
@@ -1582,6 +2100,34 @@ Si el backend cambia el contrato, el test falla y bloquea el merge.
   - (-) Generics TypeScript pueden ser complejos. Se mitiga con tipos `AnyCrudConfig` para consumidores que no necesitan tipar fuerte.
 - **Aplicabilidad**: opt-in por feature. Recursos con máquinas de estados, alta automática, subrecursos anidados con lógica propia, exportaciones en cola o acciones especiales NO usan el patrón (sección 6.9.7 detalla los excluidos).
 - **Trazabilidad**: este ADR es espejo conceptual del ADR-FE-06 (feature-first organization) y complementa al ADR-FE-07 (MSW para mocking) al permitir que los handlers MSW auto-generados sean consumidos de forma uniforme por el hook genérico.
+
+### ADR-FE-19: Design System base-nova + colores de marca + Lucide + toasts top-right
+
+- **Decisión**: adoptar el estilo **base-nova** (paleta `base` de shadcn/ui + acento `nova` semántico) como design system del SGP, con tres colores de marca sobreescritos por el cliente:
+  - `--sidebar-bg: #16202E` (azul oscuro casi negro para el Sidebar lateral)
+  - `--primary: #418AD1` (azul medio para botones primarios, avatar fallback, accent de foco, item activo del sidebar)
+  - `--sidebar-fg: #FFFFFF` (texto e iconos sobre el sidebar)
+  - Iconografía con la librería **`lucide-react`** (ya en ADR-FE-04).
+  - Sistema de toasts en **top-right fijo**, debajo del TopNavbar (top: 64px), z-index 9999, con auto-dismiss 5 s (success) / 7 s (error), basado en `react-hot-toast` con custom styling Lucide.
+- **Contexto**: el cliente (Ministerio de Trabajo de Cuba) pidió explícitamente una identidad visual sobria de gobierno, con sidebar oscuro para enfatizar la jerarquía de navegación y botones primarios azules para acciones principales. La elección de `base-nova` como base se debe a su combinación de neutros cálidos (apropiados para lectura prolongada en sistema de gestión de expedientes) con acentos saturados para feedback. Lucide se eligió por ser tree-shakeable, SVG puro y consistente con shadcn/ui.
+- **Alternativas**:
+  - *(a) Material UI v5 con tema dark blue*: rechazada por ser demasiado opinada, con bundle pesado y difícil customización a la identidad INASS (ver ADR-FE-04).
+  - *(b) Tema shadcn/ui "Slate" por defecto*: rechazada por no alinearse con la identidad INASS (gris azulado neutro no transmite gobierno).
+  - *(c) Tema shadcn/ui "Zinc" + colores de marca*: evaluada; `base-nova` se prefirió por tener neutros más cálidos que reducen fatiga visual en sesiones largas de tramitación.
+  - *(d) Heroicons en vez de Lucide*: rechazada por ser menos completa (menos iconos) y menos consistente con shadcn/ui.
+  - *(e) Toasts en bottom-right*: rechazada por convención en sistema desktop gubernamental (top-right más visible, no obstaculiza formularios largos).
+  - *(f) Toasts con sonar/notificación nativa del navegador*: rechazada por ser intrusiva y poco confiable en navegadores del Ministerio.
+- **Consecuencias**:
+  - (+) Identidad visual coherente y sobria para sistema gubernamental.
+  - (+) Sidebar oscuro enfatiza jerarquía de navegación y reduce distracción visual.
+  - (+) Botones primarios `#418AD1` consistentes y accesibles (contraste AA sobre fondo blanco).
+  - (+) Toasts en top-right estandarizados y auto-triggered desde el hook `useCrudResource` — los desarrolladores no escriben código de toast por feature.
+  - (+) Lucide tree-shakeable: solo iconos usados se incluyen en el bundle.
+  - (-) Modo oscuro (`.dark`) no implementado en MVP — solo modo claro (futuro backlog).
+  - (-) `#16202E` y `#418AD1` son hardcoded en `theme.css`; si el cliente cambia de marca, hay que editar el archivo. Se mitiga con tokens CSS centralizados.
+  - (-) `react-hot-toast` es una dependencia adicional (~5 KB gzip). Justificada por su API simple y customización profunda.
+- **Implementación**: ver sección 4.4 "Design System: base-nova, Lucide, colores y toasts" para los tokens CSS, mapeo a TailwindCSS, componentes `Sidebar`, `Button`, `ToastContainer` y `UserDropdown` con los colores aplicados.
+- **Trazabilidad**: este ADR formaliza las decisiones visuales del cliente y complementa al ADR-FE-04 (TailwindCSS + shadcn/ui + Headless UI) con la identidad de marca específica del SGP.
 
 ---
 
