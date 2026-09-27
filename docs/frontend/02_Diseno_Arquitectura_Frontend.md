@@ -543,6 +543,644 @@ const CaseDetailPage = lazy(() => import('./pages/CaseDetailPage'));
 
 Cada página se code-splitta. El bundle inicial solo incluye `AppLayout`, `Sidebar`, `TopBar`, página de login y página de error. El resto se carga on-demand.
 
+### 6.9 Patrón CRUD genérico (Generic CRUD Pattern)
+
+#### 6.9.1 Motivación
+
+El SGP tiene **al menos 18 recursos CRUD** que comparten la misma forma funcional: los 16 catálogos uniformes (provincias, tipos de agencia, organismos, etc.), más municipios, agencias, personas, entidades, oficinas, firmas autorizadas, tipos y bases legales, usuarios, controles bancarios. Cada uno sigue el mismo ciclo: listado paginado con búsqueda y filtros, modal/Drawer de creación, modal/Drawer de edición con campos inmutables, acción de desactivación lógica con confirmación, manejo de errores 422 con mapeo a campos, optimistic locking opcional, idempotencia opcional, toast de éxito, invalidación de cache TanStack Query.
+
+Implementar cada recurso de forma independiente produce (estimación conservadora para 18 recursos × ~600 LOC por CRUD completo) **~10.800 LOC duplicados**, con la consecuente carga de mantenimiento: un cambio en el manejo de 409 (conflicto de soft delete) o en la invalidación selectiva de cache debe replicarse 18 veces. Este patrón reduce ese código a **~2.000 LOC totales** (configuraciones + componentes base), con cada recurso nuevo añadiendo **~80 LOC de configuración** en vez de 600 LOC de implementación.
+
+El patrón es **opt-in**: los recursos con lógica de negocio no estándar (expedientes con máquina de estados, pensionados con alta automática desde aprobación, cálculo con simulación, pagos con polling de exportaciones, reportes read-only con export en cola) **no usan este patrón** y se implementan con hooks y componentes específicos. La distinción se documenta por feature en `features/<mod>/README.md`.
+
+#### 6.9.2 Arquitectura del patrón
+
+```mermaid
+flowchart TB
+    subgraph Config["Configuration Layer"]
+        CC["CrudConfig&lt;T, C, U&gt;<br/>tipos + endpoints + schemas + columns + fields"]
+        SC["Zod Schemas<br/>(create + update + filters)"]
+        CD["ColumnDefs<br/>(tanstack/react-table)"]
+        FD["FieldDefs<br/>(schema-driven form)"]
+    end
+
+    subgraph Hooks["Hooks Layer"]
+        UCR["useCrudResource(config)<br/>useList, useDetail, useCreate,<br/>useUpdate, useDelete"]
+        UP["usePermiso(permiso)<br/>RBAC checks"]
+    end
+
+    subgraph Components["Components Layer"]
+        RLP["ResourceListPage<br/>(tabla + filtros + paginación)"]
+        RFM["ResourceFormModal<br/>(create/edit con RHF + Zod)"]
+        RDM["ResourceDeleteModal<br/>(confirmación soft-delete)"]
+        RT["ResourceTable<br/>(sort + actions slot)"]
+        RF["ResourceFilters<br/>(search + filter defs)"]
+    end
+
+    subgraph Infra["Infrastructure Layer"]
+        HTTP["axios http client<br/>(interceptors + If-Match + Idempotency-Key)"]
+        TQ["TanStack Query<br/>(cache + invalidation)"]
+        I18N["i18next<br/>(resource namespace)"]
+    end
+
+    CC --> SC & CD & FD
+    CC --> UCR
+    UCR --> TQ
+    UCR --> HTTP
+    UCR --> I18N
+    UCR --> RLP
+    RLP --> RT
+    RLP --> RF
+    RLP --> RFM
+    RLP --> RDM
+    RFM --> SC
+    RFM --> HTTP
+    RDM --> HTTP
+    UP --> RLP
+    UP --> RFM
+    UP --> RDM
+```
+
+#### 6.9.3 Tipos base
+
+El patrón se ancla en un tipo `CrudConfig<TResource, TCreateInput, TUpdateInput>` genérico que captura toda la variabilidad de un recurso en un solo objeto inmutable. Los tipos `TResource`, `TCreateInput` y `TUpdateInput` se infieren de los schemas Zod + de los tipos generados desde OpenAPI, garantizando type-safety end-to-end.
+
+```typescript
+// src/types/crud.ts
+import type { z } from 'zod';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { FieldDef } from '@/components/crud/FieldRenderer';
+
+export interface CrudConfig<
+  TResource,
+  TCreateInput,
+  TUpdateInput
+> {
+  /** Identificación */
+  resource: string;                  // 'catalogs' | 'people' | 'entities' | ...
+  resourceKey: string;               // i18n namespace, e.g. 'catalogs'
+  permisoPrefix: string;             // 'catalogs' | 'people' | ...
+
+  /** Endpoints (path-based bajo /api/v1). Aceptan placeholders tipo :type */
+  endpoints: {
+    list: string;                    // '/api/v1/catalogs/:type'
+    create: string;
+    detail: (id: number | string) => string;
+    update: (id: number | string) => string;
+    delete: (id: number | string) => string;
+  };
+
+  /** Contexto dinámico (reemplaza placeholders en endpoints) */
+  context?: Record<string, string | number>;  // { ':type': 'provinces' }
+
+  /** Schemas Zod: único source of truth para validación + form */
+  schemas: {
+    create: z.ZodSchema<TCreateInput>;
+    update: z.ZodSchema<TUpdateInput>;
+    filters?: z.ZodSchema<unknown>;
+  };
+
+  /** Columnas de la tabla (tanstack/react-table) */
+  columns: ColumnDef<TResource>[];
+
+  /** Campos del formulario (schema-driven) */
+  fields: FieldDef<TResource>[];
+
+  /** Filtros del listado */
+  filters?: FilterDef[];
+
+  /** Búsqueda */
+  search?: {
+    fields: (keyof TResource)[];
+    debounce: number;                // default 300ms
+    placeholder?: string;
+  };
+
+  /** Permisos RBAC */
+  permisos: {
+    view: string;                    // 'catalogs.view'
+    create: string;                  // 'catalogs.manage'
+    edit: string;                    // 'catalogs.manage'
+    delete: string;                  // 'catalogs.manage'
+  };
+
+  /** Campos inmutables tras creación (se deshabilitan en edición) */
+  inmutableFields?: (keyof TResource)[];
+
+  /** Etiqueta de acción delete (i18n) */
+  deleteLabel?: 'deactivate' | 'remove';
+
+  /** Optimistic locking vía If-Match/ETag */
+  optimisticLocking?: boolean;
+
+  /** Idempotency-Key en POST create */
+  idempotencyKey?: boolean;
+
+  /** Hooks de ciclo de vida para extensiones puntuales */
+  hooks?: {
+    beforeCreate?: (input: TCreateInput) => TCreateInput | Promise<TCreateInput>;
+    afterCreate?: (resource: TResource) => void;
+    beforeUpdate?: (input: TUpdateInput, current: TResource) => TUpdateInput | Promise<TUpdateInput>;
+    afterUpdate?: (resource: TResource) => void;
+    beforeDelete?: (resource: TResource) => boolean | Promise<boolean>;
+    afterDelete?: (id: number | string) => void;
+    /** Transforma la respuesta antes de devolverla (ej. normalizar campos) */
+    transformResponse?: (resource: TResource) => TResource;
+  };
+
+  /** Invalidation selectiva tras mutación (override del default que invalida 'list') */
+  invalidateOn?: {
+    create?: (queryClient, resource) => void;
+    update?: (queryClient, resource, id) => void;
+    delete?: (queryClient, id) => void;
+  };
+
+  /** Configuración de exportación (opcional) */
+  export?: {
+    enabled: boolean;
+    formats: ('csv' | 'excel')[];
+    permiso: string;                  // 'reports.export'
+    /** Endpoint de exportación (cola) */
+    endpoint: string;
+  };
+}
+
+export type AnyCrudConfig = CrudConfig<unknown, unknown, unknown>;
+```
+
+#### 6.9.4 Hook `useCrudResource`
+
+El hook encapsula TanStack Query (queries y mutations), invalidación de cache, manejo de errores HTTP estándar (401, 403, 409, 422, 429), toasts i18n, hooks de ciclo de vida y cabeceras especiales (`If-Match`, `Idempotency-Key`). Recibe la `CrudConfig` y devuelve hooks individuales para que el consumidor los use de forma granular.
+
+```typescript
+// src/hooks/crud/useCrudResource.ts
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { http } from '@/lib/http';
+import { useToast } from '@/components/ui/Toast';
+import { usePermiso } from '@/hooks/use-permiso';
+import type { CrudConfig } from '@/types/crud';
+
+export function useCrudResource<T, C, U>(config: CrudConfig<T, C, U>) {
+  const queryClient = useQueryClient();
+  const t = useTranslation(config.resourceKey).t;
+  const { success, error: errorToast } = useToast();
+  const can = usePermiso();
+
+  /** Resuelve un endpoint reemplazando placeholders del context */
+  const resolveEndpoint = (path: string) => {
+    let resolved = path;
+    for (const [k, v] of Object.entries(config.context ?? {})) {
+      resolved = resolved.replace(k, String(v));
+    }
+    return resolved;
+  };
+
+  /** Hook de listado con paginación, búsqueda y filtros */
+  const useList = (params: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    sort?: string;
+    order?: 'asc' | 'desc';
+    [filter: string]: unknown;
+  }) =>
+    useQuery({
+      queryKey: [config.resource, 'list', params, config.context],
+      queryFn: async () => {
+        const { data } = await http.get(resolveEndpoint(config.endpoints.list), { params });
+        const envelope = data as { data: T[]; meta: PaginationMeta };
+        if (config.hooks?.transformResponse) {
+          envelope.data = envelope.data.map(config.hooks.transformResponse);
+        }
+        return envelope;
+      },
+      placeholderData: keepPreviousData,
+      staleTime: 30_000,
+      retry: (failureCount, error) => {
+        // No reintentar 4xx (excepto 429)
+        if (error.response?.status && error.response.status >= 400 && error.response.status < 500) {
+          return error.response.status === 429 && failureCount < 3;
+        }
+        return failureCount < 3;
+      },
+    });
+
+  /** Hook de detalle */
+  const useDetail = (id?: number | string) =>
+    useQuery({
+      queryKey: [config.resource, 'detail', id, config.context],
+      queryFn: async () => {
+        const { data } = await http.get(resolveEndpoint(config.endpoints.detail(id!)));
+        return data as T;
+      },
+      enabled: !!id,
+    });
+
+  /** Mutación de creación con Idempotency-Key opcional */
+  const useCreate = () =>
+    useMutation({
+      mutationFn: async (input: C) => {
+        const finalInput = config.hooks?.beforeCreate
+          ? await config.hooks.beforeCreate(input)
+          : input;
+        const headers: Record<string, string> = {};
+        if (config.idempotencyKey) {
+          headers['Idempotency-Key'] = crypto.randomUUID();
+        }
+        const { data } = await http.post(resolveEndpoint(config.endpoints.create), finalInput, { headers });
+        config.hooks?.afterCreate?.(data as T);
+        return data as T;
+      },
+      onSuccess: (resource) => {
+        if (config.invalidateOn?.create) {
+          config.invalidateOn.create(queryClient, resource);
+        } else {
+          queryClient.invalidateQueries({ queryKey: [config.resource, 'list'] });
+        }
+        success(t('create.success'));
+      },
+      onError: (err: any) => {
+        if (err.response?.status === 422) return; // handled by form
+        if (err.response?.status === 429) {
+          errorToast(t('errors.rate_limited'));
+          return;
+        }
+        errorToast(t('create.error'));
+      },
+    });
+
+  /** Mutación de actualización con optimistic locking opcional */
+  const useUpdate = () =>
+    useMutation({
+      mutationFn: async ({ id, input }: { id: number | string; input: U }) => {
+        const current = queryClient.getQueryData<T>([config.resource, 'detail', id, config.context]);
+        const finalInput = config.hooks?.beforeUpdate && current
+          ? await config.hooks.beforeUpdate(input, current)
+          : input;
+        const headers: Record<string, string> = {};
+        if (config.optimisticLocking && current && 'updated_at' in current) {
+          headers['If-Match'] = (current as any).updated_at as string;
+        }
+        const { data } = await http.patch(resolveEndpoint(config.endpoints.update(id)), finalInput, { headers });
+        config.hooks?.afterUpdate?.(data as T);
+        return data as T;
+      },
+      onSuccess: (resource, { id }) => {
+        if (config.invalidateOn?.update) {
+          config.invalidateOn.update(queryClient, resource, id);
+        } else {
+          queryClient.invalidateQueries({ queryKey: [config.resource, 'list'] });
+          queryClient.setQueryData([config.resource, 'detail', id, config.context], resource);
+        }
+        success(t('update.success'));
+      },
+      onError: (err: any) => {
+        if (err.response?.status === 422) return; // handled by form
+        if (err.response?.status === 409) {
+          errorToast(t('update.conflict'));
+          return;
+        }
+        errorToast(t('update.error'));
+      },
+    });
+
+  /** Mutación de desactivación lógica (soft delete) */
+  const useDelete = () =>
+    useMutation({
+      mutationFn: async (resource: T) => {
+        const id = (resource as any).id;
+        const shouldProceed = config.hooks?.beforeDelete
+          ? await config.hooks.beforeDelete(resource)
+          : true;
+        if (!shouldProceed) return;
+        await http.delete(resolveEndpoint(config.endpoints.delete(id)));
+        config.hooks?.afterDelete?.(id);
+      },
+      onSuccess: (_void, resource) => {
+        const id = (resource as any).id;
+        if (config.invalidateOn?.delete) {
+          config.invalidateOn.delete(queryClient, id);
+        } else {
+          queryClient.invalidateQueries({ queryKey: [config.resource, 'list'] });
+          queryClient.removeQueries({ queryKey: [config.resource, 'detail', id, config.context] });
+        }
+        success(t('delete.success'));
+      },
+      onError: (err: any) => {
+        if (err.response?.status === 422) return;
+        if (err.response?.status === 409) {
+          errorToast(t('delete.has_references'));
+          return;
+        }
+        errorToast(t('delete.error'));
+      },
+    });
+
+  /** Helpers de permiso para el recurso */
+  const canView = can(config.permisos.view);
+  const canCreate = can(config.permisos.create);
+  const canEdit = can(config.permisos.edit);
+  const canDelete = can(config.permisos.delete);
+
+  return { useList, useDetail, useCreate, useUpdate, useDelete, canView, canCreate, canEdit, canDelete };
+}
+```
+
+#### 6.9.5 Componentes base
+
+Los componentes `<ResourceListPage>`, `<ResourceFormModal>` y `<ResourceDeleteModal>` son **presentational puros** que reciben la `CrudConfig` + el estado de los hooks y renderizan de forma estándar. Están localizados en `src/components/crud/` y son compartidos por todos los recursos CRUD.
+
+```typescript
+// src/components/crud/ResourceListPage.tsx (esquema)
+export function ResourceListPage<T, C, U>({ config }: { config: CrudConfig<T, C, U> }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { useList, useDelete, canCreate, canEdit, canDelete } = useCrudResource(config);
+  const params = parseListParams(searchParams);
+  const { data, isLoading } = useList(params);
+  const deleteMutation = useDelete();
+  const [formState, setFormState] = useState<{ open: boolean; resource?: T }>({ open: false });
+  const [deleteState, setDeleteState] = useState<{ open: boolean; resource?: T }>({ open: false });
+
+  const updateParams = (patch: Partial<typeof params>) =>
+    setSearchParams(mergeParams(params, patch));
+
+  return (
+    <PageContainer
+      title={t(`${config.resourceKey}:list.title`)}
+      actions={canCreate ? (
+        <Button onClick={() => setFormState({ open: true })}>
+          <PlusIcon /> {t(`${config.resourceKey}:list.new`)}
+        </Button>
+      ) : null}
+    >
+      {config.search && <ResourceSearch config={config} value={params.search} onChange={...} />}
+      {config.filters && <ResourceFilters config={config} values={params} onChange={updateParams} />}
+
+      <ResourceTable
+        columns={config.columns}
+        data={data?.data ?? []}
+        isLoading={isLoading}
+        sort={params}
+        onSortChange={updateParams}
+        actions={(resource) => (
+          <>
+            {canEdit && <IconButton onClick={() => setFormState({ open: true, resource })}><EditIcon /></IconButton>}
+            {canDelete && <IconButton onClick={() => setDeleteState({ open: true, resource })}><DeleteIcon /></IconButton>}
+          </>
+        )}
+        emptyState={<EmptyState title={t(`${config.resourceKey}:list.empty`)} />}
+      />
+
+      <Pagination
+        currentPage={data?.meta.current_page ?? 1}
+        lastPage={data?.meta.last_page ?? 1}
+        perPage={params.per_page}
+        total={data?.meta.total ?? 0}
+        onChange={(page, per_page) => updateParams({ page, per_page })}
+      />
+
+      {formState.open && (
+        <ResourceFormModal
+          config={config}
+          resource={formState.resource}
+          onClose={() => setFormState({ open: false })}
+        />
+      )}
+      {deleteState.open && deleteState.resource && (
+        <ResourceDeleteModal
+          config={config}
+          resource={deleteState.resource}
+          onConfirm={async () => {
+            await deleteMutation.mutateAsync(deleteState.resource!);
+            setDeleteState({ open: false });
+          }}
+          isPending={deleteMutation.isPending}
+          onClose={() => setDeleteState({ open: false })}
+        />
+      )}
+    </PageContainer>
+  );
+}
+```
+
+```typescript
+// src/components/crud/ResourceFormModal.tsx (esquema)
+export function ResourceFormModal<T, C, U>({
+  config, resource, onClose,
+}: { config: CrudConfig<T, C, U>; resource?: T; onClose: () => void }) {
+  const isEdit = !!resource;
+  const { useCreate, useUpdate } = useCrudResource(config);
+  const createMutation = useCreate();
+  const updateMutation = useUpdate();
+  const t = useTranslation(config.resourceKey).t;
+
+  const form = useForm<C | U>({
+    resolver: zodResolver(isEdit ? config.schemas.update : config.schemas.create),
+    defaultValues: resource ?? {},
+  });
+
+  const onSubmit = form.handleSubmit(async (input) => {
+    try {
+      if (isEdit && resource) {
+        await updateMutation.mutateAsync({ id: (resource as any).id, input: input as U });
+      } else {
+        await createMutation.mutateAsync(input as C);
+      }
+      onClose();
+    } catch (err: any) {
+      if (err.response?.status === 422) {
+        const fieldErrors = err.response.data.errors as Record<string, string[]>;
+        for (const [field, messages] of Object.entries(fieldErrors)) {
+          form.setError(field as keyof (C | U), { message: messages[0] });
+        }
+      }
+      // otros errores ya manejados por el hook con toast
+    }
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{t(isEdit ? 'edit.title' : 'create.title')}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="space-y-4">
+          {config.fields.map((field) => (
+            <FieldRenderer
+              key={String(field.name)}
+              field={field}
+              form={form}
+              disabled={isEdit && config.inmutableFields?.includes(field.name as keyof T)}
+              context={config.context}
+            />
+          ))}
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              {t('common:cancel')}
+            </Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {t('common:save')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+#### 6.9.6 Ejemplo de uso: catálogos uniformes
+
+La aplicación más clara del patrón es el feature `catalogs`, donde los 16 tipos comparten el mismo endpoint `/api/v1/catalogs/{type}` y solo varían en los campos condicionales del schema `CatalogItem`.
+
+```typescript
+// src/features/catalogs/config/catalog-config.ts
+import { z } from 'zod';
+import type { CrudConfig } from '@/types/crud';
+import type { components } from '@/types/api';  // generado desde OpenAPI
+
+type CatalogItem = components['schemas']['CatalogItem'];
+
+// Schema base: campos comunes a todos los catálogos
+const baseSchema = z.object({
+  code: z.string().min(1).max(10),
+  name: z.string().min(1).max(80),
+  description: z.string().max(255).optional(),
+});
+
+// Schemas por tipo (campos condicionales)
+const schemasByType: Record<string, z.ZodSchema> = {
+  'pension-regimes': baseSchema.extend({
+    months_per_year: z.number().int().positive(),
+  }),
+  'income-concepts': baseSchema.extend({
+    applies_base_salary: z.boolean().default(false),
+  }),
+  // ... otros tipos solo heredan baseSchema
+};
+
+export function getCatalogConfig(type: string): CrudConfig<CatalogItem, any, any> {
+  const schema = schemasByType[type] ?? baseSchema;
+  return {
+    resource: 'catalogs',
+    resourceKey: 'catalogs',
+    permisoPrefix: 'catalogs',
+    endpoints: {
+      list: '/api/v1/catalogs/:type',
+      create: '/api/v1/catalogs/:type',
+      detail: (id) => `/api/v1/catalogs/:type/${id}`,
+      update: (id) => `/api/v1/catalogs/:type/${id}`,
+      delete: (id) => `/api/v1/catalogs/:type/${id}`,
+    },
+    context: { ':type': type },
+    schemas: { create: schema, update: schema },
+    columns: [
+      { id: 'code', header: 'catalogs:list.columns.code' },
+      { id: 'name', header: 'catalogs:list.columns.name' },
+      { id: 'description', header: 'catalogs:list.columns.description' },
+      { id: 'actions', header: '', cell: ({ row }) => <ResourceRowActions row={row} /> },
+    ],
+    fields: [
+      { name: 'code', type: 'text', label: 'catalogs:form.code', required: true },
+      { name: 'name', type: 'text', label: 'catalogs:form.name', required: true },
+      { name: 'description', type: 'textarea', label: 'catalogs:form.description' },
+      {
+        name: 'months_per_year',
+        type: 'number',
+        label: 'catalogs:form.months_per_year',
+        required: true,
+        condition: (ctx) => ctx?.[':type'] === 'pension-regimes',
+      },
+      {
+        name: 'applies_base_salary',
+        type: 'checkbox',
+        label: 'catalogs:form.applies_base_salary',
+        condition: (ctx) => ctx?.[':type'] === 'income-concepts',
+      },
+    ],
+    inmutableFields: ['code'],
+    permisos: {
+      view: 'catalogs.view',
+      create: 'catalogs.manage',
+      edit: 'catalogs.manage',
+      delete: 'catalogs.manage',
+    },
+    optimisticLocking: true,
+    deleteLabel: 'deactivate',
+  };
+}
+```
+
+```typescript
+// src/features/catalogs/pages/CatalogListPage.tsx
+import { useParams, Navigate } from 'react-router-dom';
+import { getCatalogConfig } from '../config/catalog-config';
+import { ResourceListPage } from '@/components/crud/ResourceListPage';
+import { VALID_CATALOG_TYPES } from '../config/catalog-types';
+
+export function CatalogListPage() {
+  const { type = '' } = useParams();
+  if (!VALID_CATALOG_TYPES.includes(type)) {
+    return <Navigate to="/catalogos" replace />;
+  }
+  const config = getCatalogConfig(type);
+  return <ResourceListPage config={config} />;
+}
+```
+
+Con **~120 LOC de configuración** se obtiene un CRUD completo de un catálogo: listado paginado con búsqueda, ordenamiento, filtros, modal de creación, modal de edición con `code` inmutable, acción de desactivación con confirmación, manejo de 422/409/429, optimistic locking, invalidación de cache, toasts i18n. Replicar esto manualmente costaría ~600 LOC por catálogo × 16 catálogos = **~9.600 LOC evitados**.
+
+#### 6.9.7 Cuándo NO usar el patrón
+
+El patrón genérico **no se aplica** a los siguientes recursos, que requieren implementación específica con hooks y componentes propios:
+
+| Recurso | Razón de exclusión |
+|---|---|
+| `pension-cases` (expedientes) | Máquina de estados (4 estados + transiciones), subregistros anidados (salarios/servicios/ciclos), acción `calculation-preview`, historial append-only, reapertura admin exclusiva. Complejidad no abarcable por un CRUD genérico. |
+| `pensioners` (pensionados) | Alta automática desde aprobación de expediente (no es creable directamente). Reclasificación como acción especial. Banner de fallecimiento. |
+| `pension-cases/{id}/transitions` | Subrecurso de acción (no CRUD). Mutación con validación de máquina de estados server-side. |
+| `pension-cases/{id}/calculation-preview` | Read-only con simulación no persistente. |
+| `bank-controls` | Tiene subrecurso de exportación de nómina en cola con polling. |
+| `reports` y `exports` | No son CRUD — son reportes parametrizables con exportación en cola. |
+| `audit` | Read-only con visualización de diff JSON inline. |
+| `auth/login`, `auth/logout`, `auth/me` | Acciones específicas de auth, no CRUD. |
+
+La regla operativa: **un recurso es candidato al patrón CRUD genérico si y solo si sus endpoints siguen la forma RESTful estándar (`GET list`, `POST create`, `GET/{id} detail`, `PATCH/{id} update`, `DELETE/{id} deactivate`) sin acciones especiales ni subrecursos anidados con lógica propia**.
+
+#### 6.9.8 Extensibilidad
+
+El patrón es extensible sin modificar los componentes base mediante:
+
+1. **Hooks de ciclo de vida** (`beforeCreate`, `afterCreate`, etc.): para transformaciones puntuales (ej. formatear `effective_from` antes de enviar, recalcular un campo derivado).
+2. **`invalidateOn` override**: para invalidaciones de cache no estándar (ej. crear un `municipality` invalida también el listado de `agencies` por coherencia geográfica).
+3. **`transformResponse`**: para normalizar respuestas que no siguen el envelope estándar.
+4. **`FieldDef` con `condition`**: para mostrar/ocultar campos condicionalmente según el contexto (ej. `months_per_year` solo en `pension-regimes`).
+5. **Slot `actions` en columnas**: para acciones adicionales por fila (ej. "Ver detalles", "Duplicar").
+
+Cuando la extensión requiere lógica más profunda (múltiples mutaciones coordinadas, UI adicional como wizard, etc.), el recurso **deja de usar el patrón** y se implementa con hooks específicos — esto se documenta en `features/<mod>/README.md` con la justificación.
+
+#### 6.9.9 Testing del patrón
+
+- **Tests del hook `useCrudResource`**: suite de tests con Vitest + MSW que valida, para una `CrudConfig` de prueba, los flujos de list/create/update/delete, manejo de 401/403/409/422/429, invalidación de cache, hooks de ciclo de vida, optimistic locking. **Cobertura ≥ 95 %** — al ser el hook compartido por 18+ recursos, su cobertura es crítica.
+- **Tests de componentes base**: `ResourceListPage`, `ResourceFormModal`, `ResourceDeleteModal` con Testing Library — validación de render, interacciones, a11y.
+- **Tests de configuración**: por cada `CrudConfig` concreta (ej. `catalogConfig`), test que valida que el schema Zod matchea el tipo generado desde OpenAPI (contract test).
+- **Tests E2E**: un flujo CRUD completo (crear, editar, desactivar) para un recurso representativo — los demás recursos asumen el mismo comportamiento por construcción.
+
+#### 6.9.10 Métricas de reducción de duplicación
+
+| Métrica | Sin patrón (estimación) | Con patrón |
+|---|---|---|
+| LOC por recurso CRUD | ~600 | ~120 (configuración) |
+| Recursos CRUD totales | 18 | 18 |
+| LOC totales CRUD | ~10.800 | ~2.160 + ~1.500 base = ~3.660 |
+| Reducción de LOC | — | **~66 %** |
+| Cambio transversal (ej. 409 handling) | 18 archivos | 1 archivo (`useCrudResource`) |
+| Tests requeridos por recurso | ~30 | ~5 (configuración) + tests base compartidos |
+| Tiempo de incorporación de nuevo CRUD | ~3 días | ~4 horas |
+
+La decisión se registra formalmente como **ADR-FE-18** (ver sección 10).
+
 ---
 
 ## 7. Estrategia híbrida de sincronización con docs.json
@@ -924,6 +1562,26 @@ Si el backend cambia el contrato, el test falla y bloquea el merge.
 - **Consecuencias**:
   - (+) Cross-browser real, paralelización, recording.
   - (-) Curva de aprendizaje ligeramente mayor.
+
+### ADR-FE-18: Patrón CRUD genérico (Generic CRUD Pattern)
+
+- **Decisión**: implementar un patrón CRUD genérico configurable (`CrudConfig<T, C, U>` + hook `useCrudResource` + componentes `ResourceListPage`, `ResourceFormModal`, `ResourceDeleteModal`) para los 18+ recursos CRUD estándar del sistema (catálogos, personas, entidades, oficinas, firmas, base legal, usuarios, controles bancarios).
+- **Contexto**: 18 recursos CRUD compartirían la misma forma funcional (list/create/edit/delete con paginación, búsqueda, filtros, soft delete, manejo de errores HTTP estándar). La implementación manual produciría ~10.800 LOC duplicados, con la carga de mantenimiento asociada (cualquier cambio transversal requeriría editar 18 archivos).
+- **Alternativas**:
+  - *(a) Code generation from OpenAPI* (ej. `openapi-generator` con plantillas custom React): rechazada porque las plantillas generadas son difíciles de customizar sin perder la regeneración, y porque el frontend ya tiene lógica no derivable del spec (filtros, schemas de formulario, inmutabilidad de campos).
+  - *(b) Wrapper ligero sobre TanStack Query sin componentes base*: rechazada porque no elimina la duplicación de UI (tabla, filtros, modal, paginación) que es la mayor fuente de LOC.
+  - *(c) Implementación manual por feature*: rechazada por la duplicación masiva ya citada.
+  - *(d) Lib externa (p. ej. Refine, React-Admin)*: rechazada porque imponen un modelo opionado de UI y datos que entra en conflicto con shadcn/ui + TanStack Query + i18n custom; además, su integración con el envelope SGP (`{data, meta:{current_page, per_page, total, last_page}}`) requeriría adapters no triviales.
+- **Consecuencias**:
+  - (+) Reducción de ~66 % de LOC en CRUD (~10.800 → ~3.660).
+  - (+) Cambios transversales (manejo de 409, invalidación de cache, headers especiales) en un solo archivo.
+  - (+) Onboarding de nuevos recursos en ~4 horas (vs ~3 días).
+  - (+) Tests base compartidos por todos los recursos; cada feature solo añade tests de configuración.
+  - (-) Riesgo de "over-generalization": si un recurso requiere lógica no abarcable por la `CrudConfig`, se aplica la regla de exclusión (sección 6.9.7) y se implementa específico. Documentado en `features/<mod>/README.md`.
+  - (-) Curva de aprendizaje del patrón para nuevos devs. Se mitiga con documentación + ejemplos + pairing.
+  - (-) Generics TypeScript pueden ser complejos. Se mitiga con tipos `AnyCrudConfig` para consumidores que no necesitan tipar fuerte.
+- **Aplicabilidad**: opt-in por feature. Recursos con máquinas de estados, alta automática, subrecursos anidados con lógica propia, exportaciones en cola o acciones especiales NO usan el patrón (sección 6.9.7 detalla los excluidos).
+- **Trazabilidad**: este ADR es espejo conceptual del ADR-FE-06 (feature-first organization) y complementa al ADR-FE-07 (MSW para mocking) al permitir que los handlers MSW auto-generados sean consumidos de forma uniforme por el hook genérico.
 
 ---
 
