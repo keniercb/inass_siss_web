@@ -953,6 +953,108 @@
                 ]
             }
         },
+        "/api/v1/catalogs/{type}/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Restaurar una entrada desactivada",
+                "description": "Devuelve a la vida una entrada lógicamente desactivada (RF-AUD-004). La restauración es exclusiva del rol con permiso catalogs.manage (Administrador) y queda registrada en la bitácora con autor, fecha y valores restaurados.",
+                "operationId": "catalogRestore",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "races"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entrada restaurada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Catalog entry restored."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Sin permiso catalogs.manage",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Catálogo desconocido o entrada inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not Found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La entrada ya está activa",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The catalog entry is already active: only deactivated entries can be restored."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/municipalities": {
             "get": {
                 "tags": [
@@ -1363,6 +1465,824 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/people": {
+            "get": {
+                "tags": [
+                    "Personas"
+                ],
+                "summary": "Búsqueda de personas",
+                "description": "Búsqueda por identidad exacta, fragmentos de nombres/apellidos (combinables) y filtros básicos, paginada y ordenada por apellido/nombre/fecha de nacimiento (RF-PER-004). Los resultados incluyen fecha de nacimiento y padres para desambiguar homónimos.",
+                "operationId": "peopleIndex",
+                "parameters": [
+                    {
+                        "name": "identity",
+                        "in": "query",
+                        "description": "Número de identidad exacto",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Fragmentos de nombre/apellido (cada palabra debe aparecer)",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120
+                        }
+                    },
+                    {
+                        "name": "sex",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "M",
+                                "F"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "deceased",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "birth_from",
+                        "in": "query",
+                        "description": "Nacidos desde (Y-m-d, inclusivo)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "birth_to",
+                        "in": "query",
+                        "description": "Nacidos hasta (Y-m-d, inclusivo)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resultados paginados con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Person"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 42
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Personas"
+                ],
+                "summary": "Registro de una persona",
+                "description": "Alta con validación estructural del carné (RN-001) y control de duplicados (RF-PER-005): identidad ya registrada responde 409 con la persona registrada (también contra desactivadas); homónimos vivos responden 409 con los candidatos hasta que la petición lleve confirm=true. La ficha única de ciudadano es opcional y única.",
+                "operationId": "peopleStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "identity_number",
+                                    "first_name",
+                                    "first_surname",
+                                    "sex",
+                                    "birth_date",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "identity_number": {
+                                        "type": "string",
+                                        "example": "18506150012"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Juan"
+                                    },
+                                    "middle_name": {
+                                        "type": "string",
+                                        "example": "Carlos",
+                                        "nullable": true
+                                    },
+                                    "first_surname": {
+                                        "type": "string",
+                                        "example": "Pérez"
+                                    },
+                                    "second_surname": {
+                                        "type": "string",
+                                        "example": "Gómez",
+                                        "nullable": true
+                                    },
+                                    "sex": {
+                                        "type": "string",
+                                        "example": "M",
+                                        "enum": [
+                                            "M",
+                                            "F"
+                                        ]
+                                    },
+                                    "race_id": {
+                                        "type": "integer",
+                                        "example": 3,
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Calle 23 #45, Vedado, La Habana"
+                                    },
+                                    "birth_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1985-06-15"
+                                    },
+                                    "father_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "mother_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "citizen_card_id": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "confirm": {
+                                        "description": "Confirmación del aviso de homónimos (RF-PER-005)",
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Persona registrada con autoría estampada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Person"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "409": {
+                        "description": "Duplicado: identity_number ya registrada (devuelve la persona) u homónimos vivos (devuelve candidatos)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "person": {
+                                            "oneOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/Person"
+                                                }
+                                            ],
+                                            "nullable": true
+                                        },
+                                        "candidates": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "identity_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "first_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "first_surname": {
+                                                        "type": "string"
+                                                    },
+                                                    "birth_date": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/people/{id}": {
+            "get": {
+                "tags": [
+                    "Personas"
+                ],
+                "summary": "Detalle de una persona",
+                "description": "Devuelve la persona activa con ese id (las desactivadas responden 404, RN-001: su identidad sigue reservada).",
+                "operationId": "peopleShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Persona",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Person"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Persona inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Personas"
+                ],
+                "summary": "Desactivación de una persona",
+                "description": "Borrado lógico: la persona sale de búsquedas y detalle, pero su identidad queda reservada para siempre (RN-001) y el borrado queda auditado. La reactivación seguirá el patrón restore de ADR-19 cuando el módulo lo necesite.",
+                "operationId": "peopleDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Persona desactivada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Person deactivated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Persona inexistente o ya desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Personas"
+                ],
+                "summary": "Edición de una persona",
+                "description": "Edición parcial con auditoría de valores previos (RF-PER-002). El carné de identidad es inmutable (RN-001) y la fecha de fallecimiento se registra por su propio endpoint: ambos campos responden 422 si viajan aquí.",
+                "operationId": "peopleUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Juan"
+                                    },
+                                    "middle_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "first_surname": {
+                                        "type": "string",
+                                        "example": "Pérez"
+                                    },
+                                    "second_surname": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "sex": {
+                                        "type": "string",
+                                        "enum": [
+                                            "M",
+                                            "F"
+                                        ]
+                                    },
+                                    "race_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Calle 5 #12, Vedado, La Habana"
+                                    },
+                                    "birth_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "father_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "mother_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "citizen_card_id": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Persona actualizada (valores previos en la bitácora)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Person"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Persona inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/people/{id}/death": {
+            "post": {
+                "tags": [
+                    "Personas"
+                ],
+                "summary": "Registro de fallecimiento",
+                "description": "Fija (o corrige) la fecha de fallecimiento (RF-PER-003): estrictamente posterior al nacimiento, nunca futura, datable y auditada con valores previos. Persona fallecida queda marcada como deceased en búsquedas y bloques para nuevos trámites.",
+                "operationId": "peopleRegisterDeath",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "death_date"
+                                ],
+                                "properties": {
+                                    "death_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-03-10"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Fallecimiento registrado (o corregido)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Person"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Persona inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/audit-logs": {
+            "get": {
+                "tags": [
+                    "Auditoría"
+                ],
+                "summary": "Consultar la bitácora de acciones",
+                "description": "Lista paginada y filtrable de la bitácora append-only (RF-AUD-003): filtros por usuario, sujeto, evento y rango de fechas. Requiere el permiso audit.view (rol Auditor o Administrador, sección 2.2).",
+                "operationId": "auditLogsIndex",
+                "parameters": [
+                    {
+                        "name": "causer_id",
+                        "in": "query",
+                        "description": "Filtro por usuario autor",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "subject_type",
+                        "in": "query",
+                        "description": "Filtro por clase del sujeto",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "subject_id",
+                        "in": "query",
+                        "description": "Filtro por id del sujeto",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "event",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created",
+                                "updated",
+                                "deleted",
+                                "restored"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Límite inferior inclusive (Y-m-d)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Límite superior inclusive (Y-m-d)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entradas de bitácora paginadas (envoltura RF-API-002)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AuditLogEntry"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/audit-logs/export": {
+            "get": {
+                "tags": [
+                    "Auditoría"
+                ],
+                "summary": "Exportar la bitácora a CSV",
+                "description": "Exportación CSV de la bitácora con los mismos filtros del listado (RF-AUD-003), para el rol Auditor. Requiere el permiso audit.export.",
+                "operationId": "auditLogsExport",
+                "parameters": [
+                    {
+                        "name": "causer_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "subject_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "subject_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "event",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created",
+                                "updated",
+                                "deleted",
+                                "restored"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Archivo CSV con las entradas filtradas (máximo 10 000 filas)",
+                        "content": {
+                            "text/csv": {}
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
                     }
                 },
                 "security": [
@@ -2177,9 +3097,169 @@
                 },
                 "type": "object"
             },
+            "Person": {
+                "title": "Persona",
+                "description": "Persona del registro único del SGP (RF-PER-001). deceased se deriva de death_date: el fallecimiento es una fecha, estar fallecido es estado derivado, nunca una columna.",
+                "properties": {
+                    "id": {
+                        "description": "Person projection (RF-PER-001..004). It carries the fields the\nsearch needs to disambiguate homonyms (identity, birth date and\nparents) plus the derived deceased flag: death is a date, \"being\n * deceased\" is derived state, never a column (model data 5.4).",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "identity_number": {
+                        "description": "Carné de identidad: 11 dígitos, único e inmutable (RN-001)",
+                        "type": "string",
+                        "example": "18506150012"
+                    },
+                    "first_name": {
+                        "description": "Primer nombre",
+                        "type": "string",
+                        "example": "Juan"
+                    },
+                    "middle_name": {
+                        "description": "Segundo nombre",
+                        "type": "string",
+                        "example": "Carlos",
+                        "nullable": true
+                    },
+                    "first_surname": {
+                        "description": "Primer apellido",
+                        "type": "string",
+                        "example": "Pérez"
+                    },
+                    "second_surname": {
+                        "description": "Segundo apellido",
+                        "type": "string",
+                        "example": "Gómez",
+                        "nullable": true
+                    },
+                    "sex": {
+                        "description": "Sexo (CHECK de BD)",
+                        "type": "string",
+                        "example": "M",
+                        "enum": [
+                            "M",
+                            "F"
+                        ]
+                    },
+                    "race_id": {
+                        "description": "Raza declarada (catálogo)",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3,
+                        "nullable": true
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Calle 23 #45, Vedado, La Habana"
+                    },
+                    "birth_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "1985-06-15"
+                    },
+                    "death_date": {
+                        "description": "Fecha de fallecimiento (RF-PER-003); null mientras viva",
+                        "type": "string",
+                        "format": "date",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "father_name": {
+                        "description": "Desambiguación de homónimos (RF-PER-004)",
+                        "type": "string",
+                        "example": "Pedro Pérez Rodríguez",
+                        "nullable": true
+                    },
+                    "mother_name": {
+                        "description": "Desambiguación de homónimos (RF-PER-004)",
+                        "type": "string",
+                        "example": "María Gómez Fernández",
+                        "nullable": true
+                    },
+                    "citizen_card_id": {
+                        "description": "Ficha única de ciudadano, opcional y única (RF-PER-005)",
+                        "type": "string",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "deceased": {
+                        "description": "Derivado: death_date no nula",
+                        "type": "boolean",
+                        "example": false
+                    }
+                },
+                "type": "object"
+            },
+            "AuditLogEntry": {
+                "title": "Entrada de bitácora",
+                "description": "Registro append-only de una escritura crítica: autor, sujeto, valores previos y nuevos, y contexto de la solicitud (RF-AUD-001).",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 42
+                    },
+                    "event": {
+                        "type": "string",
+                        "example": "updated",
+                        "enum": [
+                            "created",
+                            "updated",
+                            "deleted",
+                            "restored"
+                        ]
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "updated"
+                    },
+                    "causer_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "subject_type": {
+                        "type": "string",
+                        "example": "App\\Modules\\Catalogs\\Infrastructure\\Persistence\\Models\\Race",
+                        "nullable": true
+                    },
+                    "subject_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3,
+                        "nullable": true
+                    },
+                    "old": {
+                        "description": "Valores previos de los atributos modificados (nulo en created/restored)",
+                        "type": "object",
+                        "example": "{\"name\": \"Otra\"}",
+                        "nullable": true
+                    },
+                    "changes": {
+                        "description": "Valores nuevos de los atributos modificados (nulo en deleted)",
+                        "type": "object",
+                        "example": "{\"name\": \"Otra raza\"}",
+                        "nullable": true
+                    },
+                    "request_id": {
+                        "type": "string",
+                        "example": "9d5b1c2e-6f4a-4c1e-8f3b-2a7d9e0c5b41",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-09-27T12:00:00.000000Z"
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "title": "Usuario",
-                "description": "Usuario del sistema SGP.",
+                "description": "Usuario del sistema SGP con sus roles y permisos efectivos (RF-SEG-002).",
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -2194,6 +3274,22 @@
                         "type": "string",
                         "format": "email",
                         "example": "admin@sgp.local"
+                    },
+                    "roles": {
+                        "description": "Roles institucionales asignados (sección 2.2)",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "operator"
+                        }
+                    },
+                    "permissions": {
+                        "description": "Permisos efectivos (de roles y directos), orden alfabético",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "people.create"
+                        }
                     }
                 },
                 "type": "object"
@@ -2279,9 +3375,25 @@
                         "schema": {
                             "properties": {
                                 "message": {
-                                    "description": "Reusable OpenAPI response components (ADR-13).\n\nCentralizes the two cross-cutting error shapes of the SGP API so\nevery protected operation references the same component instead of\nduplicating inline definitions: 401 for the Sanctum bearer scheme\nand 422 for the per-field validation envelope (RF-API-002).",
+                                    "description": "Reusable OpenAPI response components (ADR-13).\n\nCentralizes the cross-cutting error shapes of the SGP API so every\nprotected operation references the same component instead of\nduplicating inline definitions: 401 for the Sanctum bearer scheme,\n403 for the RBAC permission guard (RF-SEG-002, ADR-18) and 422 for\nthe per-field validation envelope (RF-API-002).",
                                     "type": "string",
                                     "example": "Unauthenticated."
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "Forbidden": {
+                "description": "Sin el permiso requerido para la operación (RF-SEG-002)",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "Forbidden."
                                 }
                             },
                             "type": "object"
@@ -2338,6 +3450,14 @@
         {
             "name": "Settings",
             "description": "Configuración general versionada y futuras secuencias de numeración (RF-CAT-005, RN-007)"
+        },
+        {
+            "name": "Auditoría",
+            "description": "Bitácora append-only de acciones: consulta filtrable y exportación CSV (RF-AUD-001, RF-AUD-003)"
+        },
+        {
+            "name": "Personas",
+            "description": "Registro único de personas: alta con control de duplicados, edición auditada, fallecimiento y búsqueda (RF-PER-001..005)"
         }
     ]
 }
