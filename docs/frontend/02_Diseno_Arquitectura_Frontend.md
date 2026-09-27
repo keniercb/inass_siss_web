@@ -344,10 +344,9 @@ src/layout/
 ├── AppLayout.tsx           # Grid: TopNavbar (full-width) + Sidebar + Main + Footer
 ├── PublicLayout.tsx        # Layout para login/recuperar/404 público
 ├── components/
-│   ├── TopNavbar.tsx       # Header full-width con logo + breadcrumb + search + lang + UserDropdown
+│   ├── TopNavbar.tsx       # Header full-width con logo + breadcrumb + lang + UserDropdown
 │   │   ├── UserDropdown.tsx    # Menú desplegable: avatar + nombre + rol + acciones (Perfil/Config/Logout)
-│   │   ├── LanguageSwitcher.tsx # Selector de idioma (es-CU/es-ES/en-US)
-│   │   └── GlobalSearch.tsx    # Búsqueda global opcional (Cmd+K)
+│   │   └── LanguageSwitcher.tsx # Selector de idioma (es-CU/es-ES/en-US)
 │   ├── Sidebar.tsx         # Navegación lateral filtrada por rol (fondo #16202E)
 │   ├── Breadcrumb.tsx
 │   ├── PageContainer.tsx   # Wrapper de página con título + acciones
@@ -400,8 +399,6 @@ src/layout/
 // src/layout/components/TopNavbar.tsx
 import { UserDropdown } from './UserDropdown';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { Breadcrumb } from '../Breadcrumb';
-import { SidebarToggle } from './SidebarToggle';
 import { useUIStore } from '@/store/ui-store';
 import { SgpLogo } from '@/assets/icons';
 
@@ -416,11 +413,11 @@ export function TopNavbar() {
         <SgpLogo className="h-8 w-auto" />
         <Breadcrumb className="hidden md:flex" />
       </div>
+      {/* NOTA: el centro del TopNavbar queda vacío — la búsqueda global */}
+      {/* fue eliminada por decisión del cliente en la revisión de FE-S0.   */}
 
-      {/* Centro: búsqueda global (opcional, futura) */}
-      <div className="flex-1 max-w-md hidden lg:flex">
-        <GlobalSearch placeholder="Buscar expedientes, personas, pensionados..." />
-      </div>
+      {/* Centro: vacío (sin búsqueda global — eliminada por retroalimentación del cliente) */}
+      <div className="flex-1" />
 
       {/* Derecha: idioma + user dropdown */}
       <div className="flex items-center gap-2">

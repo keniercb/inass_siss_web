@@ -1,11 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { Menu, Search } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useUIStore } from '@/store/ui-store';
 import { useLocation } from 'react-router-dom';
 import { UserDropdown } from './UserDropdown';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { cn } from '@/lib/utils';
-
 // Mapa de rutas a claves de breadcrumb
 const breadcrumbLabels: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -56,26 +54,6 @@ export function TopNavbar() {
             <span className="text-foreground font-medium">{currentLabel}</span>
           </nav>
         )}
-      </div>
-
-      {/* Centro: búsqueda global (placeholder para futuro) */}
-      <div className="flex-1 max-w-md hidden lg:flex mx-4">
-        <div className="relative w-full">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={`${t('actions.search')}…`}
-            className={cn(
-              'w-full pl-9 pr-3 py-1.5 text-sm rounded-md',
-              'border border-input bg-muted',
-              'focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary',
-              'outline-none transition-colors',
-            )}
-          />
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground bg-white border border-border rounded px-1.5 py-0.5">
-            ⌘K
-          </kbd>
-        </div>
       </div>
 
       {/* Derecha: idioma + user dropdown */}
