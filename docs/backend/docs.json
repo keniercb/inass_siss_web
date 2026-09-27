@@ -1,0 +1,2343 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "SGP API",
+        "description": "API del Sistema de Gestión de Pensionados (SGP) del Ministerio de Trabajo. Todos los endpoints viven bajo el prefijo /api/v1. Envelope de respuestas conforme RF-API-002: campo `data` en éxito, `message` para respuestas de un solo mensaje y 422 con errores por campo.",
+        "contact": {
+            "name": "Equipo Backend SGP"
+        },
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/v1/agencies": {
+            "get": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Listado paginado de agencias bancarias",
+                "description": "Agencias activas con provincia, municipio y tipo (RF-CAT-006: filtros por provincia, municipio y tipo, búsqueda por nombre o código).",
+                "operationId": "agenciesIndex",
+                "parameters": [
+                    {
+                        "name": "province_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "municipality_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "agency_type_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "name",
+                            "enum": [
+                                "name",
+                                "code",
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "order",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "asc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado paginado con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Agency"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 25
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Crear una agencia bancaria",
+                "description": "Crea una agencia (RF-CAT-003). El municipio debe pertenecer a la provincia declarada (RN-04); la incoherencia responde 422 sobre municipality_id.",
+                "operationId": "agenciesStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code",
+                                    "name",
+                                    "province_id",
+                                    "municipality_id",
+                                    "agency_type_id"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "BPA1207"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Agencia Holguín BPA"
+                                    },
+                                    "province_id": {
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "municipality_id": {
+                                        "type": "integer",
+                                        "example": 42
+                                    },
+                                    "agency_type_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Agencia creada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Agency"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/agencies/{id}": {
+            "get": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Detalle de una agencia bancaria",
+                "operationId": "agenciesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Agencia solicitada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Agency"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Agencia inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Agency not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Desactivar una agencia bancaria",
+                "description": "Borrado lógico de la agencia (RF-CAT-001).",
+                "operationId": "agenciesDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Agencia desactivada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Agency deactivated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Agencia inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Agency not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Editar una agencia bancaria",
+                "description": "Actualiza campos de una agencia (PATCH). El código es inmutable tras la creación; los cambios de ubicación revalidan RN-04.",
+                "operationId": "agenciesUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "province_id": {
+                                        "type": "integer"
+                                    },
+                                    "municipality_id": {
+                                        "type": "integer"
+                                    },
+                                    "agency_type_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Agencia actualizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Agency"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Agencia inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Agency not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/catalogs/{type}": {
+            "get": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Listado paginado de un catálogo",
+                "description": "Lista las entradas activas de un catálogo uniforme (RF-CAT-006: paginación, búsqueda por texto y orden por columnas clave). Tipos válidos: provinces, agency-types, organizations, entity-types, office-types, legal-basis-types, scientific-categories, educational-levels, occupational-categories, pension-types, beneficiary-types, races, positions, pension-regimes, payment-types, income-concepts.",
+                "operationId": "catalogsIndex",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "description": "Clave del catálogo",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "pension-types"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Filtro por nombre (y código cuando el catálogo lo tiene)",
+                        "schema": {
+                            "type": "string",
+                            "example": "edad"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Columna de orden",
+                        "schema": {
+                            "type": "string",
+                            "default": "name",
+                            "enum": [
+                                "name",
+                                "code",
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "order",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "asc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado paginado con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CatalogItem"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Catálogo desconocido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unknown catalog."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Crear una entrada de catálogo",
+                "description": "Crea una entrada de un catálogo uniforme (RF-CAT-001). El código es requerido cuando el catálogo lo tiene y es inmutable tras la creación. Las claves naturales duplicadas responden 422 con error por campo (RN-008).",
+                "operationId": "catalogsStore",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "pension-regimes"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Campos de la entrada; los opcionales dependen del catálogo",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "GEN"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "General"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Régimen general de 12 meses por año",
+                                        "nullable": true
+                                    },
+                                    "months_per_year": {
+                                        "type": "integer",
+                                        "example": 12,
+                                        "maximum": 12,
+                                        "minimum": 1
+                                    },
+                                    "applies_base_salary": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Entrada creada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CatalogItem"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Catálogo desconocido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unknown catalog."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/catalogs/{type}/{id}": {
+            "get": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Detalle de una entrada de catálogo",
+                "operationId": "catalogsShow",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "races"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entrada solicitada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CatalogItem"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Catálogo desconocido o entrada inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not Found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Desactivar una entrada de catálogo",
+                "description": "Borrado lógico (RF-CAT-001): la entrada queda desactivada y excluida de los listados. Responde 409 mientras existan registros activos que la referencien.",
+                "operationId": "catalogsDestroy",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "agency-types"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entrada desactivada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Catalog entry deactivated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Catálogo desconocido o entrada inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not Found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Existen referencias activas que bloquean la desactivación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The catalog entry cannot be deactivated while active records reference it."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Editar una entrada de catálogo",
+                "description": "Actualiza campos de una entrada (PATCH). El código es inmutable: enviar un código distinto responde 422 (RF-CAT-001).",
+                "operationId": "catalogsUpdate",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "pension-types"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Campos a actualizar (semántica PATCH)",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Por edad (actualizado)"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "months_per_year": {
+                                        "type": "integer",
+                                        "maximum": 12,
+                                        "minimum": 1
+                                    },
+                                    "applies_base_salary": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Entrada actualizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CatalogItem"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Catálogo desconocido o entrada inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not Found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/municipalities": {
+            "get": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Listado paginado de municipios",
+                "description": "Municipios activos con su provincia (RF-CAT-002). Filtrable por provincia y buscable por nombre o código (RF-CAT-006).",
+                "operationId": "municipalitiesIndex",
+                "parameters": [
+                    {
+                        "name": "province_id",
+                        "in": "query",
+                        "description": "Filtra por provincia",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "name",
+                            "enum": [
+                                "name",
+                                "code",
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "order",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "asc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado paginado con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Municipality"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 168
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Crear un municipio",
+                "description": "Crea un municipio (RF-CAT-002). El par código-provincia es único; el municipio especial Isla de la Juventud se crea con province_id null.",
+                "operationId": "municipalitiesStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "province_id": {
+                                        "type": "integer",
+                                        "example": 12,
+                                        "nullable": true
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "99"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Nueva Paz"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Municipio creado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Municipality"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/municipalities/{id}": {
+            "get": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Detalle de un municipio",
+                "operationId": "municipalitiesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Municipio solicitado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Municipality"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Municipio inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Municipality not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Desactivar un municipio",
+                "description": "Borrado lógico del municipio (RF-CAT-001). Responde 409 mientras existan agencias activas que lo referencien.",
+                "operationId": "municipalitiesDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Municipio desactivado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Municipality deactivated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Municipio inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Municipality not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Existen agencias activas que referencian el municipio",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The catalog entry cannot be deactivated while active records reference it: agencies."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Catalogs"
+                ],
+                "summary": "Editar un municipio",
+                "description": "Actualiza campos de un municipio (PATCH). El código es inmutable tras la creación.",
+                "operationId": "municipalitiesUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "province_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Nueva Paz (renamed)"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Municipio actualizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Municipality"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Municipio inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Municipality not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Autenticar credenciales y emitir token",
+                "description": "Verifica las credenciales y emite un token Bearer (RF-SEG-001). El email desconocido y la contraseña errónea colapsan en el mismo 401 para no revelar cuál falló. Limitado por throttle: 10 intentos por minuto.",
+                "operationId": "authLogin",
+                "requestBody": {
+                    "description": "Credenciales del usuario",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@sgp.local"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Sesión iniciada: envelope RF-API-002 con token y usuario",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "1|9QsTjXxaYl2nW8kJ"
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "user": {
+                                                    "$ref": "#/components/schemas/User"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciales inválidas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid credentials."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Payload inválido (campos requeridos o con formato incorrecto)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The email field is required."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The email field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Usuario autenticado",
+                "description": "Devuelve el usuario asociado al token Bearer de la solicitud (RF-SEG-001).",
+                "operationId": "authMe",
+                "responses": {
+                    "200": {
+                        "description": "Usuario autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido o revocado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Revocar el token actual",
+                "description": "Revoca el token Bearer usado en la solicitud y cierra la sesión (RF-SEG-001).",
+                "operationId": "authLogout",
+                "responses": {
+                    "200": {
+                        "description": "Token revocado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token revoked."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido o ya revocado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-settings": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Listado paginado de las versiones de configuración",
+                "description": "Lista las vigencias de la configuración general de la más reciente a la más antigua con su effective_to derivado (RF-CAT-005, RN-007).",
+                "operationId": "generalSettingsIndex",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado paginado con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/GeneralSettingVersion"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Crear una nueva vigencia de la configuración",
+                "description": "Crea una versión nueva e inmutable de los parámetros de cálculo con su fecha de entrada en vigor (RF-CAT-005). La fecha no puede coincidir con una vigencia existente (RN-007, sin solapamientos) y el por ciento máximo no puede ser menor que el base. No existe endpoint de edición: la corrección crea una versión nueva.",
+                "operationId": "generalSettingsStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "min_work_years",
+                                    "min_age_men",
+                                    "min_age_women",
+                                    "base_calc_percent",
+                                    "max_calc_percent",
+                                    "annual_increase_percent",
+                                    "effective_from"
+                                ],
+                                "properties": {
+                                    "min_work_years": {
+                                        "type": "integer",
+                                        "example": 30,
+                                        "maximum": 100,
+                                        "minimum": 0
+                                    },
+                                    "min_age_men": {
+                                        "type": "integer",
+                                        "example": 60,
+                                        "maximum": 120,
+                                        "minimum": 0
+                                    },
+                                    "min_age_women": {
+                                        "type": "integer",
+                                        "example": 55,
+                                        "maximum": 120,
+                                        "minimum": 0
+                                    },
+                                    "base_calc_percent": {
+                                        "type": "integer",
+                                        "example": 50,
+                                        "maximum": 100,
+                                        "minimum": 0
+                                    },
+                                    "max_calc_percent": {
+                                        "type": "integer",
+                                        "example": 90,
+                                        "maximum": 100,
+                                        "minimum": 0
+                                    },
+                                    "annual_increase_percent": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "maximum": 100,
+                                        "minimum": 0
+                                    },
+                                    "effective_from": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-01-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Vigencia creada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/GeneralSettingVersion"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-settings/current": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Resolver la configuración vigente",
+                "description": "Acción de dominio RN-007: devuelve la versión con la mayor effective_from menor o igual a la fecha (hoy por el puerto Clock, o la indicada en `at`). 404 cuando ninguna versión está aún en vigor. Los cálculos de la Fase 3 congelarán la versión resuelta.",
+                "operationId": "generalSettingsCurrent",
+                "parameters": [
+                    {
+                        "name": "at",
+                        "in": "query",
+                        "description": "Fecha de resolución opcional (Y-m-d)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2024-08-15"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Versión en vigor a la fecha",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/GeneralSettingVersion"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Ninguna versión en vigor a la fecha",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No general settings are in effect at the given date."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-settings/{id}": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Detalle de una versión",
+                "description": "Devuelve una vigencia con su effective_to derivado. Las versiones históricas siempre se muestran (RF-CAT-005: la historia es reproducible).",
+                "operationId": "generalSettingsShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Versión encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/GeneralSettingVersion"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Versión inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Eliminar una vigencia no efectiva",
+                "description": "Elimina una versión solo cuando todavía no ha entrado en vigor (effective_from en el futuro). Las versiones ya en vigor quedan protegidas para la reproducibilidad histórica de los cálculos (RN-007): responden 409. La FK de pension_cases.calculation_setting_id (Fase 3) reforzará esta regla en BD.",
+                "operationId": "generalSettingsDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Vigencia futura eliminada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Future settings version deleted."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "description": "La versión ya está en vigor y no puede eliminarse",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The version effective from 2026-06-01 is already in effect and cannot be deleted."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Versión inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Agency": {
+                "title": "Agencia bancaria",
+                "description": "Agencia bancaria con provincia, municipio y tipo (RF-CAT-003). La pareja municipio-provincia es coherente por construcción (RN-04).",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 7
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "BPA0101"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Agencia 1 BPA Holguín"
+                    },
+                    "type": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "AG"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Agencia"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "province": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 12
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "12"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Holguín"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "municipality": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 42
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "07"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Holguín"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "deactivated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "CatalogItem": {
+                "title": "Entrada de catálogo",
+                "description": "Entrada de un catálogo uniforme servida por /api/v1/catalogs/{type}. Los campos opcionales dependen del catálogo.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "code": {
+                        "description": "Clave natural inmutable; presente solo en catálogos con código",
+                        "type": "string",
+                        "example": "EDAD",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Por edad"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Pensión por edad",
+                        "nullable": true
+                    },
+                    "months_per_year": {
+                        "description": "Solo pension-regimes",
+                        "type": "integer",
+                        "example": 12,
+                        "nullable": true
+                    },
+                    "applies_base_salary": {
+                        "description": "Solo income-concepts",
+                        "type": "boolean",
+                        "example": true,
+                        "nullable": true
+                    },
+                    "deactivated_at": {
+                        "description": "Borrado lógico (RF-CAT-001)",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Municipality": {
+                "title": "Municipio",
+                "description": "Municipio cubano con su provincia (RF-CAT-002). province es null para el municipio especial Isla de la Juventud.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 42
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "07"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Holguín"
+                    },
+                    "province": {
+                        "description": "Provincia del municipio; null para el municipio especial",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 12
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "12"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Holguín"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "deactivated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "User": {
+                "title": "Usuario",
+                "description": "Usuario del sistema SGP.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "SGP Demo Admin"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "admin@sgp.local"
+                    }
+                },
+                "type": "object"
+            },
+            "GeneralSettingVersion": {
+                "title": "Versión de configuración general",
+                "description": "Parámetros de cálculo de una vigencia (RF-CAT-005, RN-007). Las versiones son inmutables: la corrección crea una nueva vigencia. effective_to es derivado (día anterior a la siguiente vigencia; null en la más reciente) y nunca se almacena.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "min_work_years": {
+                        "description": "Años mínimos de trabajo",
+                        "type": "integer",
+                        "example": 30
+                    },
+                    "min_age_men": {
+                        "description": "Edad mínima hombres",
+                        "type": "integer",
+                        "example": 60
+                    },
+                    "min_age_women": {
+                        "description": "Edad mínima mujeres",
+                        "type": "integer",
+                        "example": 55
+                    },
+                    "base_calc_percent": {
+                        "description": "Por ciento de cálculo base",
+                        "type": "integer",
+                        "example": 50,
+                        "maximum": 100,
+                        "minimum": 0
+                    },
+                    "max_calc_percent": {
+                        "description": "Por ciento máximo (mayor o igual que base)",
+                        "type": "integer",
+                        "example": 90,
+                        "maximum": 100,
+                        "minimum": 0
+                    },
+                    "annual_increase_percent": {
+                        "description": "Incremento anual por excedencia",
+                        "type": "integer",
+                        "example": 1,
+                        "maximum": 100,
+                        "minimum": 0
+                    },
+                    "effective_from": {
+                        "description": "Entrada en vigor (única por fecha, RN-007)",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-06-01"
+                    },
+                    "effective_to": {
+                        "description": "Derivado: día anterior a la siguiente vigencia; null en la vigencia más reciente",
+                        "type": "string",
+                        "format": "date",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "created_by": {
+                        "description": "Usuario autor de la versión (ADR-14)",
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "responses": {
+            "Unauthorized": {
+                "description": "Token ausente, inválido o revocado",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "description": "Reusable OpenAPI response components (ADR-13).\n\nCentralizes the two cross-cutting error shapes of the SGP API so\nevery protected operation references the same component instead of\nduplicating inline definitions: 401 for the Sanctum bearer scheme\nand 422 for the per-field validation envelope (RF-API-002).",
+                                    "type": "string",
+                                    "example": "Unauthenticated."
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "ValidationError": {
+                "description": "Payload inválido o regla de negocio incumplida (errores por campo)",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "The code is already in use."
+                                },
+                                "errors": {
+                                    "properties": {
+                                        "code": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "The code is already in use."
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "sanctumAuth": {
+                "type": "http",
+                "description": "Token Bearer personal emitido por POST /api/v1/auth/login (Sanctum).",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Autenticación y sesión (RF-SEG-001)"
+        },
+        {
+            "name": "Catalogs",
+            "description": "Catálogos uniformes, municipios y agencias (RF-CAT-001..006)"
+        },
+        {
+            "name": "Settings",
+            "description": "Configuración general versionada y futuras secuencias de numeración (RF-CAT-005, RN-007)"
+        }
+    ]
+}
