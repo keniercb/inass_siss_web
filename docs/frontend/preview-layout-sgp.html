@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="es-CU">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SGP — Preview Layout (base-nova + Lucide)</title>
+
+  <!-- Tailwind Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind config inline con tokens del design system base-nova -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'sidebar': '#16202E',
+            'sidebar-fg': '#FFFFFF',
+            'sidebar-muted': 'rgba(255,255,255,0.65)',
+            'sidebar-active': '#418AD1',
+            'primary-brand': '#418AD1',
+            'primary-foreground': '#FFFFFF',
+            'nova-success': '#16A34A',
+            'nova-destructive': '#DC2626',
+            'nova-warning': '#F59E0B',
+            'nova-info': '#0EA5E9',
+            'base-bg': '#FAFAFA',
+            'base-fg': '#1A1A1A',
+            'base-card': '#FFFFFF',
+            'base-muted': '#F1F1F0',
+            'base-muted-fg': '#6B6B6B',
+            'base-border': '#E4E4E2',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    :root {
+      --sidebar-bg: #16202E;
+      --primary-brand: #418AD1;
+      --shadow-toast: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1);
+      --shadow-modal: 0 20px 50px -10px rgba(0,0,0,0.25), 0 10px 20px -5px rgba(0,0,0,0.1);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #FAFAFA;
+      color: #1A1A1A;
+    }
+
+    /* AppLayout — grid CSS (igual que en la doc) */
+    .app-layout {
+      display: grid;
+      grid-template-areas:
+        "topnavbar topnavbar"
+        "sidebar  main"
+        "sidebar  footer";
+      grid-template-rows: 56px 1fr 32px;
+      grid-template-columns: 256px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .app-layout__topnavbar { grid-area: topnavbar; }
+    .app-layout__sidebar   { grid-area: sidebar; background-color: var(--sidebar-bg); }
+    .app-layout__main      { grid-area: main; overflow-y: auto; padding: 1.5rem; }
+    .app-layout__footer    { grid-area: footer; }
+
+    /* Toasts en top-right (debajo de TopNavbar) */
+    .toast-container {
+      position: fixed;
+      top: 64px;
+      right: 16px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 400px;
+    }
+    .toast {
+      min-width: 320px;
+      max-width: 400px;
+      box-shadow: var(--shadow-toast);
+      border-radius: 0.5rem;
+      padding: 12px 16px;
+      background: white;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: toast-in 0.3s ease-out;
+    }
+    .toast-success { border-left: 4px solid #16A34A; }
+    .toast-error   { border-left: 4px solid #DC2626; }
+    .toast-warning { border-left: 4px solid #F59E0B; }
+    .toast-info    { border-left: 4px solid #0EA5E9; }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      animation: fade-in 0.2s ease-out;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-content {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: var(--shadow-modal);
+      max-width: 640px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modal-in 0.25s ease-out;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* User dropdown */
+    .dropdown-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      background: white;
+      border: 1px solid #E4E4E2;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+      min-width: 224px;
+      z-index: 50;
+      display: none;
+      animation: dropdown-in 0.15s ease-out;
+    }
+    .dropdown-menu.open { display: block; }
+    @keyframes dropdown-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Status badges (estados del expediente) */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-submitted   { background: #DBEAFE; color: #1E40AF; }
+    .badge-under_review{ background: #FEF3C7; color: #92400E; }
+    .badge-approved    { background: #D1FAE5; color: #065F46; }
+    .badge-rejected    { background: #FEE2E2; color: #991B1B; }
+
+    /* Scrollbar styling */
+    .app-layout__main::-webkit-scrollbar { width: 8px; }
+    .app-layout__main::-webkit-scrollbar-track { background: transparent; }
+    .app-layout__main::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    /* Focus ring */
+    *:focus-visible {
+      outline: 2px solid var(--primary-brand);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+
+    <!-- ============ TOPNAVBAR (full-width, 56px) ============ -->
+    <header class="app-layout__topnavbar bg-white border-b border-base-border flex items-center justify-between px-4">
+      <!-- Izquierda: toggle + logo + breadcrumb -->
+      <div class="flex items-center gap-3">
+        <button class="p-2 rounded-md hover:bg-base-muted text-base-muted-fg" aria-label="Toggle sidebar">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-md bg-primary-brand flex items-center justify-center text-white font-bold text-sm">SGP</div>
+          <span class="text-sm font-semibold text-base-fg hidden sm:block">Sistema de Gestión de Pensionados</span>
+        </div>
+        <nav class="hidden md:flex items-center gap-1 text-sm text-base-muted-fg ml-4">
+          <span>Inicio</span>
+          <i data-lucide="chevron-right" class="w-3 h-3"></i>
+          <span>Expedientes</span>
+        </nav>
+      </div>
+
+      <!-- Centro: búsqueda global -->
+      <div class="flex-1 max-w-md hidden lg:flex mx-4">
+        <div class="relative w-full">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-muted-fg"></i>
+          <input type="text" placeholder="Buscar expedientes, personas, pensionados…"
+                 class="w-full pl-9 pr-3 py-1.5 text-sm rounded-md border border-base-border bg-base-muted focus:bg-white focus:border-primary-brand focus:ring-1 focus:ring-primary-brand outline-none" />
+          <kbd class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-base-muted-fg bg-white border border-base-border rounded px-1.5 py-0.5">⌘K</kbd>
+        </div>
+      </div>
+
+      <!-- Derecha: idioma + user dropdown -->
+      <div class="flex items-center gap-2">
+        <button class="px-2 py-1.5 rounded-md hover:bg-base-muted text-sm font-medium flex items-center gap-1.5">
+          <i data-lucide="globe" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">es-CU</span>
+        </button>
+
+        <!-- UserDropdown -->
+        <div class="relative" id="userDropdown">
+          <button id="userDropdownTrigger"
+                  class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-base-muted transition-colors">
+            <div class="w-8 h-8 rounded-full bg-primary-brand flex items-center justify-center text-white text-xs font-medium border">AP</div>
+            <div class="text-left hidden sm:block">
+              <p class="text-sm font-medium leading-tight">Ana Pérez</p>
+              <p class="text-xs text-base-muted-fg leading-tight">Operador</p>
+            </div>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-base-muted-fg"></i>
+          </button>
+
+          <!-- Dropdown menu (open por defecto para preview) -->
+          <div id="userDropdownMenu" class="dropdown-menu open">
+            <div class="px-3 py-2.5 border-b border-base-border">
+              <p class="font-medium text-sm leading-tight">Ana Pérez González</p>
+              <p class="text-xs text-base-muted-fg leading-tight">ana.perez@mt.gob.cu</p>
+              <p class="text-xs text-primary-brand mt-1 font-medium uppercase tracking-wide">Operador</p>
+            </div>
+            <div class="py-1">
+              <button class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-base-muted text-left">
+                <i data-lucide="user" class="w-4 h-4"></i> Mi perfil
+              </button>
+              <button class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-base-muted text-left">
+                <i data-lucide="settings" class="w-4 h-4"></i> Configuración
+              </button>
+            </div>
+            <div class="border-t border-base-border py-1">
+              <button class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-red-50 text-left text-nova-destructive">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Cerrar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ SIDEBAR (#16202E) ============ -->
+    <aside class="app-layout__sidebar text-sidebar-fg flex flex-col">
+      <div class="px-4 py-4 border-b border-white/10">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-sidebar-muted">Módulos</h2>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-2">
+        <!-- Inactive item -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <!-- Inactive -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="users" class="w-4 h-4 shrink-0"></i>
+          <span>Personas</span>
+        </a>
+
+        <!-- Inactive -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="building-2" class="w-4 h-4 shrink-0"></i>
+          <span>Entidades</span>
+        </a>
+
+        <!-- ACTIVE item (#418AD1) -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors bg-white/10 border-l-2 border-sidebar-active text-white font-medium">
+          <i data-lucide="folder-kanban" class="w-4 h-4 shrink-0 text-sidebar-active"></i>
+          <span>Expedientes</span>
+        </a>
+
+        <!-- Inactive -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="scale" class="w-4 h-4 shrink-0"></i>
+          <span>Base legal</span>
+        </a>
+
+        <!-- Inactive -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="wallet" class="w-4 h-4 shrink-0"></i>
+          <span>Pensionados</span>
+        </a>
+
+        <!-- Inactive -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="landmark" class="w-4 h-4 shrink-0"></i>
+          <span>Pagos</span>
+        </a>
+
+        <!-- Inactive -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 shrink-0"></i>
+          <span>Reportes</span>
+        </a>
+
+        <!-- Inactive -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="shield-check" class="w-4 h-4 shrink-0"></i>
+          <span>Auditoría</span>
+        </a>
+
+        <!-- Inactive (catalogs) -->
+        <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 border-l-2 border-transparent text-sidebar-muted hover:text-white">
+          <i data-lucide="library" class="w-4 h-4 shrink-0"></i>
+          <span>Catálogos</span>
+        </a>
+      </nav>
+
+      <div class="px-4 py-2 border-t border-white/10 text-xs text-sidebar-muted">
+        SGP v1.0.0
+      </div>
+    </aside>
+
+    <!-- ============ MAIN CONTENT (Expedientes list page) ============ -->
+    <main class="app-layout__main">
+      <div class="max-w-7xl mx-auto">
+
+        <!-- Page header -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-semibold text-base-fg">Expedientes</h1>
+            <p class="text-sm text-base-muted-fg mt-1">Listado paginado de expedientes de pensión</p>
+          </div>
+          <button onclick="openCreateModal()"
+                  class="inline-flex items-center gap-2 px-4 py-2 bg-primary-brand text-primary-foreground rounded-md text-sm font-medium hover:bg-primary-brand/90 shadow-sm transition-colors">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Nuevo expediente
+          </button>
+        </div>
+
+        <!-- Filters + search -->
+        <div class="bg-white rounded-lg border border-base-border p-4 mb-4 flex flex-wrap gap-3 items-center">
+          <div class="relative flex-1 min-w-[240px]">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-muted-fg"></i>
+            <input type="text" placeholder="Buscar por número, proponente…"
+                   class="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand focus:ring-1 focus:ring-primary-brand outline-none" />
+          </div>
+
+          <select class="px-3 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand outline-none">
+            <option value="">Estado: Todos</option>
+            <option value="submitted">Solicitud</option>
+            <option value="under_review">Revisión</option>
+            <option value="approved">Aprobado</option>
+            <option value="rejected">Denegado</option>
+          </select>
+
+          <select class="px-3 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand outline-none">
+            <option value="">Oficina: Todas</option>
+            <option>La Habana Vieja</option>
+            <option>Centro Habana</option>
+            <option>La Habana del Este</option>
+          </select>
+
+          <button class="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-base-border bg-white hover:bg-base-muted">
+            <i data-lucide="filter" class="w-4 h-4"></i>
+            Más filtros
+          </button>
+
+          <div class="ml-auto flex items-center gap-2">
+            <button class="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-base-border bg-white hover:bg-base-muted">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-lg border border-base-border overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-base-muted text-base-muted-fg text-xs uppercase tracking-wider">
+                <th class="text-left px-4 py-3 font-medium">
+                  <button class="flex items-center gap-1 hover:text-base-fg">
+                    Número <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                  </button>
+                </th>
+                <th class="text-left px-4 py-3 font-medium">
+                  <button class="flex items-center gap-1 hover:text-base-fg">
+                    Proponente <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                  </button>
+                </th>
+                <th class="text-left px-4 py-3 font-medium">Oficina</th>
+                <th class="text-left px-4 py-3 font-medium">Estado</th>
+                <th class="text-left px-4 py-3 font-medium">
+                  <button class="flex items-center gap-1 hover:text-base-fg">
+                    Fecha solicitud <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                  </button>
+                </th>
+                <th class="text-right px-4 py-3 font-medium">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-base-border">
+              <!-- Row 1: submitted -->
+              <tr class="hover:bg-base-muted/50 transition-colors">
+                <td class="px-4 py-3 font-mono text-xs">EXP-2026-00428</td>
+                <td class="px-4 py-3">
+                  <div class="font-medium">Rodríguez González, Carlos</div>
+                  <div class="text-xs text-base-muted-fg">CI: 78092145678</div>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">La Habana Vieja</td>
+                <td class="px-4 py-3">
+                  <span class="badge badge-submitted">
+                    <i data-lucide="file-text" class="w-3 h-3"></i>
+                    Solicitud
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">15/09/2026</td>
+                <td class="px-4 py-3 text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="p-1.5 rounded hover:bg-base-muted" title="Ver"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-base-muted" title="Editar"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-red-50 text-nova-destructive" title="Desactivar"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 2: under_review -->
+              <tr class="hover:bg-base-muted/50 transition-colors">
+                <td class="px-4 py-3 font-mono text-xs">EXP-2026-00427</td>
+                <td class="px-4 py-3">
+                  <div class="font-medium">Hernández Pérez, María</div>
+                  <div class="text-xs text-base-muted-fg">CI: 81030547891</div>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">Centro Habana</td>
+                <td class="px-4 py-3">
+                  <span class="badge badge-under_review">
+                    <i data-lucide="search" class="w-3 h-3"></i>
+                    Revisión
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">14/09/2026</td>
+                <td class="px-4 py-3 text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="p-1.5 rounded hover:bg-base-muted"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-base-muted"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-red-50 text-nova-destructive"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 3: approved -->
+              <tr class="hover:bg-base-muted/50 transition-colors">
+                <td class="px-4 py-3 font-mono text-xs">EXP-2026-00426</td>
+                <td class="px-4 py-3">
+                  <div class="font-medium">García Suárez, José</div>
+                  <div class="text-xs text-base-muted-fg">CI: 65112845679</div>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">La Habana del Este</td>
+                <td class="px-4 py-3">
+                  <span class="badge badge-approved">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i>
+                    Aprobado
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">10/09/2026</td>
+                <td class="px-4 py-3 text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="p-1.5 rounded hover:bg-base-muted"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-base-muted"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-red-50 text-nova-destructive"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 4: rejected -->
+              <tr class="hover:bg-base-muted/50 transition-colors">
+                <td class="px-4 py-3 font-mono text-xs">EXP-2026-00425</td>
+                <td class="px-4 py-3">
+                  <div class="font-medium">Martínez López, Ana</div>
+                  <div class="text-xs text-base-muted-fg">CI: 89023456123</div>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">La Habana Vieja</td>
+                <td class="px-4 py-3">
+                  <span class="badge badge-rejected">
+                    <i data-lucide="x-circle" class="w-3 h-3"></i>
+                    Denegado
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">08/09/2026</td>
+                <td class="px-4 py-3 text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="p-1.5 rounded hover:bg-base-muted"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-base-muted"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-red-50 text-nova-destructive"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 5: submitted -->
+              <tr class="hover:bg-base-muted/50 transition-colors">
+                <td class="px-4 py-3 font-mono text-xs">EXP-2026-00424</td>
+                <td class="px-4 py-3">
+                  <div class="font-medium">Sánchez Romero, Pedro</div>
+                  <div class="text-xs text-base-muted-fg">CI: 72051548123</div>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">Centro Habana</td>
+                <td class="px-4 py-3">
+                  <span class="badge badge-submitted">
+                    <i data-lucide="file-text" class="w-3 h-3"></i>
+                    Solicitud
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-base-muted-fg">05/09/2026</td>
+                <td class="px-4 py-3 text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="p-1.5 rounded hover:bg-base-muted"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-base-muted"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-red-50 text-nova-destructive"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Pagination -->
+          <div class="flex items-center justify-between px-4 py-3 border-t border-base-border bg-base-muted/30">
+            <div class="text-xs text-base-muted-fg">
+              Mostrando <span class="font-medium text-base-fg">1-5</span> de <span class="font-medium text-base-fg">247</span> expedientes
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="px-2 py-1 rounded border border-base-border bg-white text-sm disabled:opacity-50" disabled>
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button class="px-3 py-1 rounded text-sm font-medium bg-primary-brand text-primary-foreground">1</button>
+              <button class="px-3 py-1 rounded text-sm border border-base-border bg-white hover:bg-base-muted">2</button>
+              <button class="px-3 py-1 rounded text-sm border border-base-border bg-white hover:bg-base-muted">3</button>
+              <span class="px-1 text-base-muted-fg">…</span>
+              <button class="px-3 py-1 rounded text-sm border border-base-border bg-white hover:bg-base-muted">50</button>
+              <button class="px-2 py-1 rounded border border-base-border bg-white text-sm hover:bg-base-muted">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <select class="px-2 py-1 text-xs rounded border border-base-border bg-white">
+              <option>10 por página</option>
+              <option selected>25 por página</option>
+              <option>50 por página</option>
+              <option>100 por página</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="app-layout__footer flex items-center justify-center text-xs text-base-muted-fg border-t border-base-border bg-white">
+      SGP v1.0.0 — Ministerio de Trabajo de Cuba · INASS / SSIP
+    </footer>
+
+  </div>
+
+  <!-- ============ TOAST CONTAINER (top-right, fixed, z-9999) ============ -->
+  <div class="toast-container" id="toastContainer">
+
+    <!-- Toast Success -->
+    <div class="toast toast-success" role="status" aria-live="polite">
+      <i data-lucide="check-circle" class="w-5 h-5 text-nova-success mt-0.5"></i>
+      <div class="flex-1">
+        <p class="text-sm font-medium text-base-fg">Expediente creado correctamente</p>
+        <p class="text-xs text-base-muted-fg mt-0.5">EXP-2026-00428 en estado Solicitud</p>
+      </div>
+      <button onclick="this.parentElement.remove()" class="text-base-muted-fg hover:text-base-fg">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Toast Error -->
+    <div class="toast toast-error" role="alert" aria-live="assertive">
+      <i data-lucide="x-circle" class="w-5 h-5 text-nova-destructive mt-0.5"></i>
+      <div class="flex-1">
+        <p class="text-sm font-medium text-base-fg">No se puede desactivar</p>
+        <p class="text-xs text-base-muted-fg mt-0.5">Hay 3 expedientes que referencian esta agencia</p>
+      </div>
+      <button onclick="this.parentElement.remove()" class="text-base-muted-fg hover:text-base-fg">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Toast Warning -->
+    <div class="toast toast-warning" role="alert" aria-live="polite">
+      <i data-lucide="alert-triangle" class="w-5 h-5 text-nova-warning mt-0.5"></i>
+      <div class="flex-1">
+        <p class="text-sm font-medium text-base-fg">Recurso modificado por otro usuario</p>
+        <p class="text-xs text-base-muted-fg mt-0.5">Recargue y reintente la edición</p>
+      </div>
+      <button onclick="this.parentElement.remove()" class="text-base-muted-fg hover:text-base-fg">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ============ CREATE MODAL (hidden by default) ============ -->
+  <div class="modal-overlay" id="createModal">
+    <div class="modal-content">
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-base-border">
+        <div>
+          <h2 class="text-lg font-semibold text-base-fg">Nuevo expediente</h2>
+          <p class="text-xs text-base-muted-fg mt-0.5">Complete los datos del proponente y el expediente</p>
+        </div>
+        <button onclick="closeCreateModal()" class="p-1 rounded hover:bg-base-muted">
+          <i data-lucide="x" class="w-5 h-5 text-base-muted-fg"></i>
+        </button>
+      </div>
+
+      <!-- Modal body -->
+      <form class="p-6 space-y-4" onsubmit="event.preventDefault(); submitCreate();">
+        <!-- Proponente -->
+        <div>
+          <label class="block text-sm font-medium text-base-fg mb-1">Proponente <span class="text-nova-destructive">*</span></label>
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-muted-fg"></i>
+            <input type="text" placeholder="Buscar por CI o nombre…"
+                   class="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand focus:ring-1 focus:ring-primary-brand outline-none" />
+          </div>
+          <p class="text-xs text-base-muted-fg mt-1">El número se genera automáticamente al guardar</p>
+        </div>
+
+        <!-- Oficina + Centro trabajo -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-base-fg mb-1">Oficina tramitadora <span class="text-nova-destructive">*</span></label>
+            <select class="w-full px-3 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand outline-none">
+              <option>La Habana Vieja</option>
+              <option>Centro Habana</option>
+              <option>La Habana del Este</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-base-fg mb-1">Centro de trabajo <span class="text-nova-destructive">*</span></label>
+            <select class="w-full px-3 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand outline-none">
+              <option>Empresa Grupo Empresarial Cítricos</option>
+              <option>Empresa Nacional de Servicios Técnicos</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Cargo + Categoría ocupacional -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-base-fg mb-1">Cargo <span class="text-nova-destructive">*</span></label>
+            <select class="w-full px-3 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand outline-none">
+              <option>Técnico</option>
+              <option>Especialista</option>
+              <option>Operario</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-base-fg mb-1">Categoría ocupacional</label>
+            <select class="w-full px-3 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand outline-none">
+              <option>Operario</option>
+              <option>Obrero</option>
+              <option>Técnico</option>
+              <option>Dirigente</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Último salario -->
+        <div>
+          <label class="block text-sm font-medium text-base-fg mb-1">Último salario (CUP) <span class="text-nova-destructive">*</span></label>
+          <div class="relative">
+            <input type="number" step="0.01" min="0" placeholder="0.00"
+                   class="w-full pl-3 pr-12 py-2 text-sm rounded-md border border-base-border bg-white focus:border-primary-brand focus:ring-1 focus:ring-primary-brand outline-none" />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-base-muted-fg">CUP</span>
+          </div>
+        </div>
+
+        <!-- Modal footer -->
+        <div class="flex items-center justify-end gap-2 pt-4 border-t border-base-border">
+          <button type="button" onclick="closeCreateModal()"
+                  class="px-4 py-2 text-sm rounded-md border border-base-border bg-white hover:bg-base-muted">
+            Cancelar
+          </button>
+          <button type="submit"
+                  class="inline-flex items-center gap-2 px-4 py-2 bg-primary-brand text-primary-foreground rounded-md text-sm font-medium hover:bg-primary-brand/90 shadow-sm">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            Guardar expediente
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // UserDropdown toggle (preview abierto por defecto)
+    const trigger = document.getElementById('userDropdownTrigger');
+    const menu = document.getElementById('userDropdownMenu');
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('userDropdown').contains(e.target)) {
+        menu.classList.remove('open');
+      }
+    });
+
+    // Create modal toggle
+    function openCreateModal() {
+      document.getElementById('createModal').classList.add('open');
+    }
+    function closeCreateModal() {
+      document.getElementById('createModal').classList.remove('open');
+    }
+    function submitCreate() {
+      // Simula éxito: cierra modal + añade toast success + cierra dropdown
+      closeCreateModal();
+      const t = document.createElement('div');
+      t.className = 'toast toast-success';
+      t.setAttribute('role', 'status');
+      t.innerHTML = `
+        <i data-lucide="check-circle" class="w-5 h-5 text-nova-success mt-0.5"></i>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-fg">Expediente creado correctamente</p>
+          <p class="text-xs text-base-muted-fg mt-0.5">EXP-2026-00429 en estado Solicitud</p>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-base-muted-fg hover:text-base-fg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      `;
+      document.getElementById('toastContainer').prepend(t);
+      lucide.createIcons();
+
+      // Auto-dismiss after 5s (success)
+      setTimeout(() => t.remove(), 5000);
+    }
+
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeCreateModal();
+    });
+
+    // Auto-dismiss toasts after their durations
+    setTimeout(() => {
+      const successToasts = document.querySelectorAll('.toast-success');
+      successToasts.forEach(t => t.remove());
+    }, 5000);
+    setTimeout(() => {
+      const errorToasts = document.querySelectorAll('.toast-error');
+      // Keep error visible longer (7s) — for demo, also remove
+      errorToasts.forEach(t => t.remove());
+    }, 7000);
+  </script>
+</body>
+</html>
