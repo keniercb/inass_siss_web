@@ -1,0 +1,20 @@
+# Coloca aquí los archivos del backend
+
+Este directorio debe contener los 6 archivos provistos por el equipo backend:
+
+1. `01_Requisitos_funcionales.md` — Requisitos funcionales del sistema
+2. `02_Diseno_de_arquitectura.md` — Diseño de arquitectura backend
+3. `03_Modelo_de_datos.md` — Modelo de datos (entidades, relaciones, diccionario)
+4. `04_Plan_de_desarrollo.md` — Plan de desarrollo backend (sprints, hitos)
+5. `docs.json` — Contrato OpenAPI/Swagger (cambia a medida que avanzan los sprints)
+6. `mdeditor.a8RzJZB8.md` — Archivo del editor de markdown
+
+Una vez colocados, haz:
+
+```bash
+git add docs/backend/
+git commit -m "docs: añade documentación backend v1"
+git push origin main
+```
+
+Luego avísame por el chat para hacer `git pull` y comenzar el análisis.

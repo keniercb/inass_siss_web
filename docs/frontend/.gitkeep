@@ -1,0 +1,9 @@
+# Entregables frontend
+
+Este directorio contendrá los entregables generados por el arquitecto frontend:
+
+1. `01_Requisitos_Funcionales_Frontend.md`
+2. `02_Diseno_Arquitectura_Frontend.md`
+3. `03_Plan_De_Desarrollo_Frontend.md`
+
+Se generarán tras el análisis de la documentación backend en `docs/backend/`.
