@@ -21,7 +21,8 @@
     "view": "View",
     "approve": "Approve",
     "reject": "Reject",
-    "review": "Review"
+    "review": "Review",
+    "select": "Select…"
   },
   "status": {
     "empty": "No data to display",

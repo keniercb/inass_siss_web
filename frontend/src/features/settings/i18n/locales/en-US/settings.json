@@ -1,0 +1,55 @@
+{
+  "list": {
+    "title": "General configuration",
+    "description": "Versions of pension calculation parameters",
+    "new": "New effective period",
+    "empty": "No versions registered",
+    "cannot_delete_in_effect": "In-effect version",
+    "columns": {
+      "effective_from": "Effective from",
+      "min_work_years": "Min. work years",
+      "min_age": "Min. age",
+      "men": "Men",
+      "women": "Women",
+      "percents": "Percentages",
+      "status": "Status"
+    },
+    "status": {
+      "current": "Current",
+      "future": "Future",
+      "past": "Historical"
+    }
+  },
+  "current": {
+    "title": "Current effective version",
+    "description": "These parameters are used for all new pension calculations. Each persisted calculation freezes the version used."
+  },
+  "create": {
+    "title": "New effective period",
+    "description": "Define calculation parameters for a new effective date",
+    "success": "Effective period created successfully",
+    "error": "An error occurred while creating the effective period",
+    "conflict": "A version with that effective date already exists"
+  },
+  "delete": {
+    "title": "Delete version",
+    "description": "Confirm deletion of the future version",
+    "confirm": "This action is irreversible. Only future (not in-effect) versions can be deleted.",
+    "confirm_button": "Delete",
+    "success": "Version deleted successfully",
+    "error": "An error occurred while deleting the version",
+    "in_effect": "Cannot delete a version that is already in effect"
+  },
+  "form": {
+    "min_work_years": "Minimum work years",
+    "min_age_men": "Minimum age men",
+    "min_age_women": "Minimum age women",
+    "base_calc_percent": "Base calculation percentage",
+    "base_calc_percent_help": "Percentage of average salary used as base (0-100)",
+    "max_calc_percent": "Maximum calculation percentage",
+    "max_calc_percent_help": "Upper cap of calculation percentage (must be ≥ base)",
+    "annual_increase_percent": "Annual increase percentage",
+    "effective_from": "Effective date",
+    "effective_from_help": "From this date, new calculations will use this version"
+  }
+}

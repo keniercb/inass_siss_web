@@ -1,0 +1,55 @@
+{
+  "list": {
+    "title": "Configuración general",
+    "description": "Versiones de parámetros de cálculo de pensiones",
+    "new": "Nueva vigencia",
+    "empty": "No hay versiones registradas",
+    "cannot_delete_in_effect": "Vigencia en vigor",
+    "columns": {
+      "effective_from": "Vigente desde",
+      "min_work_years": "Años mín. trabajo",
+      "min_age": "Edad mín.",
+      "men": "Hombres",
+      "women": "Mujeres",
+      "percents": "Porcientos",
+      "status": "Estado"
+    },
+    "status": {
+      "current": "Vigente",
+      "future": "Futura",
+      "past": "Histórica"
+    }
+  },
+  "current": {
+    "title": "Vigente actual",
+    "description": "Estos parámetros se usan para todos los cálculos de pensión nuevos. Cada cálculo persistido congela la versión usada."
+  },
+  "create": {
+    "title": "Nueva vigencia",
+    "description": "Define los parámetros de cálculo para una nueva fecha de vigencia",
+    "success": "Vigencia creada correctamente",
+    "error": "Ocurrió un error al crear la vigencia",
+    "conflict": "Ya existe una vigencia con esa fecha de entrada en vigor"
+  },
+  "delete": {
+    "title": "Eliminar vigencia",
+    "description": "Confirmar eliminación de la vigencia futura",
+    "confirm": "Esta acción es irreversible. Solo se pueden eliminar vigencias futuras (no efectivas).",
+    "confirm_button": "Eliminar",
+    "success": "Vigencia eliminada correctamente",
+    "error": "Ocurrió un error al eliminar la vigencia",
+    "in_effect": "No se puede eliminar una vigencia ya en vigor"
+  },
+  "form": {
+    "min_work_years": "Años mínimos de trabajo",
+    "min_age_men": "Edad mínima hombres",
+    "min_age_women": "Edad mínima mujeres",
+    "base_calc_percent": "Porciento base de cálculo",
+    "base_calc_percent_help": "Porciento del salario promedio usado como base (0-100)",
+    "max_calc_percent": "Porciento máximo de cálculo",
+    "max_calc_percent_help": "Tope superior del porciento de cálculo (debe ser ≥ base)",
+    "annual_increase_percent": "Porciento de incremento anual",
+    "effective_from": "Fecha de entrada en vigor",
+    "effective_from_help": "A partir de esta fecha, los nuevos cálculos usarán esta versión"
+  }
+}

@@ -1,10 +1,10 @@
-# E2E Test: Auth Flow
-# Verifica el flujo completo de autenticación con MSW activado en dev mode.
-# Cubre: login → redirect → logout → sesión expirada
-#
-# Requisitos:
-# - Dev server corriendo con VITE_ENABLE_MSW=true (default en dev)
-# - Playwright configurado con webServer (auto-start en tests)
+// E2E Test: Auth Flow
+// Verifica el flujo completo de autenticación con MSW activado en dev mode.
+// Cubre: login → redirect → logout → sesión expirada
+//
+// Requisitos:
+// - Dev server corriendo con VITE_ENABLE_MSW=true (default en dev)
+// - Playwright configurado con webServer (auto-start en tests)
 
 import { test, expect } from '@playwright/test';
 

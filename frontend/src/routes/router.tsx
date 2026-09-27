@@ -6,14 +6,15 @@ import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ModulePlaceholder } from '@/pages/ModulePlaceholder';
 import { NotFound } from '@/pages/NotFound';
+import { CatalogIndexPage } from '@/features/catalogs/pages/CatalogIndexPage';
+import { CatalogListPage } from '@/features/catalogs/pages/CatalogListPage';
+import { GeneralSettingsListPage } from '@/features/settings/pages/GeneralSettingsListPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
   {
     element: <PublicLayout />,
-    children: [
-      { path: '/login', element: <LoginPage /> },
-    ],
+    children: [{ path: '/login', element: <LoginPage /> }],
   },
   // Rutas autenticadas
   {
@@ -25,10 +26,37 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
+      { path: 'dashboard', element: <DashboardPage /> },
+
+      // Catálogos — índice + 16 tipos via /catalogos/:type
       {
-        path: 'dashboard',
-        element: <DashboardPage />,
+        path: 'catalogos',
+        element: (
+          <ProtectedRoute permiso="catalogs.view">
+            <CatalogIndexPage />
+          </ProtectedRoute>
+        ),
       },
+      {
+        path: 'catalogos/:type',
+        element: (
+          <ProtectedRoute permiso="catalogs.view">
+            <CatalogListPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Configuración general versionada
+      {
+        path: 'configuracion-general',
+        element: (
+          <ProtectedRoute permiso="settings.view">
+            <GeneralSettingsListPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Módulos no implementados (placeholders)
       {
         path: 'personas',
         element: (
@@ -121,18 +149,6 @@ export const router = createBrowserRouter([
               title="Auditoría"
               description="Bitácora de acciones y trazabilidad"
               sprint="FE-S12"
-            />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'catalogos',
-        element: (
-          <ProtectedRoute permiso="catalogs.view">
-            <ModulePlaceholder
-              title="Catálogos"
-              description="Catálogos uniformes, municipios, agencias y configuración"
-              sprint="FE-S2"
             />
           </ProtectedRoute>
         ),

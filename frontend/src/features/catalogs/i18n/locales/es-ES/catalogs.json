@@ -1,0 +1,48 @@
+{
+  "list": {
+    "title": "Catálogo",
+    "description": "Gestión de entradas del catálogo",
+    "new": "Nuevo",
+    "empty": "No hay entradas para los filtros seleccionados",
+    "columns": {
+      "code": "Código",
+      "name": "Nombre",
+      "description": "Descripción",
+      "actions": "Acciones"
+    }
+  },
+  "create": {
+    "title": "Crear entrada",
+    "description": "Complete los datos de la nueva entrada del catálogo",
+    "success": "Entrada creada correctamente",
+    "error": "Ocurrió un error al crear la entrada"
+  },
+  "edit": {
+    "title": "Editar entrada",
+    "description": "Modifique los datos de la entrada del catálogo"
+  },
+  "update": {
+    "success": "Entrada actualizada correctamente",
+    "error": "Ocurrió un error al actualizar la entrada",
+    "conflict": "Otro usuario ha modificado la entrada. Recargue y reintente."
+  },
+  "delete": {
+    "deactivate_title": "Desactivar entrada",
+    "deactivate_description": "Confirme la desactivación de la entrada del catálogo",
+    "deactivate_confirm": "Esta acción desactivará la entrada lógicamente. Las entradas desactivadas pueden restaurarse posteriormente.",
+    "deactivate_confirm_button": "Desactivar",
+    "success": "Entrada desactivada correctamente",
+    "error": "Ocurrió un error al desactivar la entrada",
+    "has_references": "No se puede desactivar: hay expedientes o entidades que la referencian"
+  },
+  "form": {
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "months_per_year": "Meses por año",
+    "applies_base_salary": "Aplica a salario base"
+  },
+  "errors": {
+    "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…"
+  }
+}

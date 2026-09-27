@@ -21,7 +21,8 @@
     "view": "Ver",
     "approve": "Aprobar",
     "reject": "Rechazar",
-    "review": "Revisar"
+    "review": "Revisar",
+    "select": "Seleccionar…"
   },
   "status": {
     "empty": "No hay datos para mostrar",

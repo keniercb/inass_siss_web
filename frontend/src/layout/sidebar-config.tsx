@@ -9,6 +9,7 @@ import {
   BarChart3,
   ShieldCheck,
   Library,
+  Settings,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -80,5 +81,11 @@ export const sidebarConfig: SidebarItem[] = [
     path: '/catalogos',
     icon: Library,
     permiso: 'catalogs.view',
+  },
+  {
+    label: 'Configuración general',
+    path: '/configuracion-general',
+    icon: Settings,
+    permiso: 'settings.view',
   },
 ];

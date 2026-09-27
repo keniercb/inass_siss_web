@@ -1,0 +1,48 @@
+{
+  "list": {
+    "title": "Catalog",
+    "description": "Manage catalog entries",
+    "new": "New",
+    "empty": "No entries for the selected filters",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "description": "Description",
+      "actions": "Actions"
+    }
+  },
+  "create": {
+    "title": "Create entry",
+    "description": "Fill in the data for the new catalog entry",
+    "success": "Entry created successfully",
+    "error": "An error occurred while creating the entry"
+  },
+  "edit": {
+    "title": "Edit entry",
+    "description": "Modify the catalog entry data"
+  },
+  "update": {
+    "success": "Entry updated successfully",
+    "error": "An error occurred while updating the entry",
+    "conflict": "Another user has modified the entry. Reload and retry."
+  },
+  "delete": {
+    "deactivate_title": "Deactivate entry",
+    "deactivate_description": "Confirm the deactivation of the catalog entry",
+    "deactivate_confirm": "This action will logically deactivate the entry. Deactivated entries can be restored later.",
+    "deactivate_confirm_button": "Deactivate",
+    "success": "Entry deactivated successfully",
+    "error": "An error occurred while deactivating the entry",
+    "has_references": "Cannot deactivate: there are cases or entities referencing this entry"
+  },
+  "form": {
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "months_per_year": "Months per year",
+    "applies_base_salary": "Applies to base salary"
+  },
+  "errors": {
+    "rate_limited": "The server is processing too many requests. Retrying…"
+  }
+}
