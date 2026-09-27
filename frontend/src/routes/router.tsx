@@ -8,6 +8,8 @@ import { ModulePlaceholder } from '@/pages/ModulePlaceholder';
 import { NotFound } from '@/pages/NotFound';
 import { CatalogIndexPage } from '@/features/catalogs/pages/CatalogIndexPage';
 import { CatalogListPage } from '@/features/catalogs/pages/CatalogListPage';
+import { MunicipalitiesListPage } from '@/features/municipalities/pages/MunicipalitiesListPage';
+import { AgenciesListPage } from '@/features/agencies/pages/AgenciesListPage';
 import { GeneralSettingsListPage } from '@/features/settings/pages/GeneralSettingsListPage';
 
 export const router = createBrowserRouter([
@@ -42,6 +44,24 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute permiso="catalogs.view">
             <CatalogListPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Endpoints dedicados de municipios y agencias
+      {
+        path: 'catalogos/municipios',
+        element: (
+          <ProtectedRoute permiso="catalogs.view">
+            <MunicipalitiesListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'catalogos/agencias',
+        element: (
+          <ProtectedRoute permiso="catalogs.view">
+            <AgenciesListPage />
           </ProtectedRoute>
         ),
       },

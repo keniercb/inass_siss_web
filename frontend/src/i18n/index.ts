@@ -14,6 +14,16 @@ import catalogs_esCU from '@/features/catalogs/i18n/locales/es-CU/catalogs.json'
 import catalogs_esES from '@/features/catalogs/i18n/locales/es-ES/catalogs.json';
 import catalogs_enUS from '@/features/catalogs/i18n/locales/en-US/catalogs.json';
 
+// Feature: municipalities
+import municipalities_esCU from '@/features/municipalities/i18n/locales/es-CU/municipalities.json';
+import municipalities_esES from '@/features/municipalities/i18n/locales/es-ES/municipalities.json';
+import municipalities_enUS from '@/features/municipalities/i18n/locales/en-US/municipalities.json';
+
+// Feature: agencies
+import agencies_esCU from '@/features/agencies/i18n/locales/es-CU/agencies.json';
+import agencies_esES from '@/features/agencies/i18n/locales/es-ES/agencies.json';
+import agencies_enUS from '@/features/agencies/i18n/locales/en-US/agencies.json';
+
 // Feature: settings
 import settings_esCU from '@/features/settings/i18n/locales/es-CU/settings.json';
 import settings_esES from '@/features/settings/i18n/locales/es-ES/settings.json';
@@ -38,18 +48,24 @@ void i18n
         common: common_esCU,
         auth: auth_esCU,
         catalogs: catalogs_esCU,
+        municipalities: municipalities_esCU,
+        agencies: agencies_esCU,
         settings: settings_esCU,
       },
       'es-ES': {
         common: common_esES,
         auth: auth_esES,
         catalogs: catalogs_esES,
+        municipalities: municipalities_esES,
+        agencies: agencies_esES,
         settings: settings_esES,
       },
       'en-US': {
         common: common_enUS,
         auth: auth_enUS,
         catalogs: catalogs_enUS,
+        municipalities: municipalities_enUS,
+        agencies: agencies_enUS,
         settings: settings_enUS,
       },
     },
@@ -57,7 +73,7 @@ void i18n
     lng: IS_TEST_ENV ? DEFAULT_LANGUAGE : undefined,
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: [...SUPPORTED_LANGUAGES],
-    ns: ['common', 'auth', 'catalogs', 'settings'],
+    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,

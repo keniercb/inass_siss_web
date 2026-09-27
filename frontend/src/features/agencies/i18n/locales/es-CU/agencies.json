@@ -1,0 +1,50 @@
+{
+  "list": {
+    "title": "Agencias bancarias",
+    "description": "Agencias bancarias donde los pensionados cobran",
+    "new": "Nueva agencia",
+    "empty": "No hay agencias para los filtros seleccionados",
+    "columns": {
+      "code": "Código",
+      "name": "Nombre",
+      "type": "Tipo",
+      "province": "Provincia",
+      "municipality": "Municipio"
+    }
+  },
+  "create": {
+    "title": "Crear agencia",
+    "description": "Complete los datos de la nueva agencia bancaria",
+    "success": "Agencia creada correctamente",
+    "error": "Ocurrió un error al crear la agencia"
+  },
+  "edit": {
+    "title": "Editar agencia",
+    "description": "Modifique los datos de la agencia bancaria"
+  },
+  "update": {
+    "success": "Agencia actualizada correctamente",
+    "error": "Ocurrió un error al actualizar la agencia",
+    "conflict": "Otro usuario ha modificado la agencia. Recargue y reintente."
+  },
+  "delete": {
+    "deactivate_title": "Desactivar agencia",
+    "deactivate_description": "Confirme la desactivación de la agencia",
+    "deactivate_confirm": "Esta acción desactivará la agencia lógicamente.",
+    "deactivate_confirm_button": "Desactivar",
+    "success": "Agencia desactivada correctamente",
+    "error": "Ocurrió un error al desactivar la agencia",
+    "has_references": "No se puede desactivar: hay controles bancarios que referencian esta agencia"
+  },
+  "form": {
+    "code": "Código",
+    "name": "Nombre",
+    "province": "Provincia",
+    "municipality": "Municipio",
+    "agency_type": "Tipo de agencia",
+    "select_province_first": "Seleccione provincia primero"
+  },
+  "errors": {
+    "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "list": {
+    "title": "Municipios",
+    "description": "Municipios de Cuba (168 total + Isla de la Juventud)",
+    "new": "Nuevo municipio",
+    "empty": "No hay municipios para los filtros seleccionados",
+    "columns": {
+      "code": "Código",
+      "name": "Nombre",
+      "province": "Provincia"
+    }
+  },
+  "create": {
+    "title": "Crear municipio",
+    "description": "Complete los datos del nuevo municipio",
+    "success": "Municipio creado correctamente",
+    "error": "Ocurrió un error al crear el municipio"
+  },
+  "edit": {
+    "title": "Editar municipio",
+    "description": "Modifique los datos del municipio"
+  },
+  "update": {
+    "success": "Municipio actualizado correctamente",
+    "error": "Ocurrió un error al actualizar el municipio",
+    "conflict": "Otro usuario ha modificado el municipio. Recargue y reintente."
+  },
+  "delete": {
+    "deactivate_title": "Desactivar municipio",
+    "deactivate_description": "Confirme la desactivación del municipio",
+    "deactivate_confirm": "Esta acción desactivará el municipio lógicamente. Solo se pueden restaurar municipios desactivados desde la administración.",
+    "deactivate_confirm_button": "Desactivar",
+    "success": "Municipio desactivado correctamente",
+    "error": "Ocurrió un error al desactivar el municipio",
+    "has_references": "No se puede desactivar: hay agencias que referencian este municipio"
+  },
+  "form": {
+    "code": "Código",
+    "name": "Nombre",
+    "province": "Provincia",
+    "isla_de_la_juventud": "Isla de la Juventud (municipio especial)",
+    "isla_de_la_juventud_help": "El municipio especial no pertenece a ninguna provincia"
+  },
+  "errors": {
+    "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…"
+  }
+}

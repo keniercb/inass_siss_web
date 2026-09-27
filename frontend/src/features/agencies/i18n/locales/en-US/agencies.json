@@ -1,0 +1,50 @@
+{
+  "list": {
+    "title": "Bank agencies",
+    "description": "Bank agencies where pensioners collect payments",
+    "new": "New agency",
+    "empty": "No agencies for the selected filters",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "type": "Type",
+      "province": "Province",
+      "municipality": "Municipality"
+    }
+  },
+  "create": {
+    "title": "Create agency",
+    "description": "Fill in the data for the new bank agency",
+    "success": "Agency created successfully",
+    "error": "An error occurred while creating the agency"
+  },
+  "edit": {
+    "title": "Edit agency",
+    "description": "Modify the bank agency data"
+  },
+  "update": {
+    "success": "Agency updated successfully",
+    "error": "An error occurred while updating the agency",
+    "conflict": "Another user has modified the agency. Reload and retry."
+  },
+  "delete": {
+    "deactivate_title": "Deactivate agency",
+    "deactivate_description": "Confirm the deactivation of the agency",
+    "deactivate_confirm": "This action will logically deactivate the agency.",
+    "deactivate_confirm_button": "Deactivate",
+    "success": "Agency deactivated successfully",
+    "error": "An error occurred while deactivating the agency",
+    "has_references": "Cannot deactivate: there are bank controls referencing this agency"
+  },
+  "form": {
+    "code": "Code",
+    "name": "Name",
+    "province": "Province",
+    "municipality": "Municipality",
+    "agency_type": "Agency type",
+    "select_province_first": "Select province first"
+  },
+  "errors": {
+    "rate_limited": "The server is processing too many requests. Retrying…"
+  }
+}

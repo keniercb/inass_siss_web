@@ -15,18 +15,27 @@ import type { CrudConfig, ListResponse } from '@/types/crud';
 
 interface ResourceListPageProps<TResource, TCreateInput, TUpdateInput> {
   config: CrudConfig<TResource, TCreateInput, TUpdateInput>;
+  /** Form modal personalizado (para recursos con UI específica, p. ej. cascading selects) */
+  customFormModal?: React.ComponentType<{
+    config: CrudConfig<TResource, TCreateInput, TUpdateInput>;
+    resource?: TResource;
+    onClose: () => void;
+  }>;
 }
 
 /**
  * Página de listado genérica para el patrón CRUD.
  * Incluye: búsqueda, filtros, tabla con sort y acciones, paginación,
  * modal de creación/edición y modal de desactivación.
+ *
+ * Si se pasa `customFormModal`, se usa en lugar de ResourceFormModal
+ * (para recursos con UI específica como municipios/agencias con cascading selects).
  */
 export function ResourceListPage<
   TResource extends { id: number | string },
   TCreateInput extends FieldValues,
   TUpdateInput extends FieldValues,
->({ config }: ResourceListPageProps<TResource, TCreateInput, TUpdateInput>) {
+>({ config, customFormModal }: ResourceListPageProps<TResource, TCreateInput, TUpdateInput>) {
   const { t } = useTranslation(config.resourceKey);
   const { t: tc } = useTranslation('common');
   const can = usePermiso();
@@ -294,14 +303,17 @@ export function ResourceListPage<
         )}
       </div>
 
-      {/* Modal de creación/edición */}
-      {formModalState.open && (
-        <ResourceFormModal
-          config={config}
-          resource={formModalState.resource}
-          onClose={() => setFormModalState({ open: false })}
-        />
-      )}
+      {/* Modal de creación/edición (custom o default) */}
+      {formModalState.open && (() => {
+        const FormModal = customFormModal ?? ResourceFormModal;
+        return (
+          <FormModal
+            config={config}
+            resource={formModalState.resource}
+            onClose={() => setFormModalState({ open: false })}
+          />
+        );
+      })()}
 
       {/* Modal de desactivación */}
       {deleteModalState.open && deleteModalState.resource && (

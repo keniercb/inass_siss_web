@@ -1,0 +1,47 @@
+{
+  "list": {
+    "title": "Municipalities",
+    "description": "Cuban municipalities (168 total + Isla de la Juventud)",
+    "new": "New municipality",
+    "empty": "No municipalities for the selected filters",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "province": "Province"
+    }
+  },
+  "create": {
+    "title": "Create municipality",
+    "description": "Fill in the data for the new municipality",
+    "success": "Municipality created successfully",
+    "error": "An error occurred while creating the municipality"
+  },
+  "edit": {
+    "title": "Edit municipality",
+    "description": "Modify the municipality data"
+  },
+  "update": {
+    "success": "Municipality updated successfully",
+    "error": "An error occurred while updating the municipality",
+    "conflict": "Another user has modified the municipality. Reload and retry."
+  },
+  "delete": {
+    "deactivate_title": "Deactivate municipality",
+    "deactivate_description": "Confirm the deactivation of the municipality",
+    "deactivate_confirm": "This action will logically deactivate the municipality. Only deactivated municipalities can be restored from administration.",
+    "deactivate_confirm_button": "Deactivate",
+    "success": "Municipality deactivated successfully",
+    "error": "An error occurred while deactivating the municipality",
+    "has_references": "Cannot deactivate: there are agencies referencing this municipality"
+  },
+  "form": {
+    "code": "Code",
+    "name": "Name",
+    "province": "Province",
+    "isla_de_la_juventud": "Isla de la Juventud (special municipality)",
+    "isla_de_la_juventud_help": "The special municipality does not belong to any province"
+  },
+  "errors": {
+    "rate_limited": "The server is processing too many requests. Retrying…"
+  }
+}
