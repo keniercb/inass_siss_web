@@ -10,23 +10,22 @@ desktop.ini
 *.swo
 *~
 
-# Node
-node_modules/
-dist/
-build/
-.cache/
-.next/
-coverage/
+# Node (frontend/)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.cache/
+frontend/coverage/
+frontend/.playwright/
+frontend/playwright-report/
+frontend/test-results/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/*.log
+
+# Logs
 *.log
-
-# Environment
-.env
-.env.local
-.env.*.local
-*.pem
-*.key
-
-# Build artifacts
 *.tgz
 *.tar.gz
 *.zip

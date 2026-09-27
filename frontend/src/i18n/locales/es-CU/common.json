@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "Sistema de Gestión de Pensionados",
+    "subtitle": "Ministerio de Trabajo de Cuba · INASS / SSIP",
+    "version": "SGP v1.0.0"
+  },
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "deactivate": "Desactivar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "close": "Cerrar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "view": "Ver",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "review": "Revisar"
+  },
+  "status": {
+    "empty": "No hay datos para mostrar",
+    "loading": "Cargando…",
+    "error": "Ocurrió un error",
+    "success": "Operación completada correctamente",
+    "retry": "Reintentar"
+  },
+  "errors": {
+    "unauthorized": "Su sesión ha expirado. Inicie sesión nuevamente.",
+    "forbidden": "No tiene permisos para acceder a este recurso",
+    "not_found": "El recurso solicitado no existe",
+    "conflict": "No se puede completar la operación por un conflicto",
+    "validation": "Hay errores de validación en el formulario",
+    "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…",
+    "server": "Error interno del servidor. Contacte al soporte.",
+    "network": "Error de conexión. Verifique su red."
+  },
+  "pagination": {
+    "showing": "Mostrando",
+    "of": "de",
+    "results": "resultados",
+    "page": "Página",
+    "of_pages": "de",
+    "per_page": "por página"
+  },
+  "table": {
+    "actions": "Acciones",
+    "no_data": "No hay registros"
+  },
+  "user": {
+    "my_profile": "Mi perfil",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión"
+  },
+  "language": {
+    "label": "Idioma",
+    "es-CU": "Español (Cuba)",
+    "es-ES": "Español (España)",
+    "en-US": "English (US)"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "Pensioner Management System",
+    "subtitle": "Ministry of Labor of Cuba · INASS / SSIP",
+    "version": "SGP v1.0.0"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deactivate": "Deactivate",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "view": "View",
+    "approve": "Approve",
+    "reject": "Reject",
+    "review": "Review"
+  },
+  "status": {
+    "empty": "No data to display",
+    "loading": "Loading…",
+    "error": "An error occurred",
+    "success": "Operation completed successfully",
+    "retry": "Retry"
+  },
+  "errors": {
+    "unauthorized": "Your session has expired. Please sign in again.",
+    "forbidden": "You don't have permission to access this resource",
+    "not_found": "The requested resource does not exist",
+    "conflict": "Cannot complete the operation due to a conflict",
+    "validation": "There are validation errors in the form",
+    "rate_limited": "The server is processing too many requests. Retrying…",
+    "server": "Internal server error. Contact support.",
+    "network": "Connection error. Check your network."
+  },
+  "pagination": {
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "page": "Page",
+    "of_pages": "of",
+    "per_page": "per page"
+  },
+  "table": {
+    "actions": "Actions",
+    "no_data": "No records"
+  },
+  "user": {
+    "my_profile": "My profile",
+    "settings": "Settings",
+    "logout": "Sign out"
+  },
+  "language": {
+    "label": "Language",
+    "es-CU": "Español (Cuba)",
+    "es-ES": "Español (España)",
+    "en-US": "English (US)"
+  }
+}

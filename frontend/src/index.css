@@ -1,0 +1,63 @@
+@import './styles/theme.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .app-layout {
+    display: grid;
+    grid-template-areas:
+      'topnavbar topnavbar'
+      'sidebar  main'
+      'sidebar  footer';
+    grid-template-rows: 56px 1fr 32px;
+    grid-template-columns: 256px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .app-layout__topnavbar { grid-area: topnavbar; }
+  .app-layout__sidebar   { grid-area: sidebar; background-color: var(--sidebar-bg); }
+  .app-layout__main      { grid-area: main; overflow-y: auto; padding: 1.5rem; }
+  .app-layout__footer    { grid-area: footer; }
+
+  .toast-container {
+    position: fixed;
+    top: 64px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 400px;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wide;
+  }
+  .badge-submitted    { @apply bg-blue-100 text-blue-800; }
+  .badge-under_review { @apply bg-amber-100 text-amber-800; }
+  .badge-approved     { @apply bg-emerald-100 text-emerald-800; }
+  .badge-rejected     { @apply bg-red-100 text-red-800; }
+
+  .app-layout__main::-webkit-scrollbar { width: 8px; }
+  .app-layout__main::-webkit-scrollbar-track { background: transparent; }
+  .app-layout__main::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .app-layout__main::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+}

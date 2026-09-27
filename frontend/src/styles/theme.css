@@ -1,0 +1,57 @@
+/* === Design System SGP — base-nova + colores de marca === */
+/* Tokens CSS centralizados (ADR-FE-19) */
+
+:root {
+  /* === Marca SGP (definidos por el cliente) === */
+  --sidebar-bg: #16202e;
+  --sidebar-fg: #ffffff;
+  --sidebar-muted: rgba(255, 255, 255, 0.65);
+  --sidebar-active: #418ad1;
+  --primary: #418ad1;
+  --primary-foreground: #ffffff;
+
+  /* === Base shadcn/ui (neutros cálidos) === */
+  --background: #fafafa;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --muted: #f1f1f0;
+  --muted-foreground: #6b6b6b;
+  --border: #e4e4e2;
+  --input: #e4e4e2;
+  --ring: #418ad1;
+
+  /* === Nova accent (semánticos) === */
+  --secondary: #e8f1fa;
+  --secondary-foreground: #1e4e7e;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #1a1a1a;
+  --info: #0ea5e9;
+  --info-foreground: #ffffff;
+
+  /* === Radios y sombras === */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --shadow-toast: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-modal: 0 20px 50px -10px rgba(0, 0, 0, 0.25), 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  --background: #0e1419;
+  --foreground: #fafafa;
+  --card: #16202e;
+  --card-foreground: #fafafa;
+  --popover: #16202e;
+  --popover-foreground: #fafafa;
+  --muted: #1e2a3a;
+  --muted-foreground: #94a3b8;
+  --border: #2a3a4d;
+  --input: #2a3a4d;
+}
