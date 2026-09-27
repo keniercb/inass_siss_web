@@ -1,13 +1,22 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import type { components } from '@/types/api';
 
-// Tipo del usuario autenticado (enriquecido con roles y permisos)
-export interface AuthUser {
-  id: number;
-  name: string;
-  email: string;
-  roles: string[];
-  permissions: string[];
+// Tipo User generado desde OpenAPI (auth/me + auth/login response)
+export type AuthUser = components['schemas']['User'];
+
+// Type guard para verificar que el objeto User tiene todos los campos requeridos
+// (los tipos generados marcan todo como opcional, pero en runtime siempre están presentes)
+export function isAuthUser(obj: unknown): obj is Required<AuthUser> {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const u = obj as Record<string, unknown>;
+  return (
+    typeof u.id === 'number' &&
+    typeof u.name === 'string' &&
+    typeof u.email === 'string' &&
+    Array.isArray(u.roles) &&
+    Array.isArray(u.permissions)
+  );
 }
 
 interface AuthState {
@@ -39,19 +48,19 @@ export const useAuthStore = create<AuthState>()(
       hasPermission: (permission) => {
         const user = get().user;
         if (!user) return false;
-        // admin tiene todos los permisos
-        if (user.roles.includes('admin')) return true;
-        return user.permissions.includes(permission);
+        // admin tiene todos los permisos implícitamente
+        if (user.roles?.includes('admin')) return true;
+        return user.permissions?.includes(permission) ?? false;
       },
 
       hasRole: (role) => {
         const user = get().user;
-        return user?.roles.includes(role) ?? false;
+        return user?.roles?.includes(role) ?? false;
       },
     }),
     {
       name: 'sgp-auth',
-      storage: createJSONStorage(() => sessionStorage), // sessionStorage por hardening (ADR-FE-08)
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         token: state.token,
         user: state.user,

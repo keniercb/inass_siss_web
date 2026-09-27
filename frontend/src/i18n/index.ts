@@ -13,6 +13,11 @@ export const SUPPORTED_LANGUAGES = ['es-CU', 'es-ES', 'en-US'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'es-CU';
 
+// En entorno de tests, forzar español-Cuba (jsdom defaultea a en-US)
+const IS_TEST_ENV =
+  (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
+  (typeof import.meta !== 'undefined' && (import.meta as { env?: { MODE?: string } }).env?.MODE === 'test');
+
 void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -22,18 +27,22 @@ void i18n
       'es-ES': { common: common_esES, auth: auth_esES },
       'en-US': { common: common_enUS, auth: auth_enUS },
     },
+    // En tests: forzar es-CU. En dev/prod: usar detector.
+    lng: IS_TEST_ENV ? DEFAULT_LANGUAGE : undefined,
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: [...SUPPORTED_LANGUAGES],
     ns: ['common', 'auth'],
     defaultNS: 'common',
     interpolation: {
-      escapeValue: false, // React ya escapa
+      escapeValue: false,
     },
-    detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      lookupLocalStorage: 'sgp.lang',
-      caches: ['localStorage'],
-    },
+    detection: IS_TEST_ENV
+      ? undefined
+      : {
+          order: ['localStorage', 'navigator', 'htmlTag'],
+          lookupLocalStorage: 'sgp.lang',
+          caches: ['localStorage'],
+        },
   });
 
 export default i18n;

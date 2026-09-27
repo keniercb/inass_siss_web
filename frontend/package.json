@@ -11,8 +11,9 @@
     "lint": "eslint . --ext ts,tsx --max-warnings 0",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
-    "test": "vitest run --globals --environment=jsdom --setupFiles=./src/test/setup.ts --css",
-    "test:watch": "vitest --globals --environment=jsdom --setupFiles=./src/test/setup.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "sync:api": "openapi-typescript ../docs/backend/docs.json -o src/types/api.ts",
     "msw:init": "msw init public/"
@@ -66,5 +67,10 @@
     "vite": "^6.0.7",
     "vite-bundle-visualizer": "^1.2.0",
     "vitest": "^2.1.8"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
