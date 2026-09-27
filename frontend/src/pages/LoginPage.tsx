@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -45,8 +45,15 @@ export function LoginPage() {
   const { t: tCommon } = useTranslation('common');
   const login = useAuthStore((s) => s.login);
   const toast = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const expired = searchParams.get('expired') === '1';
+
+  // Página a la que redirigir tras login exitoso:
+  // - Si el usuario fue redirigido desde una ruta protegida, volver a esa ruta
+  // - Si accedió directamente a /login, ir al dashboard
+  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -61,6 +68,8 @@ export function LoginPage() {
     onSuccess: (data) => {
       login(data.data.token, data.data.user);
       toast.success(tCommon('status.success'));
+      // Redirigir a la página origen o al dashboard por defecto
+      navigate(from, { replace: true });
     },
     onError: (error: { response?: { status?: number; data?: { message?: string } } }) => {
       const status = error.response?.status;

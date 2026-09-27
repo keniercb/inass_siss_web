@@ -1,26 +1,41 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePermiso } from '@/hooks/use-permiso';
+import { useUIStore } from '@/store/ui-store';
 import { sidebarConfig } from '../sidebar-config';
 import { cn } from '@/lib/utils';
 
 export function Sidebar() {
   const tienePermiso = usePermiso();
   const { t } = useTranslation('common');
+  const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const items = sidebarConfig.filter((item) => tienePermiso(item.permiso));
   const location = useLocation();
 
   return (
-    <aside className="app-layout__sidebar w-64 text-sidebar-fg flex flex-col">
+    <aside
+      className={cn(
+        'app-layout__sidebar text-sidebar-fg flex flex-col transition-all duration-200',
+        collapsed ? 'w-16' : 'w-64',
+      )}
+      data-collapsed={collapsed ? 'true' : 'false'}
+      aria-label="Navegación lateral"
+    >
       {/* Header del sidebar */}
-      <div className="px-4 py-4 border-b border-white/10">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-sidebar-muted">
-          {t('app.title')}
-        </h2>
+      <div className="px-4 py-4 border-b border-white/10 flex items-center justify-center">
+        {collapsed ? (
+          <span className="text-xs font-semibold text-sidebar-active" title={t('app.title')}>
+            SGP
+          </span>
+        ) : (
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-sidebar-muted">
+            {t('app.title')}
+          </h2>
+        )}
       </div>
 
       {/* Items de navegación filtrados por permiso */}
-      <nav className="flex-1 overflow-y-auto py-2">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2">
         {items.map((item) => {
           const isActive =
             location.pathname === item.path ||
@@ -29,9 +44,12 @@ export function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
+              title={collapsed ? item.label : undefined}
               className={cn(
                 'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
                 'border-l-2 border-transparent',
+                'whitespace-nowrap',
+                collapsed && 'justify-center px-0',
                 isActive
                   ? 'bg-white/10 border-sidebar-active text-white font-medium'
                   : 'text-sidebar-muted hover:bg-white/5 hover:text-white',
@@ -43,15 +61,21 @@ export function Sidebar() {
                   isActive ? 'text-sidebar-active' : 'text-sidebar-muted',
                 )}
               />
-              <span className="truncate">{item.label}</span>
+              {!collapsed && <span className="truncate">{item.label}</span>}
             </NavLink>
           );
         })}
       </nav>
 
       {/* Footer del sidebar */}
-      <div className="px-4 py-2 border-t border-white/10 text-xs text-sidebar-muted">
-        {t('app.version')}
+      <div
+        className={cn(
+          'px-4 py-2 border-t border-white/10 text-xs text-sidebar-muted',
+          collapsed ? 'text-center' : 'text-left',
+        )}
+        title={collapsed ? t('app.version') : undefined}
+      >
+        {collapsed ? 'v1' : t('app.version')}
       </div>
     </aside>
   );

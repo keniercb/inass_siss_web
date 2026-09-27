@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Menu } from 'lucide-react';
+import { PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useUIStore } from '@/store/ui-store';
 import { useLocation } from 'react-router-dom';
 import { UserDropdown } from './UserDropdown';
 import { LanguageSwitcher } from './LanguageSwitcher';
+
 // Mapa de rutas a claves de breadcrumb
 const breadcrumbLabels: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -20,6 +21,7 @@ const breadcrumbLabels: Record<string, string> = {
 
 export function TopNavbar() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const { t } = useTranslation('common');
   const location = useLocation();
 
@@ -32,10 +34,15 @@ export function TopNavbar() {
       <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-md hover:bg-muted text-muted-foreground"
-          aria-label="Toggle sidebar"
+          className="p-2 rounded-md hover:bg-muted text-muted-foreground transition-colors"
+          aria-label={sidebarCollapsed ? 'Expandir menú lateral' : 'Colapsar menú lateral'}
+          title={sidebarCollapsed ? 'Expandir menú lateral' : 'Colapsar menú lateral'}
         >
-          <Menu className="w-5 h-5" />
+          {sidebarCollapsed ? (
+            <PanelLeft className="w-5 h-5" />
+          ) : (
+            <PanelLeftClose className="w-5 h-5" />
+          )}
         </button>
 
         <div className="flex items-center gap-2">
@@ -55,6 +62,9 @@ export function TopNavbar() {
           </nav>
         )}
       </div>
+
+      {/* Centro: vacío (sin búsqueda global — eliminada por decisión del cliente en FE-S0) */}
+      <div className="flex-1" />
 
       {/* Derecha: idioma + user dropdown */}
       <div className="flex items-center gap-2">

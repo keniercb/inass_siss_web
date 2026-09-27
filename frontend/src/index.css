@@ -28,7 +28,8 @@
       'sidebar  main'
       'sidebar  footer';
     grid-template-rows: 56px 1fr 32px;
-    grid-template-columns: 256px 1fr;
+    /* 'auto' permite que el sidebar se ajuste a su contenido (w-64 expandido o w-16 colapsado) */
+    grid-template-columns: auto 1fr;
     height: 100vh;
     overflow: hidden;
   }
