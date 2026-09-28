@@ -1,0 +1,116 @@
+{
+  "list": {
+    "title": "People",
+    "description": "Master people registry of the SGP",
+    "new": "New person",
+    "search_placeholder": "Search by ID (11 digits) or by name…",
+    "empty": "No people for the selected filters",
+    "filter": {
+      "all": "All",
+      "alive": "Alive",
+      "deceased": "Deceased"
+    },
+    "columns": {
+      "ci": "Identity card",
+      "name": "Full name",
+      "sex": "Sex",
+      "sex_male": "M",
+      "sex_female": "F",
+      "birth_date": "Birth date",
+      "status": "Status"
+    },
+    "status": {
+      "alive": "Alive",
+      "deceased": "Deceased"
+    }
+  },
+  "create": {
+    "title": "Register person",
+    "description": "Fill in the data for the new person",
+    "success": "Person created successfully",
+    "error": "An error occurred while creating the person",
+    "duplicate": "A person with that identity number already exists"
+  },
+  "edit": {
+    "title": "Edit person",
+    "description": "Modify the person's data. The ID cannot be modified."
+  },
+  "update": {
+    "success": "Person updated successfully",
+    "error": "An error occurred while updating the person",
+    "conflict": "Another user has modified the person. Reload and retry."
+  },
+  "delete": {
+    "title": "Deactivate person",
+    "description": "Confirm the deactivation of the person",
+    "confirm": "This action will logically deactivate the person. If they have active cases or pensions, they cannot be deactivated.",
+    "confirm_button": "Deactivate",
+    "success": "Person deactivated successfully",
+    "error": "An error occurred while deactivating the person",
+    "has_references": "Cannot deactivate: there are cases or pensions referencing this person"
+  },
+  "death": {
+    "title": "Register death",
+    "description": "Indicate the date of death of the person",
+    "confirm": "Register death",
+    "success": "Death registered successfully",
+    "error": "An error occurred while registering the death",
+    "already_deceased": "The person is already registered as deceased",
+    "already_deceased_message": "This person is already registered as deceased.",
+    "has_pension_warning": "If the person has an active pension, proceed to terminate the pensioner in the corresponding module."
+  },
+  "form": {
+    "identity_number": "Identity number (ID)",
+    "identity_number_help": "11 digits. The verifier digit is automatically calculated by the backend.",
+    "first_name": "First name",
+    "middle_name": "Middle name",
+    "first_surname": "First surname",
+    "second_surname": "Second surname",
+    "sex": "Sex",
+    "sex_male": "Male",
+    "sex_female": "Female",
+    "race": "Race",
+    "address": "Address",
+    "birth_date": "Birth date",
+    "father_name": "Father's name",
+    "mother_name": "Mother's name",
+    "citizen_card_id": "Citizen card ID",
+    "citizen_card_id_help": "Optional and unique. Additional citizen identifier.",
+    "death_date": "Death date"
+  },
+  "detail": {
+    "back_to_list": "Back to list",
+    "register_death": "Register death",
+    "deceased_banner": "Deceased person",
+    "death_date": "Death date",
+    "not_found": "Person not found",
+    "tabs": {
+      "data": "Personal data",
+      "cases": "Cases",
+      "pensioner": "Pensioner",
+      "audit": "Audit"
+    },
+    "tabs_empty": {
+      "cases": "No cases",
+      "cases_description": "This person has no pension cases associated yet.",
+      "pensioner": "No pensioner",
+      "pensioner_description": "This person is not currently a pensioner.",
+      "audit": "No audit",
+      "audit_description": "There are no audit entries for this person."
+    },
+    "fields": {
+      "identity_number": "Identity card",
+      "citizen_card_id": "Citizen card ID",
+      "full_name": "Full name",
+      "sex": "Sex",
+      "sex_male": "Male",
+      "sex_female": "Female",
+      "birth_date": "Birth date",
+      "birth_date_from_ci": "Birth date (from ID)",
+      "address": "Address",
+      "father_name": "Father's name",
+      "mother_name": "Mother's name",
+      "death_date": "Death date"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "list": { "title": "Base legal", "description": "Normas legales del sistema de pensiones", "new": "Nueva base legal", "search_placeholder": "Buscar por número o referencia…", "empty": "No hay bases legales para los filtros seleccionados", "filter": { "all": "Todas", "vigent": "Vigentes", "derogated": "Derogadas" }, "columns": { "type": "Tipo", "number": "Número", "year": "Año", "issuing_organization": "Organismo emisor", "effective_date": "Fecha vigencia", "status": "Estado" }, "status": { "vigent": "Vigente", "derogated": "Derogada" } },
+  "create": { "title": "Crear base legal", "description": "Complete los datos de la nueva base legal", "success": "Base legal creada correctamente", "error": "Ocurrió un error al crear la base legal" },
+  "edit": { "title": "Editar base legal", "description": "Modifique los datos de la base legal" },
+  "update": { "success": "Base legal actualizada correctamente", "error": "Ocurrió un error al actualizar la base legal" },
+  "delete": { "title": "Desactivar base legal", "confirm": "Esta acción desactivará la base legal lógicamente.", "confirm_button": "Desactivar" },
+  "form": { "legal_basis_type": "Tipo de base legal", "number": "Número", "issue_date": "Fecha de emisión", "effective_date": "Fecha de vigencia", "derogation_date": "Fecha de derogación", "derogation_date_help": "Dejar vacío si la base legal está vigente.", "issuing_organization": "Organismo emisor", "reference": "Referencia" }
+}

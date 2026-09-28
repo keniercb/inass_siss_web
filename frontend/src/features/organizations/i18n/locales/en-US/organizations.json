@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "list": { "title": "Entities", "description": "Employer entities of the system", "new": "New entity", "search_placeholder": "Search by code or NIT…", "empty": "No entities for the selected filters", "columns": { "code": "Code", "name": "NIT", "organization": "Organization", "type": "Type", "location": "Location" } },
+    "create": { "title": "Create entity", "description": "Fill in the data for the new employer entity", "success": "Entity created successfully", "error": "An error occurred while creating the entity", "duplicate": "An entity with that code or NIT already exists" },
+    "edit": { "title": "Edit entity", "description": "Modify the entity data. The code cannot be modified." },
+    "update": { "success": "Entity updated successfully", "error": "An error occurred while updating the entity", "conflict": "Another user has modified the entity" },
+    "delete": { "title": "Deactivate entity", "confirm": "This action will logically deactivate the entity. If there are cases or signatures referencing it, it cannot be deactivated.", "confirm_button": "Deactivate", "success": "Entity deactivated successfully", "error": "An error occurred while deactivating the entity", "has_references": "Cannot deactivate: there are cases or signatures referencing this entity" },
+    "form": { "code": "Code", "tax_id_number": "NIT", "organization": "Organization", "entity_type": "Entity type", "province": "Province", "municipality": "Municipality", "address": "Address", "phone": "Phone", "fax": "Fax", "email": "Email", "director": "Director", "economic_director": "Economic director", "social_purpose": "Social purpose" },
+    "detail": { "back_to_list": "Back to list", "not_found": "Entity not found", "tabs": { "data": "Data", "signatures": "Authorized signatures", "hierarchy": "Hierarchy" }, "tabs_empty": { "signatures": "No authorized signatures", "signatures_description": "This entity has no authorized signatures registered.", "hierarchy": "No hierarchy", "hierarchy_description": "No hierarchy configured for this entity." }, "fields": { "code": "Code", "tax_id_number": "NIT", "organization": "Organization", "entity_type": "Entity type", "province": "Province", "municipality": "Municipality", "address": "Address", "phone": "Phone", "fax": "Fax", "email": "Email", "director": "Director", "economic_director": "Economic director", "parent_entity": "Parent entity", "social_purpose": "Social purpose" } }
+  },
+  "offices": {
+    "list": { "title": "Offices", "description": "Offices of the Ministry of Labor", "new": "New office", "search_placeholder": "Search by address…", "empty": "No offices for the selected filters", "columns": { "type": "Type", "province": "Province", "municipality": "Municipality", "address": "Address" } },
+    "create": { "title": "Create office", "description": "Fill in the data for the new office", "success": "Office created successfully", "error": "An error occurred while creating the office" },
+    "edit": { "title": "Edit office", "description": "Modify the office data" },
+    "update": { "success": "Office updated successfully", "error": "An error occurred while updating the office", "conflict": "Another user has modified the office" },
+    "delete": { "title": "Deactivate office", "confirm": "This action will logically deactivate the office.", "confirm_button": "Deactivate", "success": "Office deactivated successfully", "error": "An error occurred while deactivating the office", "has_references": "Cannot deactivate: there are cases referencing this office" },
+    "form": { "office_type": "Office type", "province": "Province", "municipality": "Municipality", "address": "Address" }
+  },
+  "signatures": {
+    "list": { "columns": { "person": "Person", "position": "Position", "validity": "Validity" } },
+    "create": { "success": "Authorized signature created successfully", "error": "An error occurred while creating the signature" },
+    "delete": { "success": "Signature deleted successfully", "error": "An error occurred while deleting the signature" }
+  },
+  "agencies": { "form": { "select_province_first": "Select province first" } }
+}

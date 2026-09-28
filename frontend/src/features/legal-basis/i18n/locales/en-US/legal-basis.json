@@ -1,0 +1,8 @@
+{
+  "list": { "title": "Legal basis", "description": "Legal norms of the pension system", "new": "New legal basis", "search_placeholder": "Search by number or reference…", "empty": "No legal bases for the selected filters", "filter": { "all": "All", "vigent": "In effect", "derogated": "Repealed" }, "columns": { "type": "Type", "number": "Number", "year": "Year", "issuing_organization": "Issuing organization", "effective_date": "Effective date", "status": "Status" }, "status": { "vigent": "In effect", "derogated": "Repealed" } },
+  "create": { "title": "Create legal basis", "description": "Fill in the data for the new legal basis", "success": "Legal basis created successfully", "error": "An error occurred while creating the legal basis" },
+  "edit": { "title": "Edit legal basis", "description": "Modify the legal basis data" },
+  "update": { "success": "Legal basis updated successfully", "error": "An error occurred while updating the legal basis" },
+  "delete": { "title": "Deactivate legal basis", "confirm": "This action will logically deactivate the legal basis.", "confirm_button": "Deactivate" },
+  "form": { "legal_basis_type": "Legal basis type", "number": "Number", "issue_date": "Issue date", "effective_date": "Effective date", "derogation_date": "Repeal date", "derogation_date_help": "Leave empty if the legal basis is in effect.", "issuing_organization": "Issuing organization", "reference": "Reference" }
+}
