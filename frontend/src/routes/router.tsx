@@ -13,6 +13,10 @@ import { AgenciesListPage } from '@/features/agencies/pages/AgenciesListPage';
 import { GeneralSettingsListPage } from '@/features/settings/pages/GeneralSettingsListPage';
 import { PeopleListPage } from '@/features/people/pages/PeopleListPage';
 import { PersonDetailPage } from '@/features/people/pages/PersonDetailPage';
+import { EntitiesListPage } from '@/features/organizations/pages/EntitiesListPage';
+import { EntityDetailPage } from '@/features/organizations/pages/EntityDetailPage';
+import { OfficesListPage } from '@/features/organizations/pages/OfficesListPage';
+import { LegalBasisListPage } from '@/features/legal-basis/pages/LegalBasisListPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -99,11 +103,31 @@ export const router = createBrowserRouter([
         path: 'entidades',
         element: (
           <ProtectedRoute permiso="organizations.view">
-            <ModulePlaceholder
-              title="Entidades"
-              description="Gestión de entidades empleadoras y oficinas"
-              sprint="FE-S4"
-            />
+            <EntitiesListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'entidades/:id',
+        element: (
+          <ProtectedRoute permiso="organizations.view">
+            <EntityDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'oficinas',
+        element: (
+          <ProtectedRoute permiso="organizations.view">
+            <OfficesListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'bases-legales',
+        element: (
+          <ProtectedRoute permiso="legalbases.view">
+            <LegalBasisListPage />
           </ProtectedRoute>
         ),
       },
