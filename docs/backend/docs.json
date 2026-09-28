@@ -1474,6 +1474,1845 @@
                 ]
             }
         },
+        "/api/v1/legal-bases": {
+            "get": {
+                "tags": [
+                    "Base legal"
+                ],
+                "summary": "Consulta documental del corpus legal",
+                "description": "Bases legales activas con tipo y organismo emisor (RF-LEG-004): búsqueda por año, tipo, organismo emisor y texto del número o la referencia; el filtro status=effective alimenta el selector de vigentes de la aprobación de expedientes (RF-LEG-003).",
+                "operationId": "legalBasesIndex",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Fragmentos del número o la referencia documental",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120
+                        }
+                    },
+                    {
+                        "name": "legal_basis_type_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "organization_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true,
+                            "maximum": 2200,
+                            "minimum": 1800
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "nullable": true,
+                            "enum": [
+                                "effective",
+                                "derogated",
+                                "future"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado paginado con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/LegalBasis"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 60
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 4
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Base legal"
+                ],
+                "summary": "Registro de una base legal",
+                "description": "Alta con validación de referencias, orden de fechas RN-006 (puesta en vigor ≥ emisión, derogación ≥ puesta en vigor) y unicidad de la terna tipo+número+año (RF-LEG-002); el año se deriva de la fecha de emisión (H-11) y nunca viaja en la petición. Toda escritura aterriza en la bitácora.",
+                "operationId": "legalBasesStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "legal_basis_type_id",
+                                    "number",
+                                    "issue_date",
+                                    "effective_date",
+                                    "issuing_organization_id"
+                                ],
+                                "properties": {
+                                    "legal_basis_type_id": {
+                                        "description": "Tipo (catálogo: Ley, Decreto-Ley, Decreto, Resolución, Indicación)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "number": {
+                                        "description": "Número del documento",
+                                        "type": "string",
+                                        "example": "128"
+                                    },
+                                    "issue_date": {
+                                        "description": "Fecha de emisión",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2019-07-16"
+                                    },
+                                    "effective_date": {
+                                        "description": "Puesta en vigor (≥ issue_date, RN-006)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2019-08-01"
+                                    },
+                                    "derogation_date": {
+                                        "description": "Derogación opcional (≥ effective_date, RN-006); null = vigente",
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "issuing_organization_id": {
+                                        "description": "Organismo emisor (catálogo)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "reference": {
+                                        "type": "string",
+                                        "example": "Gaceta Oficial Ordinaria No. 45 de 2019",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Base legal registrada con autoría estampada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LegalBasis"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/legal-bases/{id}": {
+            "get": {
+                "tags": [
+                    "Base legal"
+                ],
+                "summary": "Detalle de una base legal",
+                "description": "Devuelve la base legal activa con ese id (las desactivadas responden 404; su terna sigue reservada).",
+                "operationId": "legalBasesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Base legal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LegalBasis"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Base legal inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Base legal"
+                ],
+                "summary": "Desactivación de una base legal",
+                "description": "Borrado lógico: la base sale de listados y detalle, pero su terna queda reservada y el borrado queda auditado. Futuras referencias de expedientes (F3) bloquearán el borrado físico por FK RESTRICT.",
+                "operationId": "legalBasesDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Base legal desactivada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Legal basis deactivated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Base legal inexistente o ya desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Base legal"
+                ],
+                "summary": "Edición de una base legal",
+                "description": "La terna identidad (tipo, número, fecha de emisión) es inmutable (422 si intenta cambiar). La derogación se fija, corrige o limpia aquí — una edición de fecha auditable con valores previos, nunca una acción destructiva. Las fechas resultantes revalidan RN-006.",
+                "operationId": "legalBasesUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "effective_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "derogation_date": {
+                                        "description": "null limpia la derogación (vuelve a vigente)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "issuing_organization_id": {
+                                        "type": "integer"
+                                    },
+                                    "reference": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Base legal actualizada (valores previos en la bitácora)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LegalBasis"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Base legal inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/authorized-signatures": {
+            "get": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Listado paginado de firmas autorizadas",
+                "description": "Firmas con sus referencias anidadas y el estado derivado de la ventana de vigencia (RF-ENT-003): filtros por entidad, persona, cargo y estado (active/future/expired).",
+                "operationId": "signaturesIndex",
+                "parameters": [
+                    {
+                        "name": "entity_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "person_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "position_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "nullable": true,
+                            "enum": [
+                                "active",
+                                "future",
+                                "expired"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado paginado con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AuthorizedSignature"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 8
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Registro de una firma autorizada",
+                "description": "Vincula entidad, persona y cargo (RF-ENT-003): la terna es única y queda reservada por el historial de revocación (422 si ya existe, incluidas las revocadas). La ventana de vigencia es opcional (RN-006: fin ≥ inicio) y el estado se deriva al leer. Toda escritura aterriza en la bitácora.",
+                "operationId": "signaturesStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "entity_id",
+                                    "person_id",
+                                    "position_id"
+                                ],
+                                "properties": {
+                                    "entity_id": {
+                                        "description": "Entidad que autoriza",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "person_id": {
+                                        "description": "Persona autorizada (registro único)",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "position_id": {
+                                        "description": "Cargo en que firma (catálogo)",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "valid_from": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2020-01-01",
+                                        "nullable": true
+                                    },
+                                    "valid_to": {
+                                        "description": "≥ valid_from (RN-006)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2030-12-31",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Firma registrada con autoría estampada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AuthorizedSignature"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/authorized-signatures/{id}": {
+            "get": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Detalle de una firma autorizada",
+                "description": "Devuelve la firma con ese id (las revocadas responden 404: su fila permanece como historial auditable).",
+                "operationId": "signaturesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Firma autorizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AuthorizedSignature"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Firma inexistente o revocada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Revocación de una firma",
+                "description": "Borrado lógico: la fila queda como historial de la firma (RF-ENT-003) y mantiene la terna reservada — no puede registrarse de nuevo la misma combinación. La revocación aterriza en la bitácora. Futuras referencias (expedientes de F3) bloquearán el borrado físico por FK RESTRICT.",
+                "operationId": "signaturesDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Firma revocada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Signature revoked."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Firma inexistente o ya revocada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Edición de la ventana de vigencia",
+                "description": "La terna identifica el registro histórico y no es editable (RF-ENT-003: el versionado de firmas es la propia fila con su ventana). Solo viajan las fechas; la ventana resultante revalida el orden RN-006 y la edición queda auditada con valores previos.",
+                "operationId": "signaturesUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "valid_from": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "valid_to": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Firma actualizada (valores previos en la bitácora)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AuthorizedSignature"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Firma inexistente o revocada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/entities": {
+            "get": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Listado paginado de entidades",
+                "description": "Entidades activas con referencias anidadas (RF-ENT-005): búsqueda por fragmentos de código, NIT u objeto social, y filtros por organismo, provincia, municipio y tipo. Código y NIT quedan reservados tras desactivar.",
+                "operationId": "entitiesIndex",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Fragmentos de código, NIT u objeto social",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120
+                        }
+                    },
+                    {
+                        "name": "organization_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "province_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "municipality_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "entity_type_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado paginado con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Entity"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 30
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Registro de una entidad",
+                "description": "Alta con validación de referencias, coherencia geográfica (RN-004: el municipio pertenece a la provincia) y unicidad de código y NIT (RF-ENT-001). La jerarquía opcional (entidad superior) se mantiene acíclica (RN-003). Los directores referencian personas registradas. Toda escritura aterriza en la bitácora con valores previos.",
+                "operationId": "entitiesStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code",
+                                    "tax_id_number",
+                                    "organization_id",
+                                    "province_id",
+                                    "municipality_id",
+                                    "entity_type_id",
+                                    "address",
+                                    "social_purpose"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "description": "Único; reservado tras desactivar",
+                                        "type": "string",
+                                        "example": "ENT-0001"
+                                    },
+                                    "tax_id_number": {
+                                        "description": "NIT único",
+                                        "type": "string",
+                                        "example": "11000012345"
+                                    },
+                                    "organization_id": {
+                                        "description": "Organismo de pertenencia (catálogo)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "province_id": {
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "municipality_id": {
+                                        "description": "Debe pertenecer a la provincia (RN-004)",
+                                        "type": "integer",
+                                        "example": 42
+                                    },
+                                    "entity_type_id": {
+                                        "description": "Tipo de entidad (catálogo)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Calle 1 #2, Holguín"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "024 461234",
+                                        "nullable": true
+                                    },
+                                    "fax": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "contacto@ent.gob.cu",
+                                        "nullable": true
+                                    },
+                                    "director_person_id": {
+                                        "description": "Director general (persona registrada)",
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "economic_director_person_id": {
+                                        "description": "Director económico (persona registrada)",
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "parent_entity_id": {
+                                        "description": "Entidad superior (RN-003: sin ciclos)",
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "social_purpose": {
+                                        "type": "string",
+                                        "example": "Servicios técnicos especializados"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Entidad registrada con autoría estampada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Entity"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/entities/tree": {
+            "get": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Árbol de la jerarquía de entidades",
+                "description": "Jerarquía completa como árbol anidado (RF-ENT-005), con profundidad máxima de 5 niveles: los nodos cortados al límite exponen deeper=true en lugar de ocultar su subárbol en silencio. El conteo de expedientes por oficina se incorpora con el módulo PensionCases (F3).",
+                "operationId": "entitiesTree",
+                "responses": {
+                    "200": {
+                        "description": "Árbol de jerarquía (nodos raíz en orden de id)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "format": "int64"
+                                                    },
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "tax_id_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "social_purpose": {
+                                                        "type": "string"
+                                                    },
+                                                    "children": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "deeper": {
+                                                        "description": "Presente solo en nodos cortados al nivel máximo",
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/entities/{id}": {
+            "get": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Detalle de una entidad",
+                "description": "Devuelve la entidad activa con ese id (las desactivadas responden 404; su código y NIT siguen reservados).",
+                "operationId": "entitiesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entidad",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Entity"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Entidad inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Desactivación de una entidad",
+                "description": "Borrado lógico: la entidad sale de listados, árbol y detalle, pero su código y NIT quedan reservados y el borrado queda auditado. Se rechaza mientras tenga entidades hijas activas (la jerarquía nunca huérfana un subárbol vivo).",
+                "operationId": "entitiesDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entidad desactivada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Entity deactivated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Entidad inexistente o ya desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Edición de una entidad",
+                "description": "Edición parcial con auditoría de valores previos (RF-ENT-002). El código y el NIT son inmutables (422 si intentan cambiar); las referencias, la coherencia RN-004 y la aciclicidad RN-003 se revalidan contra el estado resultante.",
+                "operationId": "entitiesUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "organization_id": {
+                                        "type": "integer"
+                                    },
+                                    "province_id": {
+                                        "type": "integer"
+                                    },
+                                    "municipality_id": {
+                                        "type": "integer"
+                                    },
+                                    "entity_type_id": {
+                                        "type": "integer"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "fax": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "director_person_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "economic_director_person_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "parent_entity_id": {
+                                        "description": "null desarraiga la entidad; el nuevo padre no puede cerrar un ciclo (RN-003)",
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "social_purpose": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Entidad actualizada (valores previos en la bitácora)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Entity"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Entidad inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/offices": {
+            "get": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Listado paginado de oficinas",
+                "description": "Oficinas activas con tipo, provincia y municipio (RF-ENT-002): búsqueda por fragmentos de dirección y filtros por tipo y geografía.",
+                "operationId": "officesIndex",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Fragmentos de la dirección",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120
+                        }
+                    },
+                    {
+                        "name": "office_type_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "province_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "municipality_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "nullable": true
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado paginado con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Office"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 24
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Registro de una oficina",
+                "description": "Alta con validación de referencias, coherencia geográfica (RN-004) y jerarquía opcional acíclica (RN-003). Toda escritura aterriza en la bitácora.",
+                "operationId": "officesStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "office_type_id",
+                                    "province_id",
+                                    "municipality_id",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "office_type_id": {
+                                        "description": "Nacional/provincial/municipal (catálogo)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "province_id": {
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "municipality_id": {
+                                        "description": "Debe pertenecer a la provincia (RN-004)",
+                                        "type": "integer",
+                                        "example": 42
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Calle Martí #100, Holguín"
+                                    },
+                                    "parent_office_id": {
+                                        "description": "Oficina superior (RN-003: sin ciclos)",
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Oficina registrada con autoría estampada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Office"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/offices/tree": {
+            "get": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Árbol de la jerarquía de oficinas",
+                "description": "Jerarquía completa como árbol anidado (RF-ENT-005) con profundidad máxima de 5 niveles y el corte anunciado (deeper=true). El conteo de expedientes tramitados por oficina se incorpora con el módulo PensionCases (F3, ADR-22).",
+                "operationId": "officesTree",
+                "responses": {
+                    "200": {
+                        "description": "Árbol de jerarquía (nodos raíz en orden de id)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "format": "int64"
+                                                    },
+                                                    "address": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "children": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "deeper": {
+                                                        "description": "Presente solo en nodos cortados al nivel máximo",
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/offices/{id}": {
+            "get": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Detalle de una oficina",
+                "description": "Devuelve la oficina activa con ese id (las desactivadas responden 404).",
+                "operationId": "officesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Oficina",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Office"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Oficina inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Desactivación de una oficina",
+                "description": "Borrado lógico auditado. Se rechaza mientras tenga oficinas hijas activas.",
+                "operationId": "officesDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Oficina desactivada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Office deactivated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Oficina inexistente o ya desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Estructura"
+                ],
+                "summary": "Edición de una oficina",
+                "description": "Edición parcial con auditoría de valores previos. Las referencias, la coherencia RN-004 y la aciclicidad RN-003 se revalidan contra el estado resultante.",
+                "operationId": "officesUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "office_type_id": {
+                                        "type": "integer"
+                                    },
+                                    "province_id": {
+                                        "type": "integer"
+                                    },
+                                    "municipality_id": {
+                                        "type": "integer"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "parent_office_id": {
+                                        "description": "null desarraiga la oficina; el nuevo padre no puede cerrar un ciclo (RN-003)",
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Oficina actualizada (valores previos en la bitácora)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Office"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Oficina inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/people": {
             "get": {
                 "tags": [
@@ -2500,6 +4339,214 @@
                 ]
             }
         },
+        "/api/v1/users/{id}/person": {
+            "post": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Vincular una cuenta con una persona del registro único",
+                "description": "Asocia la cuenta a una persona registrada para la trazabilidad de acciones (RF-SEG-004). Idempotente para la misma pareja cuenta-persona (200). La persona ya vinculada a otra cuenta responde 409 con la cuenta dueña; las cuentas desactivadas también reservan a su persona. Requiere el permiso users.manage (Administrador) y queda registrada en la bitácora con el valor previo.",
+                "operationId": "usersLinkPerson",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identificador de la cuenta",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Persona a vincular",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "person_id"
+                                ],
+                                "properties": {
+                                    "person_id": {
+                                        "description": "Identificador de la persona en el registro único",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Vinculación aplicada (o ya vigente: idempotente)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "Sin permiso users.manage",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Cuenta inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not Found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La persona ya pertenece a otra cuenta",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The person is already linked to another user."
+                                        },
+                                        "person_id": {
+                                            "type": "integer",
+                                            "format": "int64",
+                                            "example": 1
+                                        },
+                                        "linked_to_user_id": {
+                                            "description": "Cuenta que actualmente posee a la persona (incluye desactivadas)",
+                                            "type": "integer",
+                                            "format": "int64",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Desvincular la persona de una cuenta",
+                "description": "Elimina la asociación cuenta-persona (RF-SEG-004). Idempotente: desvincular una cuenta sin persona responde 200. Requiere el permiso users.manage (Administrador) y el cambio queda en la bitácora con la persona previa.",
+                "operationId": "usersUnlinkPerson",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identificador de la cuenta",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Asociación eliminada (o inexistente: idempotente)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "Sin permiso users.manage",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Cuenta inexistente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not Found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/general-settings": {
             "get": {
                 "tags": [
@@ -3097,6 +5144,416 @@
                 },
                 "type": "object"
             },
+            "LegalBasis": {
+                "title": "Base legal",
+                "description": "Norma o resolución del corpus legal (RF-LEG-002). La terna tipo+número+año es única e inmutable; el año se deriva de la fecha de emisión (H-11); status se deriva de las fechas al leer, nunca se almacena.",
+                "properties": {
+                    "id": {
+                        "description": "Legal basis projection (RF-LEG-002..004): the tern identity with\nthe derived year, the date window and the status DERIVED at read\ntime against the Shared Clock — the same convention as the derived\nflags of People and signatures. The clock resolves through the\ncontainer here because JsonResource instances are\nframework-built; the port stays the single time source (tests may\nswap the binding to freeze time).",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "type": {
+                        "description": "Tipo de base legal (catálogo)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "LEY"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Ley"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "number": {
+                        "description": "Número del documento; con tipo y año forma la terna única",
+                        "type": "string",
+                        "example": "128"
+                    },
+                    "issue_date": {
+                        "description": "Fecha de emisión; inmutable (de ella deriva el año)",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2019-07-16"
+                    },
+                    "effective_date": {
+                        "description": "Puesta en vigor (≥ issue_date, RN-006)",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2019-08-01"
+                    },
+                    "derogation_date": {
+                        "description": "Derogación (≥ effective_date, RN-006); null = vigente hasta nueva orden",
+                        "type": "string",
+                        "format": "date",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "organization": {
+                        "description": "Organismo emisor (catálogo)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "MTSS"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Ministerio de Trabajo y Seguridad Social"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "year": {
+                        "description": "Derivado de issue_date (H-11); nunca viaja en el alta",
+                        "type": "integer",
+                        "example": 2019
+                    },
+                    "reference": {
+                        "type": "string",
+                        "example": "Gaceta Oficial Ordinaria No. 45 de 2019",
+                        "nullable": true
+                    },
+                    "status": {
+                        "description": "Derivado de las fechas al momento de la lectura",
+                        "type": "string",
+                        "example": "effective",
+                        "enum": [
+                            "effective",
+                            "derogated",
+                            "future"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AuthorizedSignature": {
+                "title": "Firma autorizada",
+                "description": "Firma autorizada de una entidad (RF-ENT-003). La terna entidad+persona+cargo es única y queda reservada por el historial de revocación; status se deriva de la ventana de vigencia al leer, nunca se almacena.",
+                "properties": {
+                    "id": {
+                        "description": "Authorized signature projection (RF-ENT-003): the tern with its\nnested references, the optional validity window and the status\nDERIVED at read time from the window against the Shared Clock —\nthe same convention as the derived deceased flag of People. The\nclock resolves through the container here because JsonResource\ninstances are framework-built; the port stays the single time\nsource (tests may swap the binding to freeze time).",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 9
+                    },
+                    "entity": {
+                        "description": "Entidad que autoriza",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "ENT-0001"
+                            },
+                            "tax_id_number": {
+                                "type": "string",
+                                "example": "11000012345"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "person": {
+                        "description": "Persona autorizada (resumen del registro único)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 5
+                            },
+                            "identity_number": {
+                                "type": "string",
+                                "example": "18506150012"
+                            },
+                            "full_name": {
+                                "type": "string",
+                                "example": "Juan Carlos Pérez Gómez"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "position": {
+                        "description": "Cargo en que firma",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 2
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Director General"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "valid_from": {
+                        "description": "Inicio de vigencia opcional; null = vigente desde siempre",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2020-01-01",
+                        "nullable": true
+                    },
+                    "valid_to": {
+                        "description": "Fin de vigencia opcional (≥ valid_from, RN-006); null = hasta nueva orden",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2030-12-31",
+                        "nullable": true
+                    },
+                    "status": {
+                        "description": "Derivado de la ventana al momento de la lectura",
+                        "type": "string",
+                        "example": "active",
+                        "enum": [
+                            "active",
+                            "future",
+                            "expired"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "Entity": {
+                "title": "Entidad",
+                "description": "Entidad empleadora / centro de trabajo (RF-ENT-001). Código y NIT únicos e inmutables; la jerarquía (parent) es acíclica (RN-003) y la pareja municipio-provincia coherente (RN-04).",
+                "properties": {
+                    "id": {
+                        "description": "Entity projection (RF-ENT-001/005): the natural keys, contact\ndata, directors and the direct parent summary. The directors\nreference the People registry by id — person details belong to the\nPeople module surface.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "code": {
+                        "description": "Código único; queda reservado tras desactivar",
+                        "type": "string",
+                        "example": "ENT-0001"
+                    },
+                    "tax_id_number": {
+                        "description": "NIT único e inmutable",
+                        "type": "string",
+                        "example": "11000012345"
+                    },
+                    "organization": {
+                        "description": "Organismo de pertenencia (catálogo)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "MTSS"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Ministerio de Trabajo y Seguridad Social"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "province": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 12
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "12"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Holguín"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "municipality": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 42
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "07"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Holguín"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": {
+                        "description": "Tipo de entidad (catálogo)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "EMP"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Empresa"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Calle 1 #2, Holguín"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "024 461234",
+                        "nullable": true
+                    },
+                    "fax": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "contacto@ent.gob.cu",
+                        "nullable": true
+                    },
+                    "director_person_id": {
+                        "description": "Director general (persona registrada, RF-ENT-001)",
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "economic_director_person_id": {
+                        "description": "Director económico (persona registrada)",
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "parent_entity_id": {
+                        "description": "Entidad superior (jerarquía acíclica RN-003)",
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "parent": {
+                        "description": "Resumen de la entidad superior",
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "social_purpose": {
+                        "type": "string",
+                        "example": "Servicios técnicos especializados"
+                    }
+                },
+                "type": "object"
+            },
+            "Office": {
+                "title": "Oficina",
+                "description": "Oficina del Ministerio (RF-ENT-002). La pareja municipio-provincia es coherente (RN-04) y la jerarquía (parent) acíclica (RN-003).",
+                "properties": {
+                    "id": {
+                        "description": "Office projection (RF-ENT-002/005): geographic scope, type and the\ndirect parent summary. Offices carry no natural key.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "type": {
+                        "description": "Tipo de oficina (nacional/provincial/municipal)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "NAC"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Nacional"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "province": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 12
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "12"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Holguín"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "municipality": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 42
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "07"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Holguín"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Calle Martí #100, Holguín"
+                    },
+                    "parent_office_id": {
+                        "description": "Oficina superior (jerarquía acíclica RN-003)",
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "parent": {
+                        "description": "Resumen de la oficina superior",
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "Person": {
                 "title": "Persona",
                 "description": "Persona del registro único del SGP (RF-PER-001). deceased se deriva de death_date: el fallecimiento es una fecha, estar fallecido es estado derivado, nunca una columna.",
@@ -3257,6 +5714,34 @@
                 },
                 "type": "object"
             },
+            "LinkedPerson": {
+                "title": "Persona vinculada",
+                "description": "Resumen de la persona del registro único vinculada a una cuenta (RF-SEG-004). deceased se deriva de death_date.",
+                "properties": {
+                    "id": {
+                        "description": "Linked person summary (S3.5, RF-SEG-004): the projection /auth/me\nand the user responses carry so consumers know the natural person\nbehind the account. Deliberately minimal: identity, display name\nand the derived life state; anything richer belongs to the People\nendpoints.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "identity_number": {
+                        "description": "Carné de identidad de la persona vinculada (RN-001)",
+                        "type": "string",
+                        "example": "18506150012"
+                    },
+                    "full_name": {
+                        "description": "Nombre de visualización compuesto de los cuatro campos de nombre",
+                        "type": "string",
+                        "example": "Juan Carlos Pérez Gómez"
+                    },
+                    "deceased": {
+                        "description": "Derivado: death_date no nula; una persona fallecida no puede iniciar trámites nuevos (RF-SEG-003)",
+                        "type": "boolean",
+                        "example": false
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "title": "Usuario",
                 "description": "Usuario del sistema SGP con sus roles y permisos efectivos (RF-SEG-002).",
@@ -3290,6 +5775,15 @@
                             "type": "string",
                             "example": "people.create"
                         }
+                    },
+                    "person": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LinkedPerson"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Persona del registro único vinculada a la cuenta (RF-SEG-004); null mientras no exista asociación"
                     }
                 },
                 "type": "object"
@@ -3458,6 +5952,18 @@
         {
             "name": "Personas",
             "description": "Registro único de personas: alta con control de duplicados, edición auditada, fallecimiento y búsqueda (RF-PER-001..005)"
+        },
+        {
+            "name": "Usuarios",
+            "description": "Cuentas de usuario: vinculación con personas del registro único para la trazabilidad de acciones (RF-SEG-004)"
+        },
+        {
+            "name": "Estructura",
+            "description": "Estructura organizacional: entidades, oficinas, jerarquías acíclicas (RN-003), firmas autorizadas y árbol de consulta (RF-ENT-001..005)"
+        },
+        {
+            "name": "Base legal",
+            "description": "Corpus legal: bases con terna tipo-número-año única, año derivado de la emisión (H-11), vigencias derivadas (RN-006) y consulta documental (RF-LEG-001..004)"
         }
     ]
 }
