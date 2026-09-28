@@ -24,6 +24,11 @@ import agencies_esCU from '@/features/agencies/i18n/locales/es-CU/agencies.json'
 import agencies_esES from '@/features/agencies/i18n/locales/es-ES/agencies.json';
 import agencies_enUS from '@/features/agencies/i18n/locales/en-US/agencies.json';
 
+// Feature: people
+import people_esCU from '@/features/people/i18n/locales/es-CU/people.json';
+import people_esES from '@/features/people/i18n/locales/es-ES/people.json';
+import people_enUS from '@/features/people/i18n/locales/en-US/people.json';
+
 // Feature: settings
 import settings_esCU from '@/features/settings/i18n/locales/es-CU/settings.json';
 import settings_esES from '@/features/settings/i18n/locales/es-ES/settings.json';
@@ -51,6 +56,7 @@ void i18n
         municipalities: municipalities_esCU,
         agencies: agencies_esCU,
         settings: settings_esCU,
+        people: people_esCU,
       },
       'es-ES': {
         common: common_esES,
@@ -59,6 +65,7 @@ void i18n
         municipalities: municipalities_esES,
         agencies: agencies_esES,
         settings: settings_esES,
+        people: people_esES,
       },
       'en-US': {
         common: common_enUS,
@@ -67,13 +74,14 @@ void i18n
         municipalities: municipalities_enUS,
         agencies: agencies_enUS,
         settings: settings_enUS,
+        people: people_enUS,
       },
     },
     // En tests: forzar es-CU. En dev/prod: usar detector.
     lng: IS_TEST_ENV ? DEFAULT_LANGUAGE : undefined,
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: [...SUPPORTED_LANGUAGES],
-    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings'],
+    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings', 'people'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,

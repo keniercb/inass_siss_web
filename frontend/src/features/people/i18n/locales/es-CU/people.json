@@ -1,0 +1,116 @@
+{
+  "list": {
+    "title": "Personas",
+    "description": "Maestro de personas del registro único del SGP",
+    "new": "Nueva persona",
+    "search_placeholder": "Buscar por CI (11 dígitos) o por nombre…",
+    "empty": "No hay personas para los filtros seleccionados",
+    "filter": {
+      "all": "Todos",
+      "alive": "Vivos",
+      "deceased": "Fallecidos"
+    },
+    "columns": {
+      "ci": "Carné de identidad",
+      "name": "Nombre completo",
+      "sex": "Sexo",
+      "sex_male": "M",
+      "sex_female": "F",
+      "birth_date": "Fecha de nacimiento",
+      "status": "Estado"
+    },
+    "status": {
+      "alive": "Vivo",
+      "deceased": "Fallecido"
+    }
+  },
+  "create": {
+    "title": "Registrar persona",
+    "description": "Complete los datos de la nueva persona",
+    "success": "Persona creada correctamente",
+    "error": "Ocurrió un error al crear la persona",
+    "duplicate": "Ya existe una persona con ese número de identidad"
+  },
+  "edit": {
+    "title": "Editar persona",
+    "description": "Modifique los datos de la persona. El CI no puede modificarse."
+  },
+  "update": {
+    "success": "Persona actualizada correctamente",
+    "error": "Ocurrió un error al actualizar la persona",
+    "conflict": "Otro usuario ha modificado la persona. Recargue y reintente."
+  },
+  "delete": {
+    "title": "Desactivar persona",
+    "description": "Confirme la desactivación de la persona",
+    "confirm": "Esta acción desactivará a la persona lógicamente. Si tiene expedientes o pensiones activas, no se podrá desactivar.",
+    "confirm_button": "Desactivar",
+    "success": "Persona desactivada correctamente",
+    "error": "Ocurrió un error al desactivar la persona",
+    "has_references": "No se puede desactivar: hay expedientes o pensiones que referencian a esta persona"
+  },
+  "death": {
+    "title": "Registrar fallecimiento",
+    "description": "Indique la fecha de fallecimiento de la persona",
+    "confirm": "Registrar fallecimiento",
+    "success": "Fallecimiento registrado correctamente",
+    "error": "Ocurrió un error al registrar el fallecimiento",
+    "already_deceased": "La persona ya está registrada como fallecida",
+    "already_deceased_message": "Esta persona ya está registrada como fallecida.",
+    "has_pension_warning": "Si la persona tiene pensión activa, proceda a la baja del pensionado en el módulo correspondiente."
+  },
+  "form": {
+    "identity_number": "Número de identidad (CI)",
+    "identity_number_help": "11 dígitos. El dígito verificador se calcula automáticamente por el backend.",
+    "first_name": "Primer nombre",
+    "middle_name": "Segundo nombre",
+    "first_surname": "Primer apellido",
+    "second_surname": "Segundo apellido",
+    "sex": "Sexo",
+    "sex_male": "Masculino",
+    "sex_female": "Femenino",
+    "race": "Raza",
+    "address": "Dirección",
+    "birth_date": "Fecha de nacimiento",
+    "father_name": "Nombre del padre",
+    "mother_name": "Nombre de la madre",
+    "citizen_card_id": "Ficha única de ciudadano",
+    "citizen_card_id_help": "Opcional y único. Identificador adicional del ciudadano.",
+    "death_date": "Fecha de fallecimiento"
+  },
+  "detail": {
+    "back_to_list": "Volver al listado",
+    "register_death": "Registrar fallecimiento",
+    "deceased_banner": "Persona fallecida",
+    "death_date": "Fecha de fallecimiento",
+    "not_found": "Persona no encontrada",
+    "tabs": {
+      "data": "Datos personales",
+      "cases": "Expedientes",
+      "pensioner": "Pensionado",
+      "audit": "Auditoría"
+    },
+    "tabs_empty": {
+      "cases": "Sin expedientes",
+      "cases_description": "Esta persona no tiene expedientes de pensión asociados aún.",
+      "pensioner": "Sin pensionado",
+      "pensioner_description": "Esta persona no es pensionada actualmente.",
+      "audit": "Sin auditoría",
+      "audit_description": "No hay entradas de auditoría para esta persona."
+    },
+    "fields": {
+      "identity_number": "Carné de identidad",
+      "citizen_card_id": "Ficha única de ciudadano",
+      "full_name": "Nombre completo",
+      "sex": "Sexo",
+      "sex_male": "Masculino",
+      "sex_female": "Femenino",
+      "birth_date": "Fecha de nacimiento",
+      "birth_date_from_ci": "Fecha de nacimiento (del CI)",
+      "address": "Dirección",
+      "father_name": "Nombre del padre",
+      "mother_name": "Nombre de la madre",
+      "death_date": "Fecha de fallecimiento"
+    }
+  }
+}

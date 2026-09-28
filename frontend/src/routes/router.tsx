@@ -11,6 +11,8 @@ import { CatalogListPage } from '@/features/catalogs/pages/CatalogListPage';
 import { MunicipalitiesListPage } from '@/features/municipalities/pages/MunicipalitiesListPage';
 import { AgenciesListPage } from '@/features/agencies/pages/AgenciesListPage';
 import { GeneralSettingsListPage } from '@/features/settings/pages/GeneralSettingsListPage';
+import { PeopleListPage } from '@/features/people/pages/PeopleListPage';
+import { PersonDetailPage } from '@/features/people/pages/PersonDetailPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -81,11 +83,15 @@ export const router = createBrowserRouter([
         path: 'personas',
         element: (
           <ProtectedRoute permiso="people.view">
-            <ModulePlaceholder
-              title="Personas"
-              description="Maestro de personas del SGP"
-              sprint="FE-S3"
-            />
+            <PeopleListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'personas/:id',
+        element: (
+          <ProtectedRoute permiso="people.view">
+            <PersonDetailPage />
           </ProtectedRoute>
         ),
       },
