@@ -119,7 +119,9 @@ export function ResourceListPage<
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t('list.title')}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">
+            {config.title ?? t('list.title')}
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">{t('list.description')}</p>
         </div>
         {canCreate && (
@@ -186,6 +188,9 @@ export function ResourceListPage<
                 const colId = (col as { id?: string }).id ?? '';
                 const sortable = colId !== 'actions' && colId !== '';
                 const isSorted = sort === colId;
+                // Traducir el header usando i18n: ${resourceKey}:list.columns.${colId}
+                // Si la clave no existe, fallback al colId en capitalizado
+                const headerLabel = t(`list.columns.${colId}`, colId);
                 return (
                   <th
                     key={colId || Math.random().toString()}
@@ -196,7 +201,7 @@ export function ResourceListPage<
                         onClick={() => handleSort(colId)}
                         className="flex items-center gap-1 hover:text-foreground"
                       >
-                        {colId}
+                        {headerLabel}
                         {isSorted ? (
                           order === 'asc' ? (
                             <ArrowUp className="w-3 h-3" />
@@ -208,7 +213,7 @@ export function ResourceListPage<
                         )}
                       </button>
                     ) : (
-                      <span>{colId || ''}</span>
+                      <span>{headerLabel}</span>
                     )}
                   </th>
                 );

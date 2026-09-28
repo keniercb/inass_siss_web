@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { components } from '@/types/api';
 import type { CrudConfig } from '@/types/crud';
 import type { CatalogType } from './catalog-types';
+import { CATALOG_TYPE_LABELS } from './catalog-types';
 
 // Tipo del recurso desde el spec OpenAPI
 type CatalogItem = components['schemas']['CatalogItem'];
@@ -87,11 +88,16 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
  */
 export function getCatalogConfig(type: CatalogType): CrudConfig<CatalogItem, unknown, unknown> {
   const schema = schemasByType[type] ?? baseSchema;
+  // Etiqueta legible del catálogo (español por defecto; el componente puede
+  // re-traducir según el idioma activo si se pasa un i18n key en su lugar)
+  const labels = CATALOG_TYPE_LABELS[type];
 
   return {
     resource: 'catalogs',
     resourceKey: 'catalogs',
     permisoPrefix: 'catalogs',
+    // Título dinámico: usa la etiqueta del catálogo (no el genérico "Catálogo")
+    title: labels.es,
     endpoints: {
       list: '/catalogs/:type',
       create: '/catalogs/:type',

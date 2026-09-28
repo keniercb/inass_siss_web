@@ -10,6 +10,9 @@ import {
   ShieldCheck,
   Library,
   Settings,
+  FolderOpen,
+  MapPin,
+  Banknote,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -18,7 +21,31 @@ export interface SidebarItem {
   path: string;
   icon: LucideIcon;
   permiso: string;
+  /** Sub-items para menús colapsables (ej. Catálogos con 16 tipos) */
+  children?: SidebarItem[];
 }
+
+// Sub-menú de catálogos: 16 tipos uniformes + municipios + agencias
+const catalogChildren: SidebarItem[] = [
+  { label: 'Provincias', path: '/catalogos/provinces', icon: MapPin, permiso: 'catalogs.view' },
+  { label: 'Tipos de agencia', path: '/catalogos/agency-types', icon: Banknote, permiso: 'catalogs.view' },
+  { label: 'Organismos', path: '/catalogos/organizations', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Tipos de entidad', path: '/catalogos/entity-types', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Tipos de oficina', path: '/catalogos/office-types', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Tipos de base legal', path: '/catalogos/legal-basis-types', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Categorías científicas', path: '/catalogos/scientific-categories', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Niveles educacionales', path: '/catalogos/educational-levels', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Categorías ocupacionales', path: '/catalogos/occupational-categories', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Tipos de pensión', path: '/catalogos/pension-types', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Tipos de beneficiario', path: '/catalogos/beneficiary-types', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Razas', path: '/catalogos/races', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Cargos', path: '/catalogos/positions', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Régimenes de pensión', path: '/catalogos/pension-regimes', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Tipos de pago', path: '/catalogos/payment-types', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Conceptos de ingreso', path: '/catalogos/income-concepts', icon: FolderOpen, permiso: 'catalogs.view' },
+  { label: 'Municipios', path: '/catalogos/municipios', icon: MapPin, permiso: 'catalogs.view' },
+  { label: 'Agencias bancarias', path: '/catalogos/agencias', icon: Banknote, permiso: 'catalogs.view' },
+];
 
 // Definición de entradas del sidebar por permiso (sección 2.2 matriz rol×módulo×acción)
 export const sidebarConfig: SidebarItem[] = [
@@ -81,6 +108,7 @@ export const sidebarConfig: SidebarItem[] = [
     path: '/catalogos',
     icon: Library,
     permiso: 'catalogs.view',
+    children: catalogChildren,
   },
   {
     label: 'Configuración general',

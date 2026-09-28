@@ -92,6 +92,9 @@ export interface CrudConfig<TResource, TCreateInput, TUpdateInput> {
   resourceKey: string; // i18n namespace, e.g. 'catalogs'
   permisoPrefix: string; // 'catalogs' | 'people' | ...
 
+  /** Título personalizado (override de t('list.title')). Si no se setea, usa i18n. */
+  title?: string;
+
   /** Endpoints (aceptan placeholders :type que se reemplazan por context) */
   endpoints: CrudEndpoints;
 

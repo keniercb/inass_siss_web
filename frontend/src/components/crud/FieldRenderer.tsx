@@ -15,6 +15,11 @@ interface FieldRendererProps<TFieldValues extends FieldValues> {
 /**
  * Renderiza un campo del formulario según su tipo (schema-driven).
  * Cada tipo tiene su implementación específica.
+ *
+ * IMPORTANTE: `field.label`, `field.help` y `field.placeholder` pueden ser:
+ *  - Una clave i18n completa con namespace (ej. "catalogs:form.code")
+ *  - Un texto literal (fallback si la clave no existe)
+ * Se traducen automáticamente con t().
  */
 export function FieldRenderer<TFieldValues extends FieldValues>({
   field,
@@ -22,7 +27,10 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
   disabled,
   context,
 }: FieldRendererProps<TFieldValues>) {
-  const { t: tc } = useTranslation('common');
+  // useTranslation() sin namespace → permite usar claves con namespace completo
+  // (ej. t('catalogs:form.code') o t('common:actions.select'))
+  const [t] = useTranslation();
+  const tc = t; // alias para claves comunes
 
   // Verificar condición (ej. months_per_year solo si context.:type === 'pension-regimes')
   if (field.condition && !field.condition(context)) {
@@ -32,9 +40,14 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
   const isDisabled = disabled || field.disabledOnEdit;
   const error = form.formState.errors[field.name as keyof TFieldValues];
 
+  // Traducir label/help/placeholder (acepta claves i18n con namespace o textos literales)
+  const labelText = field.label ? t(field.label) : '';
+  const helpText = field.help ? t(field.help) : undefined;
+  const placeholderText = field.placeholder ? t(field.placeholder) : undefined;
+
   const label = (
     <label htmlFor={field.name} className="block text-sm font-medium text-foreground mb-1">
-      {field.label}
+      {labelText}
       {field.required && <span className="text-destructive ml-1">*</span>}
     </label>
   );
@@ -45,8 +58,8 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
     </p>
   ) : null;
 
-  const helpText = field.help ? (
-    <p className="text-xs text-muted-foreground mt-1">{field.help}</p>
+  const help = helpText ? (
+    <p className="text-xs text-muted-foreground mt-1">{helpText}</p>
   ) : null;
 
   switch (field.type) {
@@ -57,13 +70,13 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
           <Input
             id={field.name}
             type="text"
-            placeholder={field.placeholder}
+            placeholder={placeholderText}
             disabled={isDisabled}
             error={!!error}
             {...form.register(field.name as never)}
           />
           {errorMessage}
-          {helpText}
+          {help}
         </div>
       );
 
@@ -73,7 +86,7 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
           {label}
           <textarea
             id={field.name}
-            placeholder={field.placeholder}
+            placeholder={placeholderText}
             disabled={isDisabled}
             className={cn(
               'flex min-h-[80px] w-full rounded-md border bg-white px-3 py-2 text-sm',
@@ -85,7 +98,7 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
             {...form.register(field.name as never)}
           />
           {errorMessage}
-          {helpText}
+          {help}
         </div>
       );
 
@@ -96,7 +109,7 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
           <Input
             id={field.name}
             type="number"
-            placeholder={field.placeholder}
+            placeholder={placeholderText}
             disabled={isDisabled}
             error={!!error}
             min={field.min}
@@ -105,7 +118,7 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
             {...form.register(field.name as never, { valueAsNumber: true })}
           />
           {errorMessage}
-          {helpText}
+          {help}
         </div>
       );
 
@@ -120,10 +133,10 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
             {...form.register(field.name as never)}
           />
           <label htmlFor={field.name} className="text-sm font-medium text-foreground">
-            {field.label}
+            {labelText}
           </label>
           {errorMessage}
-          {helpText}
+          {help}
         </div>
       );
 
@@ -139,7 +152,7 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
             {...form.register(field.name as never)}
           />
           {errorMessage}
-          {helpText}
+          {help}
         </div>
       );
 
@@ -158,7 +171,7 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
             )}
             {...form.register(field.name as never)}
           >
-            <option value="">{tc('actions.select')}</option>
+            <option value="">{tc('common:actions.select')}</option>
             {field.options?.map((opt) => (
               <option key={String(opt.value)} value={opt.value}>
                 {opt.label}
@@ -166,7 +179,7 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
             ))}
           </select>
           {errorMessage}
-          {helpText}
+          {help}
         </div>
       );
 
@@ -178,7 +191,8 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
           disabled={isDisabled}
           label={label}
           errorMessage={errorMessage}
-          helpText={helpText}
+          helpText={help}
+          placeholderText={placeholderText ?? tc('common:actions.select')}
         />
       );
 
@@ -195,6 +209,7 @@ function AsyncSelectField<TFieldValues extends FieldValues>({
   label,
   errorMessage,
   helpText,
+  placeholderText,
 }: {
   field: FieldDef<unknown>;
   form: UseFormReturn<TFieldValues>;
@@ -202,10 +217,11 @@ function AsyncSelectField<TFieldValues extends FieldValues>({
   label: React.ReactNode;
   errorMessage: React.ReactNode;
   helpText: React.ReactNode;
+  placeholderText: string;
 }) {
   const [options, setOptions] = useState<Array<{ value: string | number; label: string }>>([]);
   const [loading, setLoading] = useState(false);
-  const { t: tc } = useTranslation('common');
+  const [t] = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -241,7 +257,9 @@ function AsyncSelectField<TFieldValues extends FieldValues>({
         )}
         {...form.register(field.name as never)}
       >
-        <option value="">{loading ? `${tc('status.loading')}…` : tc('actions.select')}</option>
+        <option value="">
+          {loading ? `${t('common:status.loading')}…` : placeholderText}
+        </option>
         {options.map((opt) => (
           <option key={String(opt.value)} value={opt.value}>
             {opt.label}
@@ -253,3 +271,4 @@ function AsyncSelectField<TFieldValues extends FieldValues>({
     </div>
   );
 }
+
