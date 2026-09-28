@@ -25,8 +25,9 @@
   },
   "signatures": {
     "list": { "columns": { "person": "Persona", "position": "Cargo", "validity": "Vigencia" } },
-    "create": { "success": "Firma autorizada creada correctamente", "error": "Ocurrió un error al crear la firma" },
-    "delete": { "success": "Firma eliminada correctamente", "error": "Ocurrió un error al eliminar la firma" }
+    "create": { "title": "Nueva firma autorizada", "description": "Vincule una persona con un cargo y vigencia", "button": "Nueva firma", "success": "Firma autorizada creada correctamente", "error": "Ocurrió un error al crear la firma" },
+    "delete": { "success": "Firma eliminada correctamente", "error": "Ocurrió un error al eliminar la firma" },
+    "form": { "person": "Persona", "position": "Cargo", "valid_from": "Vigente desde", "valid_to": "Vigente hasta" }
   },
   "agencies": { "form": { "select_province_first": "Seleccione provincia primero" } }
 }

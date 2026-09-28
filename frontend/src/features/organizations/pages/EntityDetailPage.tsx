@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Edit, Building2, FileText, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, Edit, Building2, FileText, ShieldCheck, Plus, Trash2 } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { useEntity, useEntitySignatures } from '../api/queries';
 import { useDeleteSignature } from '../api/mutations';
 import { Button } from '@/components/ui/Button';
 import { EntityFormModal } from '../components/EntityFormModal';
+import { AuthorizedSignatureFormModal } from '../components/AuthorizedSignatureFormModal';
 import { cn } from '@/lib/utils';
 
 type Tab = 'data' | 'signatures' | 'hierarchy';
@@ -19,6 +20,7 @@ export function EntityDetailPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('data');
   const [editOpen, setEditOpen] = useState(false);
+  const [sigFormOpen, setSigFormOpen] = useState(false);
 
   const { data: entity, isLoading, isError } = useEntity(id);
   const { data: signatures } = useEntitySignatures(id);
@@ -67,6 +69,11 @@ export function EntityDetailPage() {
 
       {activeTab === 'signatures' && (
         <div>
+          {canManage && (
+            <div className="mb-4">
+              <Button onClick={() => setSigFormOpen(true)}><Plus className="w-4 h-4" />{t('signatures.create.button')}</Button>
+            </div>
+          )}
           {signatures && signatures.length > 0 ? (
             <table className="w-full text-sm">
               <thead><tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
@@ -95,11 +102,10 @@ export function EntityDetailPage() {
       )}
 
       {editOpen && <EntityFormModal entity={entity} onClose={() => setEditOpen(false)} />}
+      {sigFormOpen && <AuthorizedSignatureFormModal entityId={entity.id!} onClose={() => setSigFormOpen(false)} />}
     </div>
   );
 }
-
-import { Trash2 } from 'lucide-react';
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return <button onClick={onClick} className={cn('flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', active ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>{children}</button>;

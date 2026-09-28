@@ -5,6 +5,7 @@ import { municipalitiesHandlers } from './municipalities';
 import { agenciesHandlers } from './agencies';
 import { peopleHandlers } from './people';
 import { organizationsHandlers, legalBasisHandlers } from './organizations';
+import { usersHandlers } from './users';
 
 // Handlers MSW de todos los módulos
 export const handlers = [
@@ -16,4 +17,5 @@ export const handlers = [
   ...peopleHandlers,
   ...organizationsHandlers,
   ...legalBasisHandlers,
+  ...usersHandlers,
 ];

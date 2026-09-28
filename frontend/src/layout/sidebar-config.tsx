@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Library,
   Settings,
+  UserCog,
   FolderOpen,
   MapPin,
   Banknote,
@@ -115,5 +116,11 @@ export const sidebarConfig: SidebarItem[] = [
     path: '/configuracion-general',
     icon: Settings,
     permiso: 'settings.view',
+  },
+  {
+    label: 'Usuarios',
+    path: '/usuarios',
+    icon: UserCog,
+    permiso: 'users.view',
   },
 ];

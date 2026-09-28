@@ -1,0 +1,20 @@
+{
+  "list": {
+    "title": "Usuarios",
+    "description": "Directorio de cuentas del sistema SGP",
+    "new": "Nuevo usuario",
+    "search_placeholder": "Buscar por nombre o email…",
+    "empty": "No hay usuarios para los filtros seleccionados",
+    "filter": { "all": "Todos", "active": "Activos", "inactive": "Desactivados", "locked": "Bloqueados" },
+    "columns": { "name": "Nombre", "email": "Email", "roles": "Roles", "status": "Estado" },
+    "status": { "active": "Activo", "inactive": "Desactivado", "locked": "Bloqueado" }
+  },
+  "create": { "title": "Crear usuario", "description": "Complete los datos de la nueva cuenta", "success": "Usuario creado correctamente", "error": "Ocurrió un error al crear el usuario", "duplicate": "Ya existe un usuario con ese email" },
+  "edit": { "title": "Editar usuario", "description": "Modifique el nombre y los roles del usuario" },
+  "update": { "success": "Usuario actualizado correctamente", "error": "Ocurrió un error al actualizar el usuario" },
+  "delete": { "title": "Desactivar usuario", "confirm": "Esta acción desactivará la cuenta lógicamente. El usuario no podrá iniciar sesión pero sus datos se conservan.", "confirm_button": "Desactivar", "success": "Usuario desactivado correctamente", "error": "Ocurrió un error al desactivar el usuario" },
+  "restore": { "title": "Reactivar usuario", "success": "Usuario reactivado correctamente", "error": "Ocurrió un error al reactivar el usuario" },
+  "unlock": { "title": "Desbloquear usuario", "success": "Usuario desbloqueado correctamente", "error": "Ocurrió un error al desbloquear el usuario" },
+  "reset_password": { "title": "Restablecer contraseña", "for_user": "Para usuario", "confirm": "Restablecer", "success": "Contraseña restablecida correctamente", "error": "Ocurrió un error al restablecer la contraseña" },
+  "form": { "name": "Nombre", "email": "Email", "password": "Contraseña", "email_immutable": "El email no puede modificarse tras la creación", "roles": "Roles", "roles_required": "Debe asignar al menos un rol", "new_password": "Nueva contraseña", "password_min": "La contraseña debe tener al menos 8 caracteres" }
+}

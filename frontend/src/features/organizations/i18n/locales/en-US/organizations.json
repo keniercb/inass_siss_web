@@ -18,8 +18,9 @@
   },
   "signatures": {
     "list": { "columns": { "person": "Person", "position": "Position", "validity": "Validity" } },
-    "create": { "success": "Authorized signature created successfully", "error": "An error occurred while creating the signature" },
-    "delete": { "success": "Signature deleted successfully", "error": "An error occurred while deleting the signature" }
+    "create": { "title": "New authorized signature", "description": "Link a person with a position and validity period", "button": "New signature", "success": "Authorized signature created successfully", "error": "An error occurred while creating the signature" },
+    "delete": { "success": "Signature deleted successfully", "error": "An error occurred while deleting the signature" },
+    "form": { "person": "Person", "position": "Position", "valid_from": "Valid from", "valid_to": "Valid until" }
   },
   "agencies": { "form": { "select_province_first": "Select province first" } }
 }

@@ -39,6 +39,11 @@ import legalBasis_esCU from '@/features/legal-basis/i18n/locales/es-CU/legal-bas
 import legalBasis_esES from '@/features/legal-basis/i18n/locales/es-ES/legal-basis.json';
 import legalBasis_enUS from '@/features/legal-basis/i18n/locales/en-US/legal-basis.json';
 
+// Feature: users
+import users_esCU from '@/features/users/i18n/locales/es-CU/users.json';
+import users_esES from '@/features/users/i18n/locales/es-ES/users.json';
+import users_enUS from '@/features/users/i18n/locales/en-US/users.json';
+
 // Feature: settings
 import settings_esCU from '@/features/settings/i18n/locales/es-CU/settings.json';
 import settings_esES from '@/features/settings/i18n/locales/es-ES/settings.json';
@@ -64,25 +69,28 @@ void i18n
         municipalities: municipalities_esCU, agencies: agencies_esCU,
         settings: settings_esCU, people: people_esCU,
         organizations: organizations_esCU, 'legal-basis': legalBasis_esCU,
+        users: users_esCU,
       },
       'es-ES': {
         common: common_esES, auth: auth_esES, catalogs: catalogs_esES,
         municipalities: municipalities_esES, agencies: agencies_esES,
         settings: settings_esES, people: people_esES,
         organizations: organizations_esES, 'legal-basis': legalBasis_esES,
+        users: users_esES,
       },
       'en-US': {
         common: common_enUS, auth: auth_enUS, catalogs: catalogs_enUS,
         municipalities: municipalities_enUS, agencies: agencies_enUS,
         settings: settings_enUS, people: people_enUS,
         organizations: organizations_enUS, 'legal-basis': legalBasis_enUS,
+        users: users_enUS,
       },
     },
     // En tests: forzar es-CU. En dev/prod: usar detector.
     lng: IS_TEST_ENV ? DEFAULT_LANGUAGE : undefined,
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: [...SUPPORTED_LANGUAGES],
-    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings', 'people', 'organizations', 'legal-basis'],
+    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings', 'people', 'organizations', 'legal-basis', 'users'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,

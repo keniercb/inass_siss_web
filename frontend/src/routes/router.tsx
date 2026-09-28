@@ -17,6 +17,7 @@ import { EntitiesListPage } from '@/features/organizations/pages/EntitiesListPag
 import { EntityDetailPage } from '@/features/organizations/pages/EntityDetailPage';
 import { OfficesListPage } from '@/features/organizations/pages/OfficesListPage';
 import { LegalBasisListPage } from '@/features/legal-basis/pages/LegalBasisListPage';
+import { UsersListPage } from '@/features/users/pages/UsersListPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -78,6 +79,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute permiso="settings.view">
             <GeneralSettingsListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'usuarios',
+        element: (
+          <ProtectedRoute permiso="users.view">
+            <UsersListPage />
           </ProtectedRoute>
         ),
       },

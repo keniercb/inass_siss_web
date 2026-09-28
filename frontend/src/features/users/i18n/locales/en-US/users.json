@@ -1,0 +1,20 @@
+{
+  "list": {
+    "title": "Users",
+    "description": "SGP system account directory",
+    "new": "New user",
+    "search_placeholder": "Search by name or email…",
+    "empty": "No users for the selected filters",
+    "filter": { "all": "All", "active": "Active", "inactive": "Inactive", "locked": "Locked" },
+    "columns": { "name": "Name", "email": "Email", "roles": "Roles", "status": "Status" },
+    "status": { "active": "Active", "inactive": "Inactive", "locked": "Locked" }
+  },
+  "create": { "title": "Create user", "description": "Fill in the data for the new account", "success": "User created successfully", "error": "An error occurred while creating the user", "duplicate": "A user with that email already exists" },
+  "edit": { "title": "Edit user", "description": "Modify the user's name and roles" },
+  "update": { "success": "User updated successfully", "error": "An error occurred while updating the user" },
+  "delete": { "title": "Deactivate user", "confirm": "This action will logically deactivate the account. The user will not be able to log in but their data is preserved.", "confirm_button": "Deactivate", "success": "User deactivated successfully", "error": "An error occurred while deactivating the user" },
+  "restore": { "title": "Restore user", "success": "User restored successfully", "error": "An error occurred while restoring the user" },
+  "unlock": { "title": "Unlock user", "success": "User unlocked successfully", "error": "An error occurred while unlocking the user" },
+  "reset_password": { "title": "Reset password", "for_user": "For user", "confirm": "Reset", "success": "Password reset successfully", "error": "An error occurred while resetting the password" },
+  "form": { "name": "Name", "email": "Email", "password": "Password", "email_immutable": "The email cannot be modified after creation", "roles": "Roles", "roles_required": "At least one role must be assigned", "new_password": "New password", "password_min": "The password must be at least 8 characters" }
+}

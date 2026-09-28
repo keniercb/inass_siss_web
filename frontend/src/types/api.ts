@@ -171,6 +171,254 @@ export interface paths {
         patch: operations["municipalitiesUpdate"];
         trace?: never;
     };
+    "/api/v1/legal-bases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consulta documental del corpus legal
+         * @description Bases legales activas con tipo y organismo emisor (RF-LEG-004): búsqueda por año, tipo, organismo emisor y texto del número o la referencia; el filtro status=effective alimenta el selector de vigentes de la aprobación de expedientes (RF-LEG-003).
+         */
+        get: operations["legalBasesIndex"];
+        put?: never;
+        /**
+         * Registro de una base legal
+         * @description Alta con validación de referencias, orden de fechas RN-006 (puesta en vigor ≥ emisión, derogación ≥ puesta en vigor) y unicidad de la terna tipo+número+año (RF-LEG-002); el año se deriva de la fecha de emisión (H-11) y nunca viaja en la petición. Toda escritura aterriza en la bitácora.
+         */
+        post: operations["legalBasesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal-bases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una base legal
+         * @description Devuelve la base legal activa con ese id (las desactivadas responden 404; su terna sigue reservada).
+         */
+        get: operations["legalBasesShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Desactivación de una base legal
+         * @description Borrado lógico: la base sale de listados y detalle, pero su terna queda reservada y el borrado queda auditado. Futuras referencias de expedientes (F3) bloquearán el borrado físico por FK RESTRICT.
+         */
+        delete: operations["legalBasesDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Edición de una base legal
+         * @description La terna identidad (tipo, número, fecha de emisión) es inmutable (422 si intenta cambiar). La derogación se fija, corrige o limpia aquí — una edición de fecha auditable con valores previos, nunca una acción destructiva. Las fechas resultantes revalidan RN-006.
+         */
+        patch: operations["legalBasesUpdate"];
+        trace?: never;
+    };
+    "/api/v1/authorized-signatures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado paginado de firmas autorizadas
+         * @description Firmas con sus referencias anidadas y el estado derivado de la ventana de vigencia (RF-ENT-003): filtros por entidad, persona, cargo y estado (active/future/expired).
+         */
+        get: operations["signaturesIndex"];
+        put?: never;
+        /**
+         * Registro de una firma autorizada
+         * @description Vincula entidad, persona y cargo (RF-ENT-003): la terna es única y queda reservada por el historial de revocación (422 si ya existe, incluidas las revocadas). La ventana de vigencia es opcional (RN-006: fin ≥ inicio) y el estado se deriva al leer. Toda escritura aterriza en la bitácora.
+         */
+        post: operations["signaturesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/authorized-signatures/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una firma autorizada
+         * @description Devuelve la firma con ese id (las revocadas responden 404: su fila permanece como historial auditable).
+         */
+        get: operations["signaturesShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Revocación de una firma
+         * @description Borrado lógico: la fila queda como historial de la firma (RF-ENT-003) y mantiene la terna reservada — no puede registrarse de nuevo la misma combinación. La revocación aterriza en la bitácora. Futuras referencias (expedientes de F3) bloquearán el borrado físico por FK RESTRICT.
+         */
+        delete: operations["signaturesDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Edición de la ventana de vigencia
+         * @description La terna identifica el registro histórico y no es editable (RF-ENT-003: el versionado de firmas es la propia fila con su ventana). Solo viajan las fechas; la ventana resultante revalida el orden RN-006 y la edición queda auditada con valores previos.
+         */
+        patch: operations["signaturesUpdate"];
+        trace?: never;
+    };
+    "/api/v1/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado paginado de entidades
+         * @description Entidades activas con referencias anidadas (RF-ENT-005): búsqueda por fragmentos de código, NIT u objeto social, y filtros por organismo, provincia, municipio y tipo. Código y NIT quedan reservados tras desactivar.
+         */
+        get: operations["entitiesIndex"];
+        put?: never;
+        /**
+         * Registro de una entidad
+         * @description Alta con validación de referencias, coherencia geográfica (RN-004: el municipio pertenece a la provincia) y unicidad de código y NIT (RF-ENT-001). La jerarquía opcional (entidad superior) se mantiene acíclica (RN-003). Los directores referencian personas registradas. Toda escritura aterriza en la bitácora con valores previos.
+         */
+        post: operations["entitiesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/entities/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Árbol de la jerarquía de entidades
+         * @description Jerarquía completa como árbol anidado (RF-ENT-005), con profundidad máxima de 5 niveles: los nodos cortados al límite exponen deeper=true en lugar de ocultar su subárbol en silencio. El conteo de expedientes por oficina se incorpora con el módulo PensionCases (F3).
+         */
+        get: operations["entitiesTree"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/entities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una entidad
+         * @description Devuelve la entidad activa con ese id (las desactivadas responden 404; su código y NIT siguen reservados).
+         */
+        get: operations["entitiesShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Desactivación de una entidad
+         * @description Borrado lógico: la entidad sale de listados, árbol y detalle, pero su código y NIT quedan reservados y el borrado queda auditado. Se rechaza mientras tenga entidades hijas activas (la jerarquía nunca huérfana un subárbol vivo).
+         */
+        delete: operations["entitiesDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Edición de una entidad
+         * @description Edición parcial con auditoría de valores previos (RF-ENT-002). El código y el NIT son inmutables (422 si intentan cambiar); las referencias, la coherencia RN-004 y la aciclicidad RN-003 se revalidan contra el estado resultante.
+         */
+        patch: operations["entitiesUpdate"];
+        trace?: never;
+    };
+    "/api/v1/offices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado paginado de oficinas
+         * @description Oficinas activas con tipo, provincia y municipio (RF-ENT-002): búsqueda por fragmentos de dirección y filtros por tipo y geografía.
+         */
+        get: operations["officesIndex"];
+        put?: never;
+        /**
+         * Registro de una oficina
+         * @description Alta con validación de referencias, coherencia geográfica (RN-004) y jerarquía opcional acíclica (RN-003). Toda escritura aterriza en la bitácora.
+         */
+        post: operations["officesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/offices/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Árbol de la jerarquía de oficinas
+         * @description Jerarquía completa como árbol anidado (RF-ENT-005) con profundidad máxima de 5 niveles y el corte anunciado (deeper=true). El conteo de expedientes tramitados por oficina se incorpora con el módulo PensionCases (F3, ADR-22).
+         */
+        get: operations["officesTree"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/offices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una oficina
+         * @description Devuelve la oficina activa con ese id (las desactivadas responden 404).
+         */
+        get: operations["officesShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Desactivación de una oficina
+         * @description Borrado lógico auditado. Se rechaza mientras tenga oficinas hijas activas.
+         */
+        delete: operations["officesDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Edición de una oficina
+         * @description Edición parcial con auditoría de valores previos. Las referencias, la coherencia RN-004 y la aciclicidad RN-003 se revalidan contra el estado resultante.
+         */
+        patch: operations["officesUpdate"];
+        trace?: never;
+    };
     "/api/v1/people": {
         parameters: {
             query?: never;
@@ -294,7 +542,7 @@ export interface paths {
         put?: never;
         /**
          * Autenticar credenciales y emitir token
-         * @description Verifica las credenciales y emite un token Bearer (RF-SEG-001). El email desconocido y la contraseña errónea colapsan en el mismo 401 para no revelar cuál falló. Limitado por throttle: 10 intentos por minuto.
+         * @description Verifica las credenciales y emite un token Bearer (RF-SEG-001). El email desconocido, la contraseña errónea y la cuenta bloqueada por intentos fallidos colapsan en el mismo 401 para no revelar cuál falló; una contraseña caducada (política opcional, ADR-24) responde 401 con mensaje de renovación. Limitado por throttle: 10 intentos por minuto.
          */
         post: operations["authLogin"];
         delete?: never;
@@ -338,6 +586,162 @@ export interface paths {
          */
         post: operations["authLogout"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Renovar la propia contraseña
+         * @description Renovación voluntaria (RF-SEG-001 "renovación", ADR-24): verifica la contraseña actual, aplica la política a la nueva y revoca todas las demás sesiones — el token de la solicitud sigue vivo. Una contraseña caducada no puede renovarse aquí (se requiere login previo): un Administrador la restablece con PATCH /users/{id}/password.
+         */
+        post: operations["authChangePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Directorio de cuentas
+         * @description Cuentas paginadas con filtros q (nombre/email), role (rol institucional) y status (active por defecto, inactive desactivadas, all ambas). El estado derivado (locked/locked_until/password_expired) se resuelve al leer (RF-SEC-001). Requiere users.view (Administrador y Auditor, solo lectura).
+         */
+        get: operations["usersIndex"];
+        put?: never;
+        /**
+         * Registrar una cuenta
+         * @description Crea la cuenta con contraseña inicial sujeta a la política de contraseñas (RF-SEC-001) y al menos un rol institucional. El email queda reservado: una cuenta activa o desactivada con esa dirección responde 422. Requiere users.manage (Administrador); la creación queda en la bitácora (contraseña redactada).
+         */
+        post: operations["usersStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una cuenta
+         * @description Devuelve la cuenta activa con ese id (las desactivadas responden 404: su email y persona siguen reservados). Requiere users.view.
+         */
+        get: operations["usersShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Desactivar una cuenta
+         * @description Borrado lógico (RF-AUD-004): la cuenta desactivada reserva su email y persona vinculada, no puede autenticarse (login 401) y pierde todas sus sesiones. Un administrador no puede desactivarse a sí mismo ni al último administrador activo (422). Requiere users.manage; auditeda con los valores previos.
+         */
+        delete: operations["usersDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Editar una cuenta (nombre y roles)
+         * @description Actualiza el nombre y/o la asignación completa de roles. El email es inmutable: enviar uno distinto responde 422. El sistema impide dejarlo sin ningún administrador activo (422). Requiere users.manage; la edición y el cambio de roles quedan en la bitácora con los valores previos.
+         */
+        patch: operations["usersUpdate"];
+        trace?: never;
+    };
+    "/api/v1/users/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivar una cuenta desactivada
+         * @description Restauración exclusiva del Administrador (RF-AUD-004), auditada. Idempotente para una cuenta ya activa (200 sin escritura). Requiere users.manage.
+         */
+        post: operations["usersRestore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Desbloquear una cuenta bloqueada por intentos fallidos
+         * @description Desbloqueo anticipado por el Administrador (RF-SEG-001): limpia el contador y el instante de bloqueo antes de que expire el TTL. Idempotente para una cuenta limpia (200 sin escritura). Requiere users.manage; el desbloqueo queda en la bitácora con el estado previo.
+         */
+        post: operations["usersUnlock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Restablecer la contraseña de una cuenta
+         * @description Restablecimiento por el Administrador (RF-SEG-001): la nueva contraseña se valida contra la política, se renueva la línea base de caducidad, se limpia el bloqueo y se revocan TODAS las sesiones de la cuenta. Requiere users.manage; la escritura queda en la bitácora con la contraseña redactada.
+         */
+        patch: operations["usersResetPassword"];
+        trace?: never;
+    };
+    "/api/v1/users/{id}/person": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vincular una cuenta con una persona del registro único
+         * @description Asocia la cuenta a una persona registrada para la trazabilidad de acciones (RF-SEG-004). Idempotente para la misma pareja cuenta-persona (200). La persona ya vinculada a otra cuenta responde 409 con la cuenta dueña; las cuentas desactivadas también reservan a su persona. Requiere el permiso users.manage (Administrador) y queda registrada en la bitácora con el valor previo.
+         */
+        post: operations["usersLinkPerson"];
+        /**
+         * Desvincular la persona de una cuenta
+         * @description Elimina la asociación cuenta-persona (RF-SEG-004). Idempotente: desvincular una cuenta sin persona responde 200. Requiere el permiso users.manage (Administrador) y el cambio queda en la bitácora con la persona previa.
+         */
+        delete: operations["usersUnlinkPerson"];
         options?: never;
         head?: never;
         patch?: never;
@@ -542,6 +946,307 @@ export interface components {
             updated_at?: string | null;
         };
         /**
+         * Base legal
+         * @description Norma o resolución del corpus legal (RF-LEG-002). La terna tipo+número+año es única e inmutable; el año se deriva de la fecha de emisión (H-11); status se deriva de las fechas al leer, nunca se almacena.
+         */
+        LegalBasis: {
+            /**
+             * Format: int64
+             * @description Legal basis projection (RF-LEG-002..004): the tern identity with
+             *     the derived year, the date window and the status DERIVED at read
+             *     time against the Shared Clock — the same convention as the derived
+             *     flags of People and signatures. The clock resolves through the
+             *     container here because JsonResource instances are
+             *     framework-built; the port stays the single time source (tests may
+             *     swap the binding to freeze time).
+             * @example 3
+             */
+            id?: number;
+            /** @description Tipo de base legal (catálogo) */
+            type?: {
+                /**
+                 * Format: int64
+                 * @example 1
+                 */
+                id?: number;
+                /** @example LEY */
+                code?: string;
+                /** @example Ley */
+                name?: string;
+            };
+            /**
+             * @description Número del documento; con tipo y año forma la terna única
+             * @example 128
+             */
+            number?: string;
+            /**
+             * Format: date
+             * @description Fecha de emisión; inmutable (de ella deriva el año)
+             * @example 2019-07-16
+             */
+            issue_date?: string;
+            /**
+             * Format: date
+             * @description Puesta en vigor (≥ issue_date, RN-006)
+             * @example 2019-08-01
+             */
+            effective_date?: string;
+            /**
+             * Format: date
+             * @description Derogación (≥ effective_date, RN-006); null = vigente hasta nueva orden
+             * @example null
+             */
+            derogation_date?: string | null;
+            /** @description Organismo emisor (catálogo) */
+            organization?: {
+                /**
+                 * Format: int64
+                 * @example 1
+                 */
+                id?: number;
+                /** @example MTSS */
+                code?: string;
+                /** @example Ministerio de Trabajo y Seguridad Social */
+                name?: string;
+            };
+            /**
+             * @description Derivado de issue_date (H-11); nunca viaja en el alta
+             * @example 2019
+             */
+            year?: number;
+            /** @example Gaceta Oficial Ordinaria No. 45 de 2019 */
+            reference?: string | null;
+            /**
+             * @description Derivado de las fechas al momento de la lectura
+             * @example effective
+             * @enum {string}
+             */
+            status?: "effective" | "derogated" | "future";
+        };
+        /**
+         * Firma autorizada
+         * @description Firma autorizada de una entidad (RF-ENT-003). La terna entidad+persona+cargo es única y queda reservada por el historial de revocación; status se deriva de la ventana de vigencia al leer, nunca se almacena.
+         */
+        AuthorizedSignature: {
+            /**
+             * Format: int64
+             * @description Authorized signature projection (RF-ENT-003): the tern with its
+             *     nested references, the optional validity window and the status
+             *     DERIVED at read time from the window against the Shared Clock —
+             *     the same convention as the derived deceased flag of People. The
+             *     clock resolves through the container here because JsonResource
+             *     instances are framework-built; the port stays the single time
+             *     source (tests may swap the binding to freeze time).
+             * @example 9
+             */
+            id?: number;
+            /** @description Entidad que autoriza */
+            entity?: {
+                /**
+                 * Format: int64
+                 * @example 1
+                 */
+                id?: number;
+                /** @example ENT-0001 */
+                code?: string;
+                /** @example 11000012345 */
+                tax_id_number?: string;
+            };
+            /** @description Persona autorizada (resumen del registro único) */
+            person?: {
+                /**
+                 * Format: int64
+                 * @example 5
+                 */
+                id?: number;
+                /** @example 18506150012 */
+                identity_number?: string;
+                /** @example Juan Carlos Pérez Gómez */
+                full_name?: string;
+            };
+            /** @description Cargo en que firma */
+            position?: {
+                /**
+                 * Format: int64
+                 * @example 2
+                 */
+                id?: number;
+                /** @example Director General */
+                name?: string;
+            };
+            /**
+             * Format: date
+             * @description Inicio de vigencia opcional; null = vigente desde siempre
+             * @example 2020-01-01
+             */
+            valid_from?: string | null;
+            /**
+             * Format: date
+             * @description Fin de vigencia opcional (≥ valid_from, RN-006); null = hasta nueva orden
+             * @example 2030-12-31
+             */
+            valid_to?: string | null;
+            /**
+             * @description Derivado de la ventana al momento de la lectura
+             * @example active
+             * @enum {string}
+             */
+            status?: "active" | "future" | "expired";
+        };
+        /**
+         * Entidad
+         * @description Entidad empleadora / centro de trabajo (RF-ENT-001). Código y NIT únicos e inmutables; la jerarquía (parent) es acíclica (RN-003) y la pareja municipio-provincia coherente (RN-04).
+         */
+        Entity: {
+            /**
+             * Format: int64
+             * @description Entity projection (RF-ENT-001/005): the natural keys, contact
+             *     data, directors and the direct parent summary. The directors
+             *     reference the People registry by id — person details belong to the
+             *     People module surface.
+             * @example 1
+             */
+            id?: number;
+            /**
+             * @description Código único; queda reservado tras desactivar
+             * @example ENT-0001
+             */
+            code?: string;
+            /**
+             * @description NIT único e inmutable
+             * @example 11000012345
+             */
+            tax_id_number?: string;
+            /** @description Organismo de pertenencia (catálogo) */
+            organization?: {
+                /**
+                 * Format: int64
+                 * @example 1
+                 */
+                id?: number;
+                /** @example MTSS */
+                code?: string;
+                /** @example Ministerio de Trabajo y Seguridad Social */
+                name?: string;
+            };
+            province?: {
+                /**
+                 * Format: int64
+                 * @example 12
+                 */
+                id?: number;
+                /** @example 12 */
+                code?: string;
+                /** @example Holguín */
+                name?: string;
+            };
+            municipality?: {
+                /**
+                 * Format: int64
+                 * @example 42
+                 */
+                id?: number;
+                /** @example 07 */
+                code?: string;
+                /** @example Holguín */
+                name?: string;
+            };
+            /** @description Tipo de entidad (catálogo) */
+            type?: {
+                /**
+                 * Format: int64
+                 * @example 1
+                 */
+                id?: number;
+                /** @example EMP */
+                code?: string;
+                /** @example Empresa */
+                name?: string;
+            };
+            /** @example Calle 1 #2, Holguín */
+            address?: string;
+            /** @example 024 461234 */
+            phone?: string | null;
+            fax?: string | null;
+            /** @example contacto@ent.gob.cu */
+            email?: string | null;
+            /**
+             * Format: int64
+             * @description Director general (persona registrada, RF-ENT-001)
+             */
+            director_person_id?: number | null;
+            /**
+             * Format: int64
+             * @description Director económico (persona registrada)
+             */
+            economic_director_person_id?: number | null;
+            /**
+             * Format: int64
+             * @description Entidad superior (jerarquía acíclica RN-003)
+             */
+            parent_entity_id?: number | null;
+            /** @description Resumen de la entidad superior */
+            parent?: Record<string, never> | null;
+            /** @example Servicios técnicos especializados */
+            social_purpose?: string;
+        };
+        /**
+         * Oficina
+         * @description Oficina del Ministerio (RF-ENT-002). La pareja municipio-provincia es coherente (RN-04) y la jerarquía (parent) acíclica (RN-003).
+         */
+        Office: {
+            /**
+             * Format: int64
+             * @description Office projection (RF-ENT-002/005): geographic scope, type and the
+             *     direct parent summary. Offices carry no natural key.
+             * @example 3
+             */
+            id?: number;
+            /** @description Tipo de oficina (nacional/provincial/municipal) */
+            type?: {
+                /**
+                 * Format: int64
+                 * @example 1
+                 */
+                id?: number;
+                /** @example NAC */
+                code?: string;
+                /** @example Nacional */
+                name?: string;
+            };
+            province?: {
+                /**
+                 * Format: int64
+                 * @example 12
+                 */
+                id?: number;
+                /** @example 12 */
+                code?: string;
+                /** @example Holguín */
+                name?: string;
+            };
+            municipality?: {
+                /**
+                 * Format: int64
+                 * @example 42
+                 */
+                id?: number;
+                /** @example 07 */
+                code?: string;
+                /** @example Holguín */
+                name?: string;
+            };
+            /** @example Calle Martí #100, Holguín */
+            address?: string;
+            /**
+             * Format: int64
+             * @description Oficina superior (jerarquía acíclica RN-003)
+             */
+            parent_office_id?: number | null;
+            /** @description Resumen de la oficina superior */
+            parent?: Record<string, never> | null;
+        };
+        /**
          * Persona
          * @description Persona del registro único del SGP (RF-PER-001). deceased se deriva de death_date: el fallecimiento es una fecha, estar fallecido es estado derivado, nunca una columna.
          */
@@ -674,8 +1379,39 @@ export interface components {
             created_at?: string;
         };
         /**
+         * Persona vinculada
+         * @description Resumen de la persona del registro único vinculada a una cuenta (RF-SEG-004). deceased se deriva de death_date.
+         */
+        LinkedPerson: {
+            /**
+             * Format: int64
+             * @description Linked person summary (S3.5, RF-SEG-004): the projection /auth/me
+             *     and the user responses carry so consumers know the natural person
+             *     behind the account. Deliberately minimal: identity, display name
+             *     and the derived life state; anything richer belongs to the People
+             *     endpoints.
+             * @example 1
+             */
+            id?: number;
+            /**
+             * @description Carné de identidad de la persona vinculada (RN-001)
+             * @example 18506150012
+             */
+            identity_number?: string;
+            /**
+             * @description Nombre de visualización compuesto de los cuatro campos de nombre
+             * @example Juan Carlos Pérez Gómez
+             */
+            full_name?: string;
+            /**
+             * @description Derivado: death_date no nula; una persona fallecida no puede iniciar trámites nuevos (RF-SEG-003)
+             * @example false
+             */
+            deceased?: boolean;
+        };
+        /**
          * Usuario
-         * @description Usuario del sistema SGP con sus roles y permisos efectivos (RF-SEG-002).
+         * @description Cuenta del sistema SGP con roles, permisos efectivos, persona vinculada y el estado de seguridad derivado de la sesión (bloqueo, política de contraseñas, RF-SEG-001).
          */
         User: {
             /**
@@ -694,6 +1430,29 @@ export interface components {
             roles?: string[];
             /** @description Permisos efectivos (de roles y directos), orden alfabético */
             permissions?: string[];
+            /** @description Persona del registro único vinculada a la cuenta (RF-SEG-004); null mientras no exista asociación */
+            person?: components["schemas"]["LinkedPerson"] | null;
+            /**
+             * @description Ciclo de vida de la cuenta: inactive = desactivada (borrado lógico, RF-AUD-004)
+             * @enum {string}
+             */
+            status?: "active" | "inactive";
+            /** @description Bloqueada por intentos fallidos y aún dentro del TTL (RF-SEG-001): se deriva al leer de locked_at + política */
+            locked?: boolean;
+            /**
+             * Format: date-time
+             * @description Instanto en que el bloqueo expira automáticamente (null si no está bloqueada)
+             */
+            locked_until?: string | null;
+            /** @description Intentos fallidos consecutivos contados desde el último acceso válido */
+            failed_login_attempts?: number;
+            /**
+             * Format: date-time
+             * @description Línea base de la caducidad opcional de la contraseña (ADR-24)
+             */
+            password_changed_at?: string | null;
+            /** @description La contraseña superó la edad máxima configurada (false cuando la caducidad está apagada) */
+            password_expired?: boolean;
         };
         /**
          * Versión de configuración general
@@ -1536,6 +2295,940 @@ export interface operations {
             422: components["responses"]["ValidationError"];
         };
     };
+    legalBasesIndex: {
+        parameters: {
+            query?: {
+                /** @description Fragmentos del número o la referencia documental */
+                q?: string;
+                legal_basis_type_id?: number | null;
+                organization_id?: number | null;
+                year?: number | null;
+                status?: "effective" | "derogated" | "future" | null;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listado paginado con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LegalBasis"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 60 */
+                            total?: number;
+                            /** @example 4 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    legalBasesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Tipo (catálogo: Ley, Decreto-Ley, Decreto, Resolución, Indicación)
+                     * @example 1
+                     */
+                    legal_basis_type_id: number;
+                    /**
+                     * @description Número del documento
+                     * @example 128
+                     */
+                    number: string;
+                    /**
+                     * Format: date
+                     * @description Fecha de emisión
+                     * @example 2019-07-16
+                     */
+                    issue_date: string;
+                    /**
+                     * Format: date
+                     * @description Puesta en vigor (≥ issue_date, RN-006)
+                     * @example 2019-08-01
+                     */
+                    effective_date: string;
+                    /**
+                     * Format: date
+                     * @description Derogación opcional (≥ effective_date, RN-006); null = vigente
+                     */
+                    derogation_date?: string | null;
+                    /**
+                     * @description Organismo emisor (catálogo)
+                     * @example 1
+                     */
+                    issuing_organization_id: number;
+                    /** @example Gaceta Oficial Ordinaria No. 45 de 2019 */
+                    reference?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Base legal registrada con autoría estampada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LegalBasis"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    legalBasesShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Base legal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LegalBasis"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Base legal inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    legalBasesDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Base legal desactivada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Legal basis deactivated. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Base legal inexistente o ya desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    legalBasesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    effective_date?: string;
+                    /**
+                     * Format: date
+                     * @description null limpia la derogación (vuelve a vigente)
+                     */
+                    derogation_date?: string | null;
+                    issuing_organization_id?: number;
+                    reference?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Base legal actualizada (valores previos en la bitácora) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LegalBasis"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Base legal inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    signaturesIndex: {
+        parameters: {
+            query?: {
+                entity_id?: number | null;
+                person_id?: number | null;
+                position_id?: number | null;
+                status?: "active" | "future" | "expired" | null;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listado paginado con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AuthorizedSignature"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 8 */
+                            total?: number;
+                            /** @example 1 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    signaturesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Entidad que autoriza
+                     * @example 1
+                     */
+                    entity_id: number;
+                    /**
+                     * @description Persona autorizada (registro único)
+                     * @example 5
+                     */
+                    person_id: number;
+                    /**
+                     * @description Cargo en que firma (catálogo)
+                     * @example 2
+                     */
+                    position_id: number;
+                    /**
+                     * Format: date
+                     * @example 2020-01-01
+                     */
+                    valid_from?: string | null;
+                    /**
+                     * Format: date
+                     * @description ≥ valid_from (RN-006)
+                     * @example 2030-12-31
+                     */
+                    valid_to?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Firma registrada con autoría estampada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AuthorizedSignature"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    signaturesShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Firma autorizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AuthorizedSignature"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Firma inexistente o revocada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    signaturesDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Firma revocada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Signature revoked. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Firma inexistente o ya revocada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    signaturesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    valid_from?: string | null;
+                    /** Format: date */
+                    valid_to?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Firma actualizada (valores previos en la bitácora) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AuthorizedSignature"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Firma inexistente o revocada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    entitiesIndex: {
+        parameters: {
+            query?: {
+                /** @description Fragmentos de código, NIT u objeto social */
+                q?: string;
+                organization_id?: number | null;
+                province_id?: number | null;
+                municipality_id?: number | null;
+                entity_type_id?: number | null;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listado paginado con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Entity"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 30 */
+                            total?: number;
+                            /** @example 2 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    entitiesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Único; reservado tras desactivar
+                     * @example ENT-0001
+                     */
+                    code: string;
+                    /**
+                     * @description NIT único
+                     * @example 11000012345
+                     */
+                    tax_id_number: string;
+                    /**
+                     * @description Organismo de pertenencia (catálogo)
+                     * @example 1
+                     */
+                    organization_id: number;
+                    /** @example 12 */
+                    province_id: number;
+                    /**
+                     * @description Debe pertenecer a la provincia (RN-004)
+                     * @example 42
+                     */
+                    municipality_id: number;
+                    /**
+                     * @description Tipo de entidad (catálogo)
+                     * @example 1
+                     */
+                    entity_type_id: number;
+                    /** @example Calle 1 #2, Holguín */
+                    address: string;
+                    /** @example 024 461234 */
+                    phone?: string | null;
+                    fax?: string | null;
+                    /** @example contacto@ent.gob.cu */
+                    email?: string | null;
+                    /** @description Director general (persona registrada) */
+                    director_person_id?: number | null;
+                    /** @description Director económico (persona registrada) */
+                    economic_director_person_id?: number | null;
+                    /** @description Entidad superior (RN-003: sin ciclos) */
+                    parent_entity_id?: number | null;
+                    /** @example Servicios técnicos especializados */
+                    social_purpose: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Entidad registrada con autoría estampada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Entity"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    entitiesTree: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Árbol de jerarquía (nodos raíz en orden de id) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            id?: number;
+                            code?: string;
+                            tax_id_number?: string;
+                            social_purpose?: string;
+                            children?: Record<string, never>[];
+                            /** @description Presente solo en nodos cortados al nivel máximo */
+                            deeper?: boolean;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    entitiesShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entidad */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Entity"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Entidad inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    entitiesDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entidad desactivada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Entity deactivated. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Entidad inexistente o ya desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    entitiesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    organization_id?: number;
+                    province_id?: number;
+                    municipality_id?: number;
+                    entity_type_id?: number;
+                    address?: string;
+                    phone?: string | null;
+                    fax?: string | null;
+                    email?: string | null;
+                    director_person_id?: number | null;
+                    economic_director_person_id?: number | null;
+                    /** @description null desarraiga la entidad; el nuevo padre no puede cerrar un ciclo (RN-003) */
+                    parent_entity_id?: number | null;
+                    social_purpose?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Entidad actualizada (valores previos en la bitácora) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Entity"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Entidad inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    officesIndex: {
+        parameters: {
+            query?: {
+                /** @description Fragmentos de la dirección */
+                q?: string;
+                office_type_id?: number | null;
+                province_id?: number | null;
+                municipality_id?: number | null;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listado paginado con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Office"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 24 */
+                            total?: number;
+                            /** @example 2 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    officesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Nacional/provincial/municipal (catálogo)
+                     * @example 1
+                     */
+                    office_type_id: number;
+                    /** @example 12 */
+                    province_id: number;
+                    /**
+                     * @description Debe pertenecer a la provincia (RN-004)
+                     * @example 42
+                     */
+                    municipality_id: number;
+                    /** @example Calle Martí #100, Holguín */
+                    address: string;
+                    /** @description Oficina superior (RN-003: sin ciclos) */
+                    parent_office_id?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Oficina registrada con autoría estampada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Office"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    officesTree: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Árbol de jerarquía (nodos raíz en orden de id) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            id?: number;
+                            address?: string;
+                            type?: Record<string, never> | null;
+                            children?: Record<string, never>[];
+                            /** @description Presente solo en nodos cortados al nivel máximo */
+                            deeper?: boolean;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    officesShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Oficina */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Office"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Oficina inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    officesDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Oficina desactivada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Office deactivated. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Oficina inexistente o ya desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    officesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    office_type_id?: number;
+                    province_id?: number;
+                    municipality_id?: number;
+                    address?: string;
+                    /** @description null desarraiga la oficina; el nuevo padre no puede cerrar un ciclo (RN-003) */
+                    parent_office_id?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Oficina actualizada (valores previos en la bitácora) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Office"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Oficina inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
     peopleIndex: {
         parameters: {
             query?: {
@@ -2032,6 +3725,515 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @example Unauthenticated. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    authChangePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Contraseña actual y nueva */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: password
+                     * @example Segura2026
+                     */
+                    current_password: string;
+                    /**
+                     * Format: password
+                     * @description Sujeta a la política (longitud mínima y complejidad) y distinta de la actual
+                     * @example Renovada2026
+                     */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Contraseña renovada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["User"];
+                    };
+                };
+            };
+            /** @description Token ausente, inválido o ya revocado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Unauthenticated. */
+                        message?: string;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    usersIndex: {
+        parameters: {
+            query?: {
+                /** @description Texto libre sobre nombre o email (palabras en AND) */
+                q?: string;
+                /** @description Rol institucional exacto */
+                role?: "admin" | "director" | "specialist" | "operator" | "auditor";
+                status?: "active" | "inactive" | "all";
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultados paginados con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["User"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 42 */
+                            total?: number;
+                            /** @example 3 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    usersStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Cuenta a registrar */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example María Operadora */
+                    name: string;
+                    /**
+                     * Format: email
+                     * @example maria@sgp.local
+                     */
+                    email: string;
+                    /**
+                     * Format: password
+                     * @description Sujeta a la política (longitud mínima y complejidad)
+                     * @example Segura2026
+                     */
+                    password: string;
+                    /**
+                     * @example [
+                     *       "operator"
+                     *     ]
+                     */
+                    roles: ("admin" | "director" | "specialist" | "operator" | "auditor")[];
+                };
+            };
+        };
+        responses: {
+            /** @description Cuenta registrada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["User"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    usersShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cuenta */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["User"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Cuenta inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    usersDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cuenta desactivada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Cuenta inexistente o ya desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    usersUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Campos a editar (parcial) */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example María Especialista */
+                    name?: string;
+                    /**
+                     * Format: email
+                     * @description Solo se acepta igual al actual (inmutabilidad)
+                     */
+                    email?: string;
+                    /**
+                     * @example [
+                     *       "specialist"
+                     *     ]
+                     */
+                    roles?: ("admin" | "director" | "specialist" | "operator" | "auditor")[];
+                };
+            };
+        };
+        responses: {
+            /** @description Cuenta actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["User"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Cuenta inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    usersRestore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cuenta reactivada (o ya activa: idempotente) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["User"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Cuenta inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    usersUnlock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cuenta desbloqueada (o ya limpia: idempotente) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["User"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Cuenta inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    usersResetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Nueva contraseña */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: password
+                     * @description Sujeta a la política (longitud mínima y complejidad)
+                     * @example Renovada2026
+                     */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Contraseña restablecida (todas las sesiones revocadas) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["User"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Cuenta inexistente o desactivada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    usersLinkPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador de la cuenta */
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Persona a vincular */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: int64
+                     * @description Identificador de la persona en el registro único
+                     * @example 1
+                     */
+                    person_id: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Vinculación aplicada (o ya vigente: idempotente) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["User"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Sin permiso users.manage */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Forbidden. */
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Cuenta inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Not Found */
+                        message?: string;
+                    };
+                };
+            };
+            /** @description La persona ya pertenece a otra cuenta */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example The person is already linked to another user. */
+                        message?: string;
+                        /**
+                         * Format: int64
+                         * @example 1
+                         */
+                        person_id?: number;
+                        /**
+                         * Format: int64
+                         * @description Cuenta que actualmente posee a la persona (incluye desactivadas)
+                         * @example 3
+                         */
+                        linked_to_user_id?: number;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    usersUnlinkPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador de la cuenta */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Asociación eliminada (o inexistente: idempotente) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["User"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Sin permiso users.manage */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Forbidden. */
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Cuenta inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Not Found */
                         message?: string;
                     };
                 };
