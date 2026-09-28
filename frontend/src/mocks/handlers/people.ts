@@ -1,10 +1,12 @@
 import { http, HttpResponse } from 'msw';
 import type { components } from '@/types/api';
-import { validateCubanCI } from '@/lib/cuban-ci';
 
 type Person = components['schemas']['Person'];
 
 const API_BASE = 'http://localhost:8000/api/v1';
+
+// CI: solo validar 11 dígitos (la validación sustantiva la hace el backend real)
+const CI_REGEX = /^\d{11}$/;
 
 // 10 personas sembradas con CI cubanos válidos (verificados por el algoritmo del frontend)
 // Los CI son ficticios pero pasan validación básica de formato
@@ -148,16 +150,10 @@ export const peopleHandlers = [
   http.post(`${API_BASE}/people`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
 
-    // Validar CI cubano (formato + fecha + dígito verificador)
-    const ciError = body.identity_number ? validateCubanCI(body.identity_number as string) : 'invalid_format';
-    if (ciError) {
-      const messages: Record<string, string> = {
-        invalid_format: 'El CI debe tener 11 dígitos numéricos',
-        invalid_birth_date: 'La fecha de nacimiento codificada en el CI es inválida',
-        invalid_verifier: 'El dígito verificador del CI es incorrecto',
-      };
+    // Validar CI: solo formato (11 dígitos). El backend real valida fecha + verificador.
+    if (!body.identity_number || !CI_REGEX.test(body.identity_number as string)) {
       return HttpResponse.json(
-        { message: 'Validation error.', errors: { identity_number: [messages[ciError]] } },
+        { message: 'Validation error.', errors: { identity_number: ['El CI debe tener 11 dígitos numéricos'] } },
         { status: 422 },
       );
     }
