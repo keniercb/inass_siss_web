@@ -1,35 +1,28 @@
 /**
  * Value Object: CubanIdentityNumber (Carné de Identidad cubano)
  *
- * Formato: 11 dígitos AABBBBCCCCN donde:
- *  - AA: año de nacimiento (2 dígitos)
- *  - BB: mes de nacimiento (2 dígitos, 01-12)
- *  - BB: día de nacimiento (2 dígitos, 01-31)
+ * Formato: 11 dígitos YYMMDDCCCCN donde:
+ *  - YY: año de nacimiento (2 dígitos)
+ *  - MM: mes de nacimiento (2 dígitos, 01-12)
+ *  - DD: día de nacimiento (2 dígitos, 01-31)
  *  - CCCC: secuencia (4 dígitos)
- *  - N: dígito verificador (calculado con algoritmo MOD 11)
+ *  - N: dígito verificador (validado por el backend, NO por el frontend)
  *
- * El siglo se infiere del primer dígito:
- *  - 0-4 (mujer) o 5-9 (hombre) → 1900s
- *  - 5-9 (mujer) — en realidad no, el algoritmo es:
- *    - Primer dígito 0-4: siglo XX (1900-1999), sexo femenino si 0-4, masculino si 5-9
- *    - Primer dígito 5-9: siglo XXI (2000-2099), sexo femenino si 5-?, masculino si ?-9
+ * Encoding del siglo (primer dígito del CI):
+ *  - 0-4: nacido en el siglo XXI (2000-2099)
+ *  - 5-9: nacido en el siglo XX (1900-1999)
  *
- * NOTA: el algoritmo de verificación cubano es MOD 11 con pesos específicos.
- * Esta implementación usa el algoritmo más documentado públicamente.
+ * NOTA: El dígito verificador NO se valida en el frontend.
+ * El backend SGP tiene el algoritmo oficial cubano (RF-SEG-001) y lo valida
+ * server-side. El frontend solo valida formato + fecha básica.
  */
 
 const CI_REGEX = /^\d{11}$/;
 
-// Pesos para el cálculo del dígito verificador (algoritmo MOD 11 cubano)
-const VERIFIER_WEIGHTS = [7, 6, 5, 4, 3, 2, 7, 6, 5, 4];
-
-export type CIValidationError =
-  | 'invalid_format'
-  | 'invalid_birth_date'
-  | 'invalid_verifier';
+export type CIValidationError = 'invalid_format' | 'invalid_birth_date';
 
 /**
- * Valida un número de identidad cubano (11 dígitos + dígito verificador).
+ * Valida un número de identidad cubano (11 dígitos).
  *
  * @returns true si es válido, false en caso contrario
  */
@@ -39,6 +32,7 @@ export function isValidCubanCI(ci: string): boolean {
 
 /**
  * Valida un número de identidad cubano y retorna el error específico.
+ * NO valida el dígito verificador (esa validación la hace el backend).
  *
  * @returns null si es válido, o el código de error específico
  */
@@ -53,9 +47,9 @@ export function validateCubanCI(ci: string): CIValidationError | null {
   const mm = parseInt(ci.substring(2, 4), 10);
   const dd = parseInt(ci.substring(4, 6), 10);
 
-  // Siglo: primer dígito 0-4 → 1900s, 5-9 → 2000s (aproximación)
+  // Siglo: primer dígito 0-4 → siglo XXI (2000s), 5-9 → siglo XX (1900s)
   const firstDigit = parseInt(ci.charAt(0), 10);
-  const fullYear = firstDigit <= 4 ? 1900 + yy : 2000 + yy;
+  const fullYear = firstDigit <= 4 ? 2000 + yy : 1900 + yy;
 
   // Validar mes
   if (mm < 1 || mm > 12) {
@@ -75,31 +69,7 @@ export function validateCubanCI(ci: string): CIValidationError | null {
     return 'invalid_birth_date';
   }
 
-  // 3. Dígito verificador (algoritmo MOD 11)
-  const first10 = ci.substring(0, 10);
-  const expectedVerifier = parseInt(ci.charAt(10), 10);
-  const calculated = computeVerifier(first10);
-
-  if (calculated !== expectedVerifier) {
-    return 'invalid_verifier';
-  }
-
   return null;
-}
-
-/**
- * Calcula el dígito verificador de los primeros 10 dígitos.
- * Algoritmo: suma de digit×weight mod 11; si resultado es 10 → 0.
- */
-function computeVerifier(tenDigits: string): number {
-  let sum = 0;
-  for (let i = 0; i < 10; i++) {
-    const digit = parseInt(tenDigits.charAt(i), 10);
-    const weight = VERIFIER_WEIGHTS[i] ?? 0;
-    sum += digit * weight;
-  }
-  const mod = sum % 11;
-  return mod === 10 ? 0 : mod;
 }
 
 /**
@@ -111,7 +81,7 @@ export function getBirthDateFromCI(ci: string): Date | null {
   const mm = parseInt(ci.substring(2, 4), 10);
   const dd = parseInt(ci.substring(4, 6), 10);
   const firstDigit = parseInt(ci.charAt(0), 10);
-  const fullYear = firstDigit <= 4 ? 1900 + yy : 2000 + yy;
+  const fullYear = firstDigit <= 4 ? 2000 + yy : 1900 + yy;
   return new Date(fullYear, mm - 1, dd);
 }
 
@@ -126,16 +96,13 @@ export function formatCI(ci: string): string {
 
 /**
  * Mensajes de error legibles por código de validación.
- * El frontend usa i18n keys, el backend puede usarlos en español directo.
  */
 export const CI_ERROR_MESSAGES_ES: Record<CIValidationError, string> = {
   invalid_format: 'El CI debe tener 11 dígitos numéricos',
   invalid_birth_date: 'La fecha de nacimiento codificada en el CI es inválida',
-  invalid_verifier: 'El dígito verificador del CI es incorrecto',
 };
 
 export const CI_ERROR_MESSAGES_EN: Record<CIValidationError, string> = {
   invalid_format: 'The ID must have 11 numeric digits',
   invalid_birth_date: 'The birth date encoded in the ID is invalid',
-  invalid_verifier: 'The ID verifier digit is incorrect',
 };

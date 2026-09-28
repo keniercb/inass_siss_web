@@ -33,9 +33,9 @@ const seedPersons: Person[] = [
     father_name: null, mother_name: null, citizen_card_id: null,
     deceased: true,
   },
-  // 89 0234 5612 3 (hombre 1989-02-34 — fecha inválida para probar validación)
+  // 89 0212 5612 3 (hombre 1989-02-12 — fecha corregida)
   {
-    id: 4, identity_number: '89023456123', first_name: 'Pedro', middle_name: 'Luis',
+    id: 4, identity_number: '89021256123', first_name: 'Pedro', middle_name: 'Luis',
     first_surname: 'Sánchez', second_surname: 'Romero', sex: 'M', race_id: 1,
     address: 'Calle Máximo Gómez #12, Holguín', birth_date: '1989-02-12', death_date: null,
     father_name: 'Luis Sánchez', mother_name: 'Carmen Romero', citizen_card_id: null,

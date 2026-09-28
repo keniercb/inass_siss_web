@@ -30,7 +30,6 @@ export const personSchema = z
       const messages: Record<CIValidationError, string> = {
         invalid_format: 'El formato del CI cubano es inválido (debe ser 11 dígitos)',
         invalid_birth_date: 'La fecha de nacimiento codificada en el CI es inválida',
-        invalid_verifier: 'El dígito verificador del CI es incorrecto',
       };
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
