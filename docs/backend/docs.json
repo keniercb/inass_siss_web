@@ -4137,7 +4137,7 @@
                     "Auth"
                 ],
                 "summary": "Autenticar credenciales y emitir token",
-                "description": "Verifica las credenciales y emite un token Bearer (RF-SEG-001). El email desconocido y la contraseña errónea colapsan en el mismo 401 para no revelar cuál falló. Limitado por throttle: 10 intentos por minuto.",
+                "description": "Verifica las credenciales y emite un token Bearer (RF-SEG-001). El email desconocido, la contraseña errónea y la cuenta bloqueada por intentos fallidos colapsan en el mismo 401 para no revelar cuál falló; una contraseña caducada (política opcional, ADR-24) responde 401 con mensaje de renovación. Limitado por throttle: 10 intentos por minuto.",
                 "operationId": "authLogin",
                 "requestBody": {
                     "description": "Credenciales del usuario",
@@ -4330,6 +4330,692 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/password": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Renovar la propia contraseña",
+                "description": "Renovación voluntaria (RF-SEG-001 \"renovación\", ADR-24): verifica la contraseña actual, aplica la política a la nueva y revoca todas las demás sesiones — el token de la solicitud sigue vivo. Una contraseña caducada no puede renovarse aquí (se requiere login previo): un Administrador la restablece con PATCH /users/{id}/password.",
+                "operationId": "authChangePassword",
+                "requestBody": {
+                    "description": "Contraseña actual y nueva",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "current_password",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Segura2026"
+                                    },
+                                    "password": {
+                                        "description": "Sujeta a la política (longitud mínima y complejidad) y distinta de la actual",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Renovada2026"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contraseña renovada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido o ya revocado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users": {
+            "get": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Directorio de cuentas",
+                "description": "Cuentas paginadas con filtros q (nombre/email), role (rol institucional) y status (active por defecto, inactive desactivadas, all ambas). El estado derivado (locked/locked_until/password_expired) se resuelve al leer (RF-SEC-001). Requiere users.view (Administrador y Auditor, solo lectura).",
+                "operationId": "usersIndex",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Texto libre sobre nombre o email (palabras en AND)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "Rol institucional exacto",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "admin",
+                                "director",
+                                "specialist",
+                                "operator",
+                                "auditor"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "active",
+                            "enum": [
+                                "active",
+                                "inactive",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resultados paginados con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/User"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 42
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Registrar una cuenta",
+                "description": "Crea la cuenta con contraseña inicial sujeta a la política de contraseñas (RF-SEC-001) y al menos un rol institucional. El email queda reservado: una cuenta activa o desactivada con esa dirección responde 422. Requiere users.manage (Administrador); la creación queda en la bitácora (contraseña redactada).",
+                "operationId": "usersStore",
+                "requestBody": {
+                    "description": "Cuenta a registrar",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "roles"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "María Operadora",
+                                        "maxLength": 255
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "maria@sgp.local",
+                                        "maxLength": 255
+                                    },
+                                    "password": {
+                                        "description": "Sujeta a la política (longitud mínima y complejidad)",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Segura2026"
+                                    },
+                                    "roles": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "admin",
+                                                "director",
+                                                "specialist",
+                                                "operator",
+                                                "auditor"
+                                            ]
+                                        },
+                                        "example": [
+                                            "operator"
+                                        ],
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Cuenta registrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{id}": {
+            "get": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Detalle de una cuenta",
+                "description": "Devuelve la cuenta activa con ese id (las desactivadas responden 404: su email y persona siguen reservados). Requiere users.view.",
+                "operationId": "usersShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cuenta",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Cuenta inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Desactivar una cuenta",
+                "description": "Borrado lógico (RF-AUD-004): la cuenta desactivada reserva su email y persona vinculada, no puede autenticarse (login 401) y pierde todas sus sesiones. Un administrador no puede desactivarse a sí mismo ni al último administrador activo (422). Requiere users.manage; auditeda con los valores previos.",
+                "operationId": "usersDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Cuenta desactivada"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Cuenta inexistente o ya desactivada"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Editar una cuenta (nombre y roles)",
+                "description": "Actualiza el nombre y/o la asignación completa de roles. El email es inmutable: enviar uno distinto responde 422. El sistema impide dejarlo sin ningún administrador activo (422). Requiere users.manage; la edición y el cambio de roles quedan en la bitácora con los valores previos.",
+                "operationId": "usersUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Campos a editar (parcial)",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "María Especialista",
+                                        "maxLength": 255
+                                    },
+                                    "email": {
+                                        "description": "Solo se acepta igual al actual (inmutabilidad)",
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "roles": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "admin",
+                                                "director",
+                                                "specialist",
+                                                "operator",
+                                                "auditor"
+                                            ]
+                                        },
+                                        "example": [
+                                            "specialist"
+                                        ],
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cuenta actualizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Cuenta inexistente o desactivada"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Reactivar una cuenta desactivada",
+                "description": "Restauración exclusiva del Administrador (RF-AUD-004), auditada. Idempotente para una cuenta ya activa (200 sin escritura). Requiere users.manage.",
+                "operationId": "usersRestore",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cuenta reactivada (o ya activa: idempotente)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Cuenta inexistente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{id}/unlock": {
+            "post": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Desbloquear una cuenta bloqueada por intentos fallidos",
+                "description": "Desbloqueo anticipado por el Administrador (RF-SEG-001): limpia el contador y el instante de bloqueo antes de que expire el TTL. Idempotente para una cuenta limpia (200 sin escritura). Requiere users.manage; el desbloqueo queda en la bitácora con el estado previo.",
+                "operationId": "usersUnlock",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cuenta desbloqueada (o ya limpia: idempotente)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Cuenta inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{id}/password": {
+            "patch": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Restablecer la contraseña de una cuenta",
+                "description": "Restablecimiento por el Administrador (RF-SEG-001): la nueva contraseña se valida contra la política, se renueva la línea base de caducidad, se limpia el bloqueo y se revocan TODAS las sesiones de la cuenta. Requiere users.manage; la escritura queda en la bitácora con la contraseña redactada.",
+                "operationId": "usersResetPassword",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Nueva contraseña",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "password"
+                                ],
+                                "properties": {
+                                    "password": {
+                                        "description": "Sujeta a la política (longitud mínima y complejidad)",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Renovada2026"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contraseña restablecida (todas las sesiones revocadas)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Cuenta inexistente o desactivada"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
                     }
                 },
                 "security": [
@@ -5744,7 +6430,7 @@
             },
             "User": {
                 "title": "Usuario",
-                "description": "Usuario del sistema SGP con sus roles y permisos efectivos (RF-SEG-002).",
+                "description": "Cuenta del sistema SGP con roles, permisos efectivos, persona vinculada y el estado de seguridad derivado de la sesión (bloqueo, política de contraseñas, RF-SEG-001).",
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -5784,6 +6470,38 @@
                         ],
                         "nullable": true,
                         "description": "Persona del registro único vinculada a la cuenta (RF-SEG-004); null mientras no exista asociación"
+                    },
+                    "status": {
+                        "description": "Ciclo de vida de la cuenta: inactive = desactivada (borrado lógico, RF-AUD-004)",
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "inactive"
+                        ]
+                    },
+                    "locked": {
+                        "description": "Bloqueada por intentos fallidos y aún dentro del TTL (RF-SEG-001): se deriva al leer de locked_at + política",
+                        "type": "boolean"
+                    },
+                    "locked_until": {
+                        "description": "Instanto en que el bloqueo expira automáticamente (null si no está bloqueada)",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "failed_login_attempts": {
+                        "description": "Intentos fallidos consecutivos contados desde el último acceso válido",
+                        "type": "integer"
+                    },
+                    "password_changed_at": {
+                        "description": "Línea base de la caducidad opcional de la contraseña (ADR-24)",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "password_expired": {
+                        "description": "La contraseña superó la edad máxima configurada (false cuando la caducidad está apagada)",
+                        "type": "boolean"
                     }
                 },
                 "type": "object"
