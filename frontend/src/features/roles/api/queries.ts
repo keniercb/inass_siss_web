@@ -49,8 +49,10 @@ export function usePermissions() {
   return useQuery({
     queryKey: ['permissions', 'all'],
     queryFn: async () => {
-      const response = await http.get<Permission[]>('/permissions');
-      return response.data;
+      // El backend retorna envelope { data: Permission[] }
+      const response = await http.get<{ data: Permission[] }>('/permissions');
+      const data = response.data?.data;
+      return Array.isArray(data) ? data : [];
     },
     staleTime: 5 * 60 * 1000,
   });

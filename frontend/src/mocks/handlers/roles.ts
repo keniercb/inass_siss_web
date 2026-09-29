@@ -52,15 +52,15 @@ const roles = new Map<number, Role>([
 let nextId = 100;
 
 export const rolesHandlers = [
-  // GET /permissions — catálogo completo
+  // GET /permissions — catálogo completo (envelope { data: [...] })
   http.get(`${API_BASE}/permissions`, () => {
-    return HttpResponse.json(ALL_PERMISSIONS);
+    return HttpResponse.json({ data: ALL_PERMISSIONS });
   }),
   // GET /permissions/{permission}
   http.get(`${API_BASE}/permissions/:permission`, ({ params }) => {
     const perm = ALL_PERMISSIONS.find((p) => p.name === params.permission);
     if (!perm) return HttpResponse.json({ message: 'Permission not found.' }, { status: 404 });
-    return HttpResponse.json(perm);
+    return HttpResponse.json({ data: perm });
   }),
   // GET /roles — listado
   http.get(`${API_BASE}/roles`, ({ request }) => {

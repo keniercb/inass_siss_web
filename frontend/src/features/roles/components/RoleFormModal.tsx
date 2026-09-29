@@ -34,7 +34,8 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
   // Agrupar permisos por módulo
   const grouped = useMemo(() => {
     const map = new Map<string, Permission[]>();
-    (permissions ?? []).forEach((p) => {
+    const perms = Array.isArray(permissions) ? permissions : [];
+    perms.forEach((p) => {
       const mod = p.module ?? 'other';
       if (!map.has(mod)) map.set(mod, []);
       map.get(mod)!.push(p);
