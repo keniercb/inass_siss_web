@@ -3058,7 +3058,7 @@
                     "Estructura"
                 ],
                 "summary": "Árbol de la jerarquía de oficinas",
-                "description": "Jerarquía completa como árbol anidado (RF-ENT-005) con profundidad máxima de 5 niveles y el corte anunciado (deeper=true). El conteo de expedientes tramitados por oficina se incorpora con el módulo PensionCases (F3, ADR-22).",
+                "description": "Jerarquía completa como árbol anidado (RF-ENT-005) con profundidad máxima de 5 niveles y el corte anunciado (deeper=true). Cada nodo incluye el conteo de expedientes tramitados por la oficina (cases_count) y por su ámbito (scope_cases_count: la oficina y sus subordinadas activas, ADR-28).",
                 "operationId": "officesTree",
                 "responses": {
                     "200": {
@@ -3084,6 +3084,14 @@
                                                     "type": {
                                                         "type": "object",
                                                         "nullable": true
+                                                    },
+                                                    "cases_count": {
+                                                        "description": "Expedientes tramitados por la oficina (todo estado)",
+                                                        "type": "integer"
+                                                    },
+                                                    "scope_cases_count": {
+                                                        "description": "Expedientes en su ámbito (ella y sus subordinadas activas)",
+                                                        "type": "integer"
                                                     },
                                                     "children": {
                                                         "type": "array",
@@ -3125,7 +3133,7 @@
                     "Estructura"
                 ],
                 "summary": "Detalle de una oficina",
-                "description": "Devuelve la oficina activa con ese id (las desactivadas responden 404).",
+                "description": "Devuelve la oficina activa con ese id (las desactivadas responden 404) con el conteo de expedientes tramitados por la oficina y por su ámbito (RF-ENT-005, ADR-28).",
                 "operationId": "officesShow",
                 "parameters": [
                     {
@@ -5166,7 +5174,7 @@
                     "Auth"
                 ],
                 "summary": "Usuario autenticado",
-                "description": "Devuelve el usuario asociado al token Bearer de la solicitud (RF-SEG-001).",
+                "description": "Devuelve el usuario asociado al token Bearer de la solicitud (RF-SEG-001) con su oficina territorial de pertenencia (ADR-29): data.office porta la oficina activa a la que pertenece la cuenta — null si no tiene ninguna —, la base que el filtrado por ámbito territorial del Sprint 6 consumirá.",
                 "operationId": "authMe",
                 "responses": {
                     "200": {
@@ -5919,7 +5927,7 @@
                     "Usuarios"
                 ],
                 "summary": "Registrar una cuenta",
-                "description": "Crea la cuenta con contraseña inicial sujeta a la política de contraseñas (RF-SEC-001) y al menos un rol institucional. El email queda reservado: una cuenta activa o desactivada con esa dirección responde 422. Requiere users.manage (Administrador); la creación queda en la bitácora (contraseña redactada).",
+                "description": "Crea la cuenta con contraseña inicial sujeta a la política de contraseñas (RF-SEC-001), al menos un rol del directorio y la oficina territorial opcional (ADR-29, debe estar activa). El email queda reservado: una cuenta activa o desactivada con esa dirección responde 422. Requiere users.manage (Administrador); la creación queda en la bitácora (contraseña redactada).",
                 "operationId": "usersStore",
                 "requestBody": {
                     "description": "Cuenta a registrar",
@@ -5962,6 +5970,13 @@
                                             "operator"
                                         ],
                                         "minItems": 1
+                                    },
+                                    "office_id": {
+                                        "description": "Oficina territorial de pertenencia (ADR-29); debe estar activa",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 3,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -6105,7 +6120,7 @@
                     "Usuarios"
                 ],
                 "summary": "Editar una cuenta (nombre y roles)",
-                "description": "Actualiza el nombre y/o la asignación completa de roles. El email es inmutable: enviar uno distinto responde 422. El sistema impide dejarlo sin ningún administrador activo (422). Requiere users.manage; la edición y el cambio de roles quedan en la bitácora con los valores previos.",
+                "description": "Actualiza el nombre, la asignación completa de roles y/o la oficina territorial (ADR-29: presente — incluso null — reasigna o limpia; ausente queda intacta). El email es inmutable: enviar uno distinto responde 422. El sistema impide dejarlo sin ningún administrador activo (422). Requiere users.manage; la edición, el cambio de roles y el de oficina quedan en la bitácora con los valores previos.",
                 "operationId": "usersUpdate",
                 "parameters": [
                     {
@@ -6146,6 +6161,13 @@
                                             "specialist"
                                         ],
                                         "minItems": 1
+                                    },
+                                    "office_id": {
+                                        "description": "Oficina territorial (ADR-29): null limpia la pertenencia; ausente la deja intacta; debe estar activa",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 5,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7516,7 +7538,7 @@
             },
             "Office": {
                 "title": "Oficina",
-                "description": "Oficina del Ministerio (RF-ENT-002). La pareja municipio-provincia es coherente (RN-04) y la jerarquía (parent) acíclica (RN-003).",
+                "description": "Oficina del Ministerio (RF-ENT-002). La pareja municipio-provincia es coherente (RN-04) y la jerarquía (parent) acíclica (RN-003). El detalle incluye el conteo de expedientes tramitados por la oficina y por su ámbito (RF-ENT-005, ADR-28).",
                 "properties": {
                     "id": {
                         "description": "Office projection (RF-ENT-002/005): geographic scope, type and the\ndirect parent summary. Offices carry no natural key.",
@@ -7593,6 +7615,16 @@
                         "description": "Resumen de la oficina superior",
                         "type": "object",
                         "nullable": true
+                    },
+                    "cases_count": {
+                        "description": "Expedientes tramitados por la oficina (todo estado; ADR-28)",
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "scope_cases_count": {
+                        "description": "Expedientes en su ámbito: la oficina y sus subordinadas activas (RF-ENT-005, ADR-28)",
+                        "type": "integer",
+                        "example": 7
                     }
                 },
                 "type": "object"
@@ -8157,6 +8189,15 @@
                         ],
                         "nullable": true,
                         "description": "Persona del registro único vinculada a la cuenta (RF-SEG-004); null mientras no exista asociación"
+                    },
+                    "office": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Office"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Oficina territorial de pertenencia (ADR-29): /auth/me y la gestión de cuentas la devuelven; null si la cuenta no pertenece a ninguna oficina activa"
                     },
                     "status": {
                         "description": "Ciclo de vida de la cuenta: inactive = desactivada (borrado lógico, RF-AUD-004)",
