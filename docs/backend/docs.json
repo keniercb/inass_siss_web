@@ -3313,21 +3313,939 @@
                 ]
             }
         },
+        "/api/v1/pension-cases": {
+            "get": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Listado de expedientes",
+                "description": "Listado filtrable por estado, oficina, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6).",
+                "operationId": "pensionCasesIndex",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "submitted",
+                                "under_review",
+                                "approved",
+                                "rejected"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "office_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "applicant_person_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "number",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 20
+                        }
+                    },
+                    {
+                        "name": "requested_from",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "requested_to",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resultados paginados con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PensionCase"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 42
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Apertura de un expediente",
+                "description": "Alta del expediente (RF-EXP-001) con número secuencial único (RN-009) y estado inicial submitted. El proponente debe estar vivo y activo (RF-SEG-003: 422 si falleció o está desactivado) y no puede tener otro expediente abierto (409 con el expediente abierto). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; el par año-expediente es único (422). Las advertencias (huecos salariales, solapamientos de servicios, vínculos abiertos) viajan junto a data.",
+                "operationId": "pensionCasesStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "applicant_person_id",
+                                    "office_id",
+                                    "employer_entity_id",
+                                    "position_id",
+                                    "occupational_category_id",
+                                    "educational_level_id",
+                                    "scientific_category_id",
+                                    "last_salary"
+                                ],
+                                "properties": {
+                                    "applicant_person_id": {
+                                        "type": "integer",
+                                        "example": 7
+                                    },
+                                    "office_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "employer_entity_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "position_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "occupational_category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "educational_level_id": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "scientific_category_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "last_salary": {
+                                        "description": "Último salario, decimal exacto no negativo (RN-005)",
+                                        "type": "string",
+                                        "example": "5000.00"
+                                    },
+                                    "requested_at": {
+                                        "description": "Opcional; por defecto hoy; nunca futura",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-09-28",
+                                        "nullable": true
+                                    },
+                                    "salary_records": {
+                                        "description": "Serie salarial inicial (todo o nada)",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "year": {
+                                                    "type": "integer",
+                                                    "example": 2024
+                                                },
+                                                "earned_salary": {
+                                                    "type": "string",
+                                                    "example": "4800.00"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "service_records": {
+                                        "description": "Historial laboral inicial (todo o nada)",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "entity_id": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "start_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2000-01-01"
+                                                },
+                                                "end_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "is_appendix": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "work_cycles": {
+                                        "description": "Ciclos de trabajo iniciales (todo o nada)",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "planned_days": {
+                                                    "type": "integer",
+                                                    "example": 300
+                                                },
+                                                "actual_days": {
+                                                    "type": "integer",
+                                                    "example": 280
+                                                },
+                                                "cycles_count": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Expediente creado (con subregistros y advertencias)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PensionCase"
+                                        },
+                                        "warnings": {
+                                            "description": "Análisis de evidencia (huecos, solapamientos, vínculos abiertos)",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "409": {
+                        "description": "La persona ya tiene un expediente abierto (devuelve el expediente) o el expediente ya no es editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case": {
+                                            "oneOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PensionCase"
+                                                }
+                                            ],
+                                            "nullable": true
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "nullable": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}": {
+            "get": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Detalle de un expediente",
+                "description": "Devuelve el expediente con sus subregistros (salarios, servicios, ciclos) y el resumen del proponente, junto al objeto warnings: años salariales interiores ausentes (RF-EXP-002), pares de servicios solapados y vínculos sin cerrar (RF-EXP-003). Las advertencias son evidencia para el especialista, nunca bloqueos.",
+                "operationId": "pensionCasesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Expediente con subregistros y advertencias",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PensionCase"
+                                        },
+                                        "warnings": {
+                                            "properties": {
+                                                "missing_salary_years": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    },
+                                                    "example": [
+                                                        2019,
+                                                        2020
+                                                    ]
+                                                },
+                                                "overlapping_services": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "example": [
+                                                        [
+                                                            1,
+                                                            2
+                                                        ]
+                                                    ]
+                                                },
+                                                "open_services": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    },
+                                                    "example": [
+                                                        3
+                                                    ]
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente o desactivado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/salary-records": {
+            "post": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Alta de un registro de salario",
+                "description": "Añade un año de salario devengado (RF-EXP-002) mientras el expediente está en submitted. El par año-expediente es único (422 semántico) y el año respeta 1950…año actual+1. La respuesta lleva el objeto warnings con los años interiores ausentes de la serie resultante.",
+                "operationId": "pensionCasesAddSalaryRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "year",
+                                    "earned_salary"
+                                ],
+                                "properties": {
+                                    "year": {
+                                        "type": "integer",
+                                        "example": 2024
+                                    },
+                                    "earned_salary": {
+                                        "type": "string",
+                                        "example": "4800.00"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Registro añadido con advertencias de la serie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SalaryRecord"
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/salary-records/{record}": {
+            "delete": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Baja de un registro de salario",
+                "description": "Elimina un año de la serie salarial (RF-EXP-002, altas/bajas de S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).",
+                "operationId": "pensionCasesRemoveSalaryRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "record",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Registro eliminado (con advertencias actualizadas)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Salary record removed."
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Expediente o registro inexistente"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/service-records": {
+            "post": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Alta de un registro de servicio",
+                "description": "Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. end_date null = vínculo vigente y debe ser ≥ start_date (422). Los solapamientos y vínculos abiertos NO bloquean: viajan en warnings (id de pares solapados, ids de vínculos abiertos).",
+                "operationId": "pensionCasesAddServiceRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "entity_id",
+                                    "start_date"
+                                ],
+                                "properties": {
+                                    "entity_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2000-01-01"
+                                    },
+                                    "end_date": {
+                                        "description": "null = vínculo vigente",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "is_appendix": {
+                                        "description": "Coletilla",
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Registro añadido con advertencias de solapamiento",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ServiceRecord"
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/service-records/{record}": {
+            "delete": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Baja de un registro de servicio",
+                "description": "Elimina un vínculo laboral (S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).",
+                "operationId": "pensionCasesRemoveServiceRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "record",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Registro eliminado (con advertencias actualizadas)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Service record removed."
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Expediente o registro inexistente"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/work-cycles": {
+            "post": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Alta de un ciclo de trabajo",
+                "description": "Añade un ciclo de trabajo (RF-EXP-004: días plan, días reales y cantidad, enteros no negativos) mientras el expediente está en submitted.",
+                "operationId": "pensionCasesAddWorkCycle",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "planned_days",
+                                    "actual_days",
+                                    "cycles_count"
+                                ],
+                                "properties": {
+                                    "planned_days": {
+                                        "type": "integer",
+                                        "example": 300
+                                    },
+                                    "actual_days": {
+                                        "type": "integer",
+                                        "example": 280
+                                    },
+                                    "cycles_count": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ciclo añadido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkCycle"
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/work-cycles/{record}": {
+            "delete": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Baja de un ciclo de trabajo",
+                "description": "Elimina un ciclo de trabajo (S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).",
+                "operationId": "pensionCasesRemoveWorkCycle",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "record",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ciclo eliminado (con advertencias actualizadas)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Work cycle removed."
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Expediente o registro inexistente"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/people": {
             "get": {
                 "tags": [
                     "Personas"
                 ],
                 "summary": "Búsqueda de personas",
-                "description": "Búsqueda por identidad exacta, fragmentos de nombres/apellidos (combinables) y filtros básicos, paginada y ordenada por apellido/nombre/fecha de nacimiento (RF-PER-004). Los resultados incluyen fecha de nacimiento y padres para desambiguar homónimos.",
+                "description": "Búsqueda por prefijo de identidad (patrón ci_buscado%: acota con cada dígito tecleado), fragmentos de nombres/apellidos (combinables) y filtros básicos, paginada y ordenada por apellido/nombre/fecha de nacimiento (RF-PER-004). Los resultados incluyen fecha de nacimiento y padres para desambiguar homónimos.",
                 "operationId": "peopleIndex",
                 "parameters": [
                     {
                         "name": "identity",
                         "in": "query",
-                        "description": "Número de identidad exacto",
+                        "description": "Prefijo del carné de identidad: 1 a 11 dígitos, ci_buscado% (11 dígitos equivale a la búsqueda exacta)",
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 11,
+                            "minLength": 1
                         }
                     },
                     {
@@ -4418,6 +5336,462 @@
                 ]
             }
         },
+        "/api/v1/permissions": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Catálogo de permisos",
+                "description": "El catálogo completo de permisos asignables (PermissionMatrix: la única fuente de verdad, code-owned), cada uno descompuesto en módulo y acción, con los roles institucionales que lo otorgan según la matriz, los roles personalizados que lo incluyen y el número de cuentas que pueden actuar con él (incluye desactivadas: sus pivotes reservan los roles). Superficie de solo lectura que el editor de roles consume para construir el selector de concesiones. Requiere roles.view (Administrador y Auditor).",
+                "operationId": "permissionsIndex",
+                "responses": {
+                    "200": {
+                        "description": "Catálogo de permisos con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Permission"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/permissions/{permission}": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Detalle de un permiso",
+                "description": "Un permiso del catálogo por su clave natural modulo.accion: descomposición, roles institucionales que lo otorgan, roles personalizados que lo incluyen y cuentas con acceso efectivo. La ruta solo admite nombres minúscula modulo.accion; un nombre bien formado que no pertenece al catálogo responde 404. Requiere roles.view.",
+                "operationId": "permissionsShow",
+                "parameters": [
+                    {
+                        "name": "permission",
+                        "in": "path",
+                        "description": "Clave natural del permiso",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "people.view"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Permiso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Permission"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Permiso inexistente o nombre malformado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/roles": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Directorio de roles",
+                "description": "Los cinco roles institucionales de la sección 2.2 (is_system = true) y los personalizados, cada uno con su conjunto de permisos y el número de cuentas que lo ostentan (incluye desactivadas: sus pivotes reservan el rol). El catálogo completo de permisos viaja en meta.permissions para construir el selector de concesiones. Requiere roles.view (Administrador y Auditor, solo lectura).",
+                "operationId": "rolesIndex",
+                "responses": {
+                    "200": {
+                        "description": "Directorio de roles con envelope RF-API-002",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Role"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "permissions": {
+                                                    "description": "Catálogo de permisos asignables (PermissionMatrix)",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "people.view"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Registrar un rol personalizado",
+                "description": "Crea un rol personalizado con un subconjunto del catálogo de permisos (RF-SEG-002: permisos asignables a roles). El nombre es un slug minúsculo único; los nombres institucionales de la sección 2.2 están reservados (422) y el catálogo completo cierra el conjunto válido (422). Requiere roles.manage (Administrador); la creación y la concesión inicial quedan en la bitácora.",
+                "operationId": "rolesStore",
+                "requestBody": {
+                    "description": "Rol a registrar",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "permissions"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "Slug minúsculo (letras, dígitos, guiones bajos) que empieza por letra",
+                                        "type": "string",
+                                        "example": "supervisor_territorial",
+                                        "maxLength": 31
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Supervisa la captura de una provincia",
+                                        "nullable": true,
+                                        "maxLength": 255
+                                    },
+                                    "permissions": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "people.view"
+                                        },
+                                        "example": [
+                                            "cases.view",
+                                            "people.view"
+                                        ],
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Rol registrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Role"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/roles/{id}": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Detalle de un rol",
+                "description": "Devuelve el rol institucional o personalizado con su conjunto de permisos y su número de cuentas. Requiere roles.view.",
+                "operationId": "rolesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rol",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Role"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Rol inexistente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Eliminar un rol personalizado",
+                "description": "Elimina el rol y sus concesiones (los pivotes caen en cascada); la bitácora conserva el nombre y el conjunto de permisos que portaba. Un rol que cuentas aún ostentan (activas o desactivadas) responde 409 con el número de cuentas; los institucionales responden 422. Requiere roles.manage.",
+                "operationId": "rolesDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Rol eliminado"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Rol inexistente"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "409": {
+                        "description": "El rol sigue asignado a cuentas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The role is still assigned to accounts. Unassign it before deleting it."
+                                        },
+                                        "role_id": {
+                                            "type": "integer",
+                                            "format": "int64",
+                                            "example": 6
+                                        },
+                                        "users_count": {
+                                            "description": "Cuentas que ostentan el rol, incluidas desactivadas",
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Editar un rol personalizado",
+                "description": "Actualiza el nombre, la descripción y/o el conjunto completo de permisos (PATCH parcial: lo ausente no cambia; permissions reemplaza el set entero). Los roles institucionales son inmutables (422: sus permisos viven en la matriz, no en la base de datos). El nombre sigue el contrato de slug y la unicidad (422). Requiere roles.manage; la edición y el cambio de concesiones quedan en la bitácora con los valores previos.",
+                "operationId": "rolesUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Campos a editar (parcial)",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "Slug minúsculo; solo para roles personalizados",
+                                        "type": "string",
+                                        "example": "supervisor_nacional",
+                                        "maxLength": 31
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Alcance nacional",
+                                        "nullable": true,
+                                        "maxLength": 255
+                                    },
+                                    "permissions": {
+                                        "description": "Reemplaza el conjunto completo de concesiones",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "people.view"
+                                        },
+                                        "example": [
+                                            "cases.view",
+                                            "people.view"
+                                        ],
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rol actualizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Role"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Rol inexistente"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "tags": [
@@ -4440,17 +5814,10 @@
                     {
                         "name": "role",
                         "in": "query",
-                        "description": "Rol institucional exacto",
+                        "description": "Rol exacto del directorio (institucional de la sección 2.2 o personalizado, ADR-26)",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "enum": [
-                                "admin",
-                                "director",
-                                "specialist",
-                                "operator",
-                                "auditor"
-                            ]
+                            "type": "string"
                         }
                     },
                     {
@@ -4585,16 +5952,11 @@
                                         "example": "Segura2026"
                                     },
                                     "roles": {
+                                        "description": "Roles del directorio: institucionales de la sección 2.2 o personalizados (ADR-26)",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
-                                            "enum": [
-                                                "admin",
-                                                "director",
-                                                "specialist",
-                                                "operator",
-                                                "auditor"
-                                            ]
+                                            "example": "operator"
                                         },
                                         "example": [
                                             "operator"
@@ -4774,16 +6136,11 @@
                                         "format": "email"
                                     },
                                     "roles": {
+                                        "description": "Asignación completa: institucionales de la sección 2.2 o personalizados (ADR-26)",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
-                                            "enum": [
-                                                "admin",
-                                                "director",
-                                                "specialist",
-                                                "operator",
-                                                "auditor"
-                                            ]
+                                            "example": "specialist"
                                         },
                                         "example": [
                                             "specialist"
@@ -6240,6 +7597,254 @@
                 },
                 "type": "object"
             },
+            "PensionCase": {
+                "title": "Expediente de pensión",
+                "description": "Expediente de pensión (RF-EXP-001): número secuencial único (RN-009), estado de la sección 2.4 y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.",
+                "properties": {
+                    "id": {
+                        "description": "Pension case projection (RF-EXP-001..004): the aggregate with its\nsubrecords. The advisory analysis (missing salary years,\noverlapping and open services) travels as a sibling `warnings`\nobject of the envelope — never inside data — because it is\nderived evidence for the specialist, not case state. The decision\nfields (approval_legal_basis_id, decision_notes, decided_at,\ndecided_by, computed_amount) stay null until the S6 transitions\nwrite them.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "number": {
+                        "description": "Número del expediente (secuencia pension_case, único)",
+                        "type": "string",
+                        "example": "1"
+                    },
+                    "requested_at": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-09-28"
+                    },
+                    "status": {
+                        "description": "Estado normativo de la sección 2.4",
+                        "type": "string",
+                        "example": "submitted",
+                        "enum": [
+                            "submitted",
+                            "under_review",
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "applicant_person_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 7
+                    },
+                    "office_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "employer_entity_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "position_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 2
+                    },
+                    "occupational_category_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "educational_level_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 4
+                    },
+                    "scientific_category_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 2
+                    },
+                    "last_salary": {
+                        "description": "Último salario, DECIMAL(12,2) no negativo (RN-005)",
+                        "type": "string",
+                        "example": "5000.00"
+                    },
+                    "approval_legal_basis_id": {
+                        "description": "Resolución aprobatoria (H-05); la fija la aprobación de S6",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "decision_notes": {
+                        "description": "Nota de resolución o motivo de denegación (S6)",
+                        "type": "string",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "decided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "decided_by": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "computed_amount": {
+                        "description": "Cuantía congelada al aprobar (S6)",
+                        "type": "string",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "calculation_setting_id": {
+                        "description": "Versión de parámetros usada (RF-CAL-008, S6)",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "salary_records": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SalaryRecord"
+                        }
+                    },
+                    "service_records": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ServiceRecord"
+                        }
+                    },
+                    "work_cycles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkCycle"
+                        }
+                    },
+                    "applicant": {
+                        "description": "Resumen del proponente para desambiguar",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "identity_number": {
+                                "type": "string"
+                            },
+                            "first_name": {
+                                "type": "string"
+                            },
+                            "first_surname": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "SalaryRecord": {
+                "title": "Registro de salario",
+                "description": "Salario devengado en un año del expediente (RF-EXP-002). El par expediente-año es único; earned_salary es DECIMAL(12,2) no negativo (RN-005).",
+                "properties": {
+                    "id": {
+                        "description": "Salary row projection (RF-EXP-002).",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "pension_case_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "year": {
+                        "description": "Año devengado (1950…año actual+1)",
+                        "type": "integer",
+                        "example": 2024
+                    },
+                    "earned_salary": {
+                        "description": "Importe exacto con dos decimales (RN-005)",
+                        "type": "string",
+                        "example": "4800.00"
+                    }
+                },
+                "type": "object"
+            },
+            "ServiceRecord": {
+                "title": "Registro de servicio",
+                "description": "Vínculo laboral declarado en el expediente (RF-EXP-003). end_date null = vínculo vigente; is_appendix marca la coletilla (servicio reconocido adicional). El orden end ≥ start está respaldado por CHECK y los solapamientos se detectan y advierten.",
+                "properties": {
+                    "id": {
+                        "description": "Work service projection (RF-EXP-003). end_date null means the\nemployment link is still open; overlaps and open links are\nadvertised in the case-level warnings, never blocked here.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "pension_case_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "entity_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2000-01-01"
+                    },
+                    "end_date": {
+                        "description": "null = vínculo vigente",
+                        "type": "string",
+                        "format": "date",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "is_appendix": {
+                        "description": "Coletilla: servicio reconocido adicional",
+                        "type": "boolean",
+                        "example": false
+                    }
+                },
+                "type": "object"
+            },
+            "WorkCycle": {
+                "title": "Ciclo de trabajo",
+                "description": "Ciclo de trabajo declarado en el expediente (RF-EXP-004): días plan, días reales y cantidad, enteros no negativos que el cómputo de años de servicio consumirá según el régimen (RF-CAL-002).",
+                "properties": {
+                    "id": {
+                        "description": "Work cycle projection (RF-EXP-004).",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "pension_case_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "planned_days": {
+                        "type": "integer",
+                        "example": 300
+                    },
+                    "actual_days": {
+                        "type": "integer",
+                        "example": 280
+                    },
+                    "cycles_count": {
+                        "type": "integer",
+                        "example": 1
+                    }
+                },
+                "type": "object"
+            },
             "Person": {
                 "title": "Persona",
                 "description": "Persona del registro único del SGP (RF-PER-001). deceased se deriva de death_date: el fallecimiento es una fecha, estar fallecido es estado derivado, nunca una columna.",
@@ -6428,6 +8033,88 @@
                 },
                 "type": "object"
             },
+            "Permission": {
+                "title": "Permiso",
+                "description": "Entrada del catálogo de permisos (RF-SEG-002, ADR-27): artefacto de código propiedad de la PermissionMatrix, expuesto como superficie de solo lectura para construir el selector de concesiones del editor de roles. Los permisos no se crean ni editan en runtime: la matriz es su única fuente de verdad y la extiende el código.",
+                "properties": {
+                    "name": {
+                        "description": "Clave natural modulo.accion del catálogo",
+                        "type": "string",
+                        "example": "people.view"
+                    },
+                    "module": {
+                        "description": "Módulo al que pertenece el permiso",
+                        "type": "string",
+                        "example": "people"
+                    },
+                    "action": {
+                        "description": "Acción (ver, crear, editar, aprobar, exportar…)",
+                        "type": "string",
+                        "example": "view"
+                    },
+                    "institutional_roles": {
+                        "description": "Roles institucionales (sección 2.2) que lo otorgan según la matriz, en orden de la sección",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "operator"
+                        }
+                    },
+                    "custom_roles": {
+                        "description": "Roles personalizados que lo incluyen en su conjunto, orden alfabético",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "supervisor_territorial"
+                        }
+                    },
+                    "users_count": {
+                        "description": "Cuentas que pueden actuar con este permiso a través de los roles que lo otorgan (incluye desactivadas: sus pivotes reservan los roles)",
+                        "type": "integer",
+                        "example": 3
+                    }
+                },
+                "type": "object"
+            },
+            "Role": {
+                "title": "Rol",
+                "description": "Rol del sistema: los cinco institucionales de la sección 2.2 (is_system = true, inmutables: sus permisos viven en la matriz) y los personalizados creados por el Administrador como subconjuntos del catálogo de permisos (RF-SEG-002, ADR-26).",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 6
+                    },
+                    "name": {
+                        "description": "Clave natural (slug minúscula); los nombres institucionales están reservados",
+                        "type": "string",
+                        "example": "supervisor_territorial"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Supervisa la captura de una provincia",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "is_system": {
+                        "description": "true para los roles institucionales de la sección 2.2 (sembrados desde la matriz, inmutables vía API); false para los personalizados",
+                        "type": "boolean"
+                    },
+                    "permissions": {
+                        "description": "Permisos otorgados al rol, subconjunto del catálogo de la matriz, orden alfabético",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "people.view"
+                        }
+                    },
+                    "users_count": {
+                        "description": "Cuentas que ostentan el rol (incluye desactivadas: sus pivotes reservan el rol, igual que la guarda de borrado)",
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "title": "Usuario",
                 "description": "Cuenta del sistema SGP con roles, permisos efectivos, persona vinculada y el estado de seguridad derivado de la sesión (bloqueo, política de contraseñas, RF-SEG-001).",
@@ -6447,7 +8134,7 @@
                         "example": "admin@sgp.local"
                     },
                     "roles": {
-                        "description": "Roles institucionales asignados (sección 2.2)",
+                        "description": "Roles asignados del directorio: institucionales (sección 2.2) o personalizados (ADR-26)",
                         "type": "array",
                         "items": {
                             "type": "string",
@@ -6676,12 +8363,20 @@
             "description": "Cuentas de usuario: vinculación con personas del registro único para la trazabilidad de acciones (RF-SEG-004)"
         },
         {
+            "name": "Roles",
+            "description": "Gestión de roles y catálogo de permisos: los cinco institucionales inmutables de la sección 2.2, los personalizados con subconjuntos del catálogo y la superficie de solo lectura de permisos que consume el editor de roles (RF-SEG-002, ADR-26/27)"
+        },
+        {
             "name": "Estructura",
             "description": "Estructura organizacional: entidades, oficinas, jerarquías acíclicas (RN-003), firmas autorizadas y árbol de consulta (RF-ENT-001..005)"
         },
         {
             "name": "Base legal",
             "description": "Corpus legal: bases con terna tipo-número-año única, año derivado de la emisión (H-11), vigencias derivadas (RN-006) y consulta documental (RF-LEG-001..004)"
+        },
+        {
+            "name": "Expedientes",
+            "description": "Expedientes de pensión: apertura con número secuencial (RN-009), subregistros de salarios/servicios/ciclos con validaciones RN-005 y advertencias de evidencia (RF-EXP-001..004)"
         }
     ]
 }
