@@ -31,7 +31,16 @@ export function usePeople(params: PeopleListParams = {}) {
   return useQuery({
     queryKey: ['people', 'list', params],
     queryFn: async () => {
-      const response = await http.get<PaginatedResponse<Person>>('/people', { params });
+      // Transformar deceased: 'all' → omitir, 'alive' → false, 'deceased' → true
+      const queryParams: Record<string, unknown> = { ...params };
+      if (!queryParams.deceased || queryParams.deceased === 'all') {
+        delete queryParams.deceased;
+      } else if (queryParams.deceased === 'alive') {
+        queryParams.deceased = false;
+      } else if (queryParams.deceased === 'deceased') {
+        queryParams.deceased = true;
+      }
+      const response = await http.get<PaginatedResponse<Person>>('/people', { params: queryParams });
       return response.data;
     },
     placeholderData: (prev) => prev,

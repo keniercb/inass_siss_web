@@ -103,15 +103,15 @@ export const peopleHandlers = [
     const page = parseInt(url.searchParams.get('page') ?? '1', 10);
     const perPage = parseInt(url.searchParams.get('per_page') ?? '15', 10);
     const search = url.searchParams.get('search') ?? '';
-    const deceased = url.searchParams.get('deceased') ?? 'all';
     const sort = url.searchParams.get('sort') ?? 'first_surname';
     const order = url.searchParams.get('order') ?? 'asc';
 
     let items = Array.from(persons.values());
 
-    // Filtro deceased
-    if (deceased === 'alive') items = items.filter((p) => !p.deceased);
-    else if (deceased === 'deceased') items = items.filter((p) => p.deceased);
+    // Filtro deceased: acepta true/false/0/1 desde el frontend
+    const deceased = url.searchParams.get('deceased');
+    if (deceased === 'true' || deceased === '1') items = items.filter((p) => p.deceased);
+    else if (deceased === 'false' || deceased === '0') items = items.filter((p) => !p.deceased);
 
     // Búsqueda: si es 11 dígitos, búsqueda por CI exacto; si no, por nombre
     if (search) {
