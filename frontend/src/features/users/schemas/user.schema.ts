@@ -4,17 +4,18 @@ import { z } from 'zod';
 export const SYSTEM_ROLES = ['admin', 'director', 'specialist', 'operator', 'auditor'] as const;
 
 // Schema para crear usuario (incluye password)
+// NOTA: roles NO se valida con Zod (se gestiona por estado local).
 export const createUserSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio').max(100),
   email: z.string().min(1, 'El email es obligatorio').email('El email no es válido').max(100),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(100),
-  roles: z.array(z.string()).min(1, 'Debe asignar al menos un rol'),
+  roles: z.array(z.string()).optional(),
 });
 
 // Schema para editar usuario (sin password, roles editables)
 export const updateUserSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio').max(100),
-  roles: z.array(z.string()).min(1, 'Debe asignar al menos un rol'),
+  roles: z.array(z.string()).optional(),
 });
 
 // Schema para restablecer contraseña

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Plus, Edit, Trash2, Lock, Unlock, RotateCcw, KeyRound } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Lock, Unlock, RotateCcw, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useUsers } from '../api/queries';
@@ -26,6 +26,7 @@ export function UsersListPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
   const [resetPassword, setResetPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const page = parseInt(searchParams.get('page') ?? '1', 10);
   const per_page = parseInt(searchParams.get('per_page') ?? '15', 10);
@@ -116,11 +117,19 @@ export function UsersListPage() {
         </Dialog>
       )}
       {resetPasswordUser && (
-        <Dialog open onClose={() => { setResetPasswordUser(null); setResetPassword(''); }} title={t('reset_password.title')} description={`${t('reset_password.for_user')}: ${resetPasswordUser.name}`} size="sm">
+        <Dialog open onClose={() => { setResetPasswordUser(null); setResetPassword(''); setShowResetPassword(false); }} title={t('reset_password.title')} description={`${t('reset_password.for_user')}: ${resetPasswordUser.name}`} size="sm">
           <div className="space-y-4">
-            <div><label className="block text-sm font-medium mb-1">{t('form.new_password')} *</label><Input type="password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="••••••••" /></div>
-            {resetPassword.length > 0 && resetPassword.length < 8 && <p className="text-xs text-destructive">{t('form.password_min')}</p>}
-            <div className="flex items-center justify-end gap-2"><Button type="button" variant="outline" onClick={() => { setResetPasswordUser(null); setResetPassword(''); }}>{tc('actions.cancel')}</Button><Button type="button" disabled={resetPassword.length < 8 || resetPwdMutation.isPending} onClick={async () => { await resetPwdMutation.mutateAsync({ id: resetPasswordUser.id!, input: { password: resetPassword } }); setResetPasswordUser(null); setResetPassword(''); }}>{resetPwdMutation.isPending ? tc('status.loading') + '…' : t('reset_password.confirm')}</Button></div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('form.new_password')} *</label>
+              <div className="relative">
+                <Input type={showResetPassword ? 'text' : 'password'} value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="••••••••" className="pr-10" />
+                <button type="button" onClick={() => setShowResetPassword(!showResetPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1}>
+                  {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {resetPassword.length > 0 && resetPassword.length < 8 && <p className="text-xs text-destructive">{t('form.password_min')}</p>}
+            </div>
+            <div className="flex items-center justify-end gap-2"><Button type="button" variant="outline" onClick={() => { setResetPasswordUser(null); setResetPassword(''); setShowResetPassword(false); }}>{tc('actions.cancel')}</Button><Button type="button" disabled={resetPassword.length < 8 || resetPwdMutation.isPending} onClick={async () => { await resetPwdMutation.mutateAsync({ id: resetPasswordUser.id!, input: { password: resetPassword } }); setResetPasswordUser(null); setResetPassword(''); setShowResetPassword(false); }}>{resetPwdMutation.isPending ? tc('status.loading') + '…' : t('reset_password.confirm')}</Button></div>
           </div>
         </Dialog>
       )}
