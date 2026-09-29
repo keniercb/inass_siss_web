@@ -11,9 +11,9 @@ const entities = new Map<number, Entity>([
 ]);
 
 const offices = new Map<number, Office>([
-  [1, { id: 1, office_type_id: 2, office_type: { id: 2, code: 'PRO', name: 'Provincial' }, province_id: 3, province: { id: 3, code: '03', name: 'La Habana' }, municipality_id: 7, municipality: { id: 7, code: '0301', name: 'La Habana Vieja' }, address: 'Calle Reina #508, Centro Habana', parent_office_id: null, parent_office: null, deactivated_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
-  [2, { id: 2, office_type_id: 3, office_type: { id: 3, code: 'MUN', name: 'Municipal' }, province_id: 3, province: { id: 3, code: '03', name: 'La Habana' }, municipality_id: 7, municipality: { id: 7, code: '0301', name: 'La Habana Vieja' }, address: 'Calle Oficios #12, Habana Vieja', parent_office_id: 1, parent_office: { id: 1, address: 'Calle Reina #508, Centro Habana' }, deactivated_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
-  [3, { id: 3, office_type_id: 1, office_type: { id: 1, code: 'NAC', name: 'Nacional' }, province_id: 3, province: { id: 3, code: '03', name: 'La Habana' }, municipality_id: 9, municipality: { id: 9, code: '0303', name: 'La Habana del Este' }, address: 'Av. Carlos III #801, Habana del Este', parent_office_id: null, parent_office: null, deactivated_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  [1, { id: 1, type: { id: 2, code: 'PRO', name: 'Provincial' }, province: { id: 3, code: '03', name: 'La Habana' }, municipality: { id: 7, code: '0301', name: 'La Habana Vieja' }, address: 'Calle Reina #508, Centro Habana', parent_office_id: null, parent: null, deactivated_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } as Office],
+  [2, { id: 2, type: { id: 3, code: 'MUN', name: 'Municipal' }, province: { id: 3, code: '03', name: 'La Habana' }, municipality: { id: 7, code: '0301', name: 'La Habana Vieja' }, address: 'Calle Oficios #12, Habana Vieja', parent_office_id: 1, parent: { id: 1, address: 'Calle Reina #508, Centro Habana' }, deactivated_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } as Office],
+  [3, { id: 3, type: { id: 1, code: 'NAC', name: 'Nacional' }, province: { id: 3, code: '03', name: 'La Habana' }, municipality: { id: 9, code: '0303', name: 'La Habana del Este' }, address: 'Av. Carlos III #801, Habana del Este', parent_office_id: null, parent: null, deactivated_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } as Office],
 ]);
 
 const signatures = new Map<number, AuthorizedSignature & { entity_id: number }>([
@@ -87,7 +87,7 @@ export const organizationsHandlers = [
   http.post(`${API_BASE}/offices`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     const id = nextOfficeId++;
-    const office: Office = { id, office_type_id: body.office_type_id as number, province_id: body.province_id as number, municipality_id: body.municipality_id as number, address: body.address as string, parent_office_id: (body.parent_office_id as number) || null, deactivated_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    const office: Office = { id, type: { id: body.office_type_id as number, code: '—', name: '—' }, province: { id: body.province_id as number, code: '—', name: '—' }, municipality: { id: body.municipality_id as number, code: '—', name: '—' }, address: body.address as string, parent_office_id: (body.parent_office_id as number) || null, deactivated_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as Office;
     offices.set(id, office);
     return HttpResponse.json({ data: office }, { status: 201 });
   }),

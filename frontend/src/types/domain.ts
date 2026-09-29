@@ -73,15 +73,12 @@ export interface Entity {
 
 export interface Office {
   id: number;
-  office_type_id: number;
-  office_type?: { id: number; code: string; name: string };
-  province_id: number;
+  type?: { id: number; code: string; name: string };
   province?: { id: number; code: string; name: string };
-  municipality_id: number;
   municipality?: { id: number; code: string; name: string };
   address: string;
   parent_office_id?: number | null;
-  parent_office?: { id: number; address: string } | null;
+  parent?: { id: number; address: string } | null;
   deactivated_at?: string | null;
   created_at?: string;
   updated_at?: string;

@@ -22,18 +22,6 @@ import { http } from '@/lib/http';
 interface CatalogItem { id: number; name: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
 
-// Mapa de tipos de oficina para resolver office_type_id → name
-function useOfficeTypesMap() {
-  const { data } = useQuery({
-    queryKey: ['catalogs', 'office-types', 'all'],
-    queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/office-types', { params: { per_page: 100 } }); return r.data; },
-    staleTime: 5 * 60 * 1000,
-  });
-  const map = new Map<number, string>();
-  (data?.data ?? []).forEach((t) => map.set(t.id, t.name));
-  return map;
-}
-
 export function OfficesListPage() {
   const { t } = useTranslation('organizations');
   const { t: tc } = useTranslation('common');
@@ -59,7 +47,6 @@ export function OfficesListPage() {
   const { data, isLoading } = useOffices({ page, per_page, search: debouncedSearch || undefined });
   const deleteMutation = useDeleteOffice();
   const canManage = can('organizations.manage');
-  const officeTypesMap = useOfficeTypesMap();
   const items = data?.data ?? [];
   const meta = data?.meta;
 
@@ -92,7 +79,7 @@ export function OfficesListPage() {
             : items.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t('offices.list.empty')}</td></tr>
             : items.map((o) => (
               <tr key={o.id} className="hover:bg-muted/50 transition-colors">
-                <td className="px-4 py-3">{o.office_type?.name ?? officeTypesMap.get(o.office_type_id) ?? `ID: ${o.office_type_id}`}</td>
+                <td className="px-4 py-3">{o.type?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.province?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.municipality?.name ?? '—'}</td>
                 <td className="px-4 py-3">{o.address}</td>
@@ -121,10 +108,10 @@ function OfficeFormModal({ office, onClose }: { office: Office | null; onClose: 
   const updateMutation = useUpdateOffice();
   const { data: typesData } = useQuery({ queryKey: ['catalogs', 'office-types', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/office-types', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: provincesData } = useQuery({ queryKey: ['catalogs', 'provinces', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/provinces', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
-  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(office?.province_id ?? null);
+  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(office?.province?.id ?? null);
   const { data: municipalitiesData } = useQuery({ queryKey: ['municipalities', 'list', { province_id: selectedProvinceId }], queryFn: async () => { if (!selectedProvinceId) return { data: [] as CatalogItem[] }; const r = await http.get<CatalogListResponse>('/municipalities', { params: { per_page: 100, province_id: selectedProvinceId } }); return r.data; }, enabled: !!selectedProvinceId });
 
-  const form = useForm<OfficeInput>({ resolver: zodResolver(officeSchema), defaultValues: office ? { office_type_id: office.office_type_id, province_id: office.province_id, municipality_id: office.municipality_id, address: office.address, parent_office_id: office.parent_office_id ?? null } : { office_type_id: 0, province_id: 0, municipality_id: 0, address: '', parent_office_id: null } });
+  const form = useForm<OfficeInput>({ resolver: zodResolver(officeSchema), defaultValues: office ? { office_type_id: office.type?.id ?? 0, province_id: office.province?.id ?? 0, municipality_id: office.municipality?.id ?? 0, address: office.address, parent_office_id: office.parent_office_id ?? null } : { office_type_id: 0, province_id: 0, municipality_id: 0, address: '', parent_office_id: null } });
   useEffect(() => { if (!isEdit) form.setValue('municipality_id', 0); }, [selectedProvinceId, form, isEdit]);
 
   const onSubmit = form.handleSubmit(async (input) => {
