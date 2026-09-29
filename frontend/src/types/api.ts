@@ -419,6 +419,170 @@ export interface paths {
         patch: operations["officesUpdate"];
         trace?: never;
     };
+    "/api/v1/pension-cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado de expedientes
+         * @description Listado filtrable por estado, oficina, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6).
+         */
+        get: operations["pensionCasesIndex"];
+        put?: never;
+        /**
+         * Apertura de un expediente
+         * @description Alta del expediente (RF-EXP-001) con número secuencial único (RN-009) y estado inicial submitted. El proponente debe estar vivo y activo (RF-SEG-003: 422 si falleció o está desactivado) y no puede tener otro expediente abierto (409 con el expediente abierto). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; el par año-expediente es único (422). Las advertencias (huecos salariales, solapamientos de servicios, vínculos abiertos) viajan junto a data.
+         */
+        post: operations["pensionCasesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de un expediente
+         * @description Devuelve el expediente con sus subregistros (salarios, servicios, ciclos) y el resumen del proponente, junto al objeto warnings: años salariales interiores ausentes (RF-EXP-002), pares de servicios solapados y vínculos sin cerrar (RF-EXP-003). Las advertencias son evidencia para el especialista, nunca bloqueos.
+         */
+        get: operations["pensionCasesShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/salary-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alta de un registro de salario
+         * @description Añade un año de salario devengado (RF-EXP-002) mientras el expediente está en submitted. El par año-expediente es único (422 semántico) y el año respeta 1950…año actual+1. La respuesta lleva el objeto warnings con los años interiores ausentes de la serie resultante.
+         */
+        post: operations["pensionCasesAddSalaryRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/salary-records/{record}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Baja de un registro de salario
+         * @description Elimina un año de la serie salarial (RF-EXP-002, altas/bajas de S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).
+         */
+        delete: operations["pensionCasesRemoveSalaryRecord"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/service-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alta de un registro de servicio
+         * @description Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. end_date null = vínculo vigente y debe ser ≥ start_date (422). Los solapamientos y vínculos abiertos NO bloquean: viajan en warnings (id de pares solapados, ids de vínculos abiertos).
+         */
+        post: operations["pensionCasesAddServiceRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/service-records/{record}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Baja de un registro de servicio
+         * @description Elimina un vínculo laboral (S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).
+         */
+        delete: operations["pensionCasesRemoveServiceRecord"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/work-cycles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alta de un ciclo de trabajo
+         * @description Añade un ciclo de trabajo (RF-EXP-004: días plan, días reales y cantidad, enteros no negativos) mientras el expediente está en submitted.
+         */
+        post: operations["pensionCasesAddWorkCycle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/work-cycles/{record}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Baja de un ciclo de trabajo
+         * @description Elimina un ciclo de trabajo (S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).
+         */
+        delete: operations["pensionCasesRemoveWorkCycle"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/people": {
         parameters: {
             query?: never;
@@ -428,7 +592,7 @@ export interface paths {
         };
         /**
          * Búsqueda de personas
-         * @description Búsqueda por identidad exacta, fragmentos de nombres/apellidos (combinables) y filtros básicos, paginada y ordenada por apellido/nombre/fecha de nacimiento (RF-PER-004). Los resultados incluyen fecha de nacimiento y padres para desambiguar homónimos.
+         * @description Búsqueda por prefijo de identidad (patrón ci_buscado%: acota con cada dígito tecleado), fragmentos de nombres/apellidos (combinables) y filtros básicos, paginada y ordenada por apellido/nombre/fecha de nacimiento (RF-PER-004). Los resultados incluyen fecha de nacimiento y padres para desambiguar homónimos.
          */
         get: operations["peopleIndex"];
         put?: never;
@@ -609,6 +773,98 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catálogo de permisos
+         * @description El catálogo completo de permisos asignables (PermissionMatrix: la única fuente de verdad, code-owned), cada uno descompuesto en módulo y acción, con los roles institucionales que lo otorgan según la matriz, los roles personalizados que lo incluyen y el número de cuentas que pueden actuar con él (incluye desactivadas: sus pivotes reservan los roles). Superficie de solo lectura que el editor de roles consume para construir el selector de concesiones. Requiere roles.view (Administrador y Auditor).
+         */
+        get: operations["permissionsIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permissions/{permission}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de un permiso
+         * @description Un permiso del catálogo por su clave natural modulo.accion: descomposición, roles institucionales que lo otorgan, roles personalizados que lo incluyen y cuentas con acceso efectivo. La ruta solo admite nombres minúscula modulo.accion; un nombre bien formado que no pertenece al catálogo responde 404. Requiere roles.view.
+         */
+        get: operations["permissionsShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Directorio de roles
+         * @description Los cinco roles institucionales de la sección 2.2 (is_system = true) y los personalizados, cada uno con su conjunto de permisos y el número de cuentas que lo ostentan (incluye desactivadas: sus pivotes reservan el rol). El catálogo completo de permisos viaja en meta.permissions para construir el selector de concesiones. Requiere roles.view (Administrador y Auditor, solo lectura).
+         */
+        get: operations["rolesIndex"];
+        put?: never;
+        /**
+         * Registrar un rol personalizado
+         * @description Crea un rol personalizado con un subconjunto del catálogo de permisos (RF-SEG-002: permisos asignables a roles). El nombre es un slug minúsculo único; los nombres institucionales de la sección 2.2 están reservados (422) y el catálogo completo cierra el conjunto válido (422). Requiere roles.manage (Administrador); la creación y la concesión inicial quedan en la bitácora.
+         */
+        post: operations["rolesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de un rol
+         * @description Devuelve el rol institucional o personalizado con su conjunto de permisos y su número de cuentas. Requiere roles.view.
+         */
+        get: operations["rolesShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Eliminar un rol personalizado
+         * @description Elimina el rol y sus concesiones (los pivotes caen en cascada); la bitácora conserva el nombre y el conjunto de permisos que portaba. Un rol que cuentas aún ostentan (activas o desactivadas) responde 409 con el número de cuentas; los institucionales responden 422. Requiere roles.manage.
+         */
+        delete: operations["rolesDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Editar un rol personalizado
+         * @description Actualiza el nombre, la descripción y/o el conjunto completo de permisos (PATCH parcial: lo ausente no cambia; permissions reemplaza el set entero). Los roles institucionales son inmutables (422: sus permisos viven en la matriz, no en la base de datos). El nombre sigue el contrato de slug y la unicidad (422). Requiere roles.manage; la edición y el cambio de concesiones quedan en la bitácora con los valores previos.
+         */
+        patch: operations["rolesUpdate"];
         trace?: never;
     };
     "/api/v1/users": {
@@ -1247,6 +1503,214 @@ export interface components {
             parent?: Record<string, never> | null;
         };
         /**
+         * Expediente de pensión
+         * @description Expediente de pensión (RF-EXP-001): número secuencial único (RN-009), estado de la sección 2.4 y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.
+         */
+        PensionCase: {
+            /**
+             * Format: int64
+             * @description Pension case projection (RF-EXP-001..004): the aggregate with its
+             *     subrecords. The advisory analysis (missing salary years,
+             *     overlapping and open services) travels as a sibling `warnings`
+             *     object of the envelope — never inside data — because it is
+             *     derived evidence for the specialist, not case state. The decision
+             *     fields (approval_legal_basis_id, decision_notes, decided_at,
+             *     decided_by, computed_amount) stay null until the S6 transitions
+             *     write them.
+             * @example 1
+             */
+            id?: number;
+            /**
+             * @description Número del expediente (secuencia pension_case, único)
+             * @example 1
+             */
+            number?: string;
+            /**
+             * Format: date
+             * @example 2026-09-28
+             */
+            requested_at?: string;
+            /**
+             * @description Estado normativo de la sección 2.4
+             * @example submitted
+             * @enum {string}
+             */
+            status?: "submitted" | "under_review" | "approved" | "rejected";
+            /**
+             * Format: int64
+             * @example 7
+             */
+            applicant_person_id?: number;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            office_id?: number;
+            /**
+             * Format: int64
+             * @example 3
+             */
+            employer_entity_id?: number;
+            /**
+             * Format: int64
+             * @example 2
+             */
+            position_id?: number;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            occupational_category_id?: number;
+            /**
+             * Format: int64
+             * @example 4
+             */
+            educational_level_id?: number;
+            /**
+             * Format: int64
+             * @example 2
+             */
+            scientific_category_id?: number;
+            /**
+             * @description Último salario, DECIMAL(12,2) no negativo (RN-005)
+             * @example 5000.00
+             */
+            last_salary?: string;
+            /**
+             * Format: int64
+             * @description Resolución aprobatoria (H-05); la fija la aprobación de S6
+             * @example null
+             */
+            approval_legal_basis_id?: number | null;
+            /**
+             * @description Nota de resolución o motivo de denegación (S6)
+             * @example null
+             */
+            decision_notes?: string | null;
+            /**
+             * Format: date-time
+             * @example null
+             */
+            decided_at?: string | null;
+            /**
+             * Format: int64
+             * @example null
+             */
+            decided_by?: number | null;
+            /**
+             * @description Cuantía congelada al aprobar (S6)
+             * @example null
+             */
+            computed_amount?: string | null;
+            /**
+             * Format: int64
+             * @description Versión de parámetros usada (RF-CAL-008, S6)
+             * @example null
+             */
+            calculation_setting_id?: number | null;
+            salary_records?: components["schemas"]["SalaryRecord"][];
+            service_records?: components["schemas"]["ServiceRecord"][];
+            work_cycles?: components["schemas"]["WorkCycle"][];
+            /** @description Resumen del proponente para desambiguar */
+            applicant?: {
+                /** Format: int64 */
+                id?: number;
+                identity_number?: string;
+                first_name?: string;
+                first_surname?: string;
+            } | null;
+        };
+        /**
+         * Registro de salario
+         * @description Salario devengado en un año del expediente (RF-EXP-002). El par expediente-año es único; earned_salary es DECIMAL(12,2) no negativo (RN-005).
+         */
+        SalaryRecord: {
+            /**
+             * Format: int64
+             * @description Salary row projection (RF-EXP-002).
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            pension_case_id?: number;
+            /**
+             * @description Año devengado (1950…año actual+1)
+             * @example 2024
+             */
+            year?: number;
+            /**
+             * @description Importe exacto con dos decimales (RN-005)
+             * @example 4800.00
+             */
+            earned_salary?: string;
+        };
+        /**
+         * Registro de servicio
+         * @description Vínculo laboral declarado en el expediente (RF-EXP-003). end_date null = vínculo vigente; is_appendix marca la coletilla (servicio reconocido adicional). El orden end ≥ start está respaldado por CHECK y los solapamientos se detectan y advierten.
+         */
+        ServiceRecord: {
+            /**
+             * Format: int64
+             * @description Work service projection (RF-EXP-003). end_date null means the
+             *     employment link is still open; overlaps and open links are
+             *     advertised in the case-level warnings, never blocked here.
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            pension_case_id?: number;
+            /**
+             * Format: int64
+             * @example 3
+             */
+            entity_id?: number;
+            /**
+             * Format: date
+             * @example 2000-01-01
+             */
+            start_date?: string;
+            /**
+             * Format: date
+             * @description null = vínculo vigente
+             * @example null
+             */
+            end_date?: string | null;
+            /**
+             * @description Coletilla: servicio reconocido adicional
+             * @example false
+             */
+            is_appendix?: boolean;
+        };
+        /**
+         * Ciclo de trabajo
+         * @description Ciclo de trabajo declarado en el expediente (RF-EXP-004): días plan, días reales y cantidad, enteros no negativos que el cómputo de años de servicio consumirá según el régimen (RF-CAL-002).
+         */
+        WorkCycle: {
+            /**
+             * Format: int64
+             * @description Work cycle projection (RF-EXP-004).
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            pension_case_id?: number;
+            /** @example 300 */
+            planned_days?: number;
+            /** @example 280 */
+            actual_days?: number;
+            /** @example 1 */
+            cycles_count?: number;
+        };
+        /**
          * Persona
          * @description Persona del registro único del SGP (RF-PER-001). deceased se deriva de death_date: el fallecimiento es una fecha, estar fallecido es estado derivado, nunca una columna.
          */
@@ -1410,6 +1874,60 @@ export interface components {
             deceased?: boolean;
         };
         /**
+         * Permiso
+         * @description Entrada del catálogo de permisos (RF-SEG-002, ADR-27): artefacto de código propiedad de la PermissionMatrix, expuesto como superficie de solo lectura para construir el selector de concesiones del editor de roles. Los permisos no se crean ni editan en runtime: la matriz es su única fuente de verdad y la extiende el código.
+         */
+        Permission: {
+            /**
+             * @description Clave natural modulo.accion del catálogo
+             * @example people.view
+             */
+            name?: string;
+            /**
+             * @description Módulo al que pertenece el permiso
+             * @example people
+             */
+            module?: string;
+            /**
+             * @description Acción (ver, crear, editar, aprobar, exportar…)
+             * @example view
+             */
+            action?: string;
+            /** @description Roles institucionales (sección 2.2) que lo otorgan según la matriz, en orden de la sección */
+            institutional_roles?: string[];
+            /** @description Roles personalizados que lo incluyen en su conjunto, orden alfabético */
+            custom_roles?: string[];
+            /**
+             * @description Cuentas que pueden actuar con este permiso a través de los roles que lo otorgan (incluye desactivadas: sus pivotes reservan los roles)
+             * @example 3
+             */
+            users_count?: number;
+        };
+        /**
+         * Rol
+         * @description Rol del sistema: los cinco institucionales de la sección 2.2 (is_system = true, inmutables: sus permisos viven en la matriz) y los personalizados creados por el Administrador como subconjuntos del catálogo de permisos (RF-SEG-002, ADR-26).
+         */
+        Role: {
+            /**
+             * Format: int64
+             * @example 6
+             */
+            id?: number;
+            /**
+             * @description Clave natural (slug minúscula); los nombres institucionales están reservados
+             * @example supervisor_territorial
+             */
+            name?: string;
+            /** @example Supervisa la captura de una provincia */
+            description?: string | null;
+            /** @description true para los roles institucionales de la sección 2.2 (sembrados desde la matriz, inmutables vía API); false para los personalizados */
+            is_system?: boolean;
+            /** @description Permisos otorgados al rol, subconjunto del catálogo de la matriz, orden alfabético */
+            permissions?: string[];
+            /** @description Cuentas que ostentan el rol (incluye desactivadas: sus pivotes reservan el rol, igual que la guarda de borrado) */
+            users_count?: number;
+        };
+        /**
          * Usuario
          * @description Cuenta del sistema SGP con roles, permisos efectivos, persona vinculada y el estado de seguridad derivado de la sesión (bloqueo, política de contraseñas, RF-SEG-001).
          */
@@ -1426,7 +1944,7 @@ export interface components {
              * @example admin@sgp.local
              */
             email?: string;
-            /** @description Roles institucionales asignados (sección 2.2) */
+            /** @description Roles asignados del directorio: institucionales (sección 2.2) o personalizados (ADR-26) */
             roles?: string[];
             /** @description Permisos efectivos (de roles y directos), orden alfabético */
             permissions?: string[];
@@ -3229,10 +3747,513 @@ export interface operations {
             422: components["responses"]["ValidationError"];
         };
     };
+    pensionCasesIndex: {
+        parameters: {
+            query?: {
+                status?: "submitted" | "under_review" | "approved" | "rejected";
+                office_id?: number;
+                applicant_person_id?: number;
+                number?: string;
+                requested_from?: string;
+                requested_to?: string;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultados paginados con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PensionCase"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 42 */
+                            total?: number;
+                            /** @example 3 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionCasesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example 7 */
+                    applicant_person_id: number;
+                    /** @example 1 */
+                    office_id: number;
+                    /** @example 3 */
+                    employer_entity_id: number;
+                    /** @example 2 */
+                    position_id: number;
+                    /** @example 1 */
+                    occupational_category_id: number;
+                    /** @example 4 */
+                    educational_level_id: number;
+                    /** @example 2 */
+                    scientific_category_id: number;
+                    /**
+                     * @description Último salario, decimal exacto no negativo (RN-005)
+                     * @example 5000.00
+                     */
+                    last_salary: string;
+                    /**
+                     * Format: date
+                     * @description Opcional; por defecto hoy; nunca futura
+                     * @example 2026-09-28
+                     */
+                    requested_at?: string | null;
+                    /** @description Serie salarial inicial (todo o nada) */
+                    salary_records?: {
+                        /** @example 2024 */
+                        year?: number;
+                        /** @example 4800.00 */
+                        earned_salary?: string;
+                    }[];
+                    /** @description Historial laboral inicial (todo o nada) */
+                    service_records?: {
+                        /** @example 3 */
+                        entity_id?: number;
+                        /**
+                         * Format: date
+                         * @example 2000-01-01
+                         */
+                        start_date?: string;
+                        /**
+                         * Format: date
+                         * @example null
+                         */
+                        end_date?: string | null;
+                        /** @example false */
+                        is_appendix?: boolean;
+                    }[];
+                    /** @description Ciclos de trabajo iniciales (todo o nada) */
+                    work_cycles?: {
+                        /** @example 300 */
+                        planned_days?: number;
+                        /** @example 280 */
+                        actual_days?: number;
+                        /** @example 1 */
+                        cycles_count?: number;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Expediente creado (con subregistros y advertencias) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PensionCase"];
+                        /** @description Análisis de evidencia (huecos, solapamientos, vínculos abiertos) */
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description La persona ya tiene un expediente abierto (devuelve el expediente) o el expediente ya no es editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                        case?: components["schemas"]["PensionCase"] | null;
+                        case_id?: number | null;
+                        status?: string | null;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionCasesShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Expediente con subregistros y advertencias */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PensionCase"];
+                        warnings?: {
+                            /**
+                             * @example [
+                             *       2019,
+                             *       2020
+                             *     ]
+                             */
+                            missing_salary_years?: number[];
+                            /**
+                             * @example [
+                             *       [
+                             *         1,
+                             *         2
+                             *       ]
+                             *     ]
+                             */
+                            overlapping_services?: number[][];
+                            /**
+                             * @example [
+                             *       3
+                             *     ]
+                             */
+                            open_services?: number[];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente inexistente o desactivado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pensionCasesAddSalaryRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example 2024 */
+                    year: number;
+                    /** @example 4800.00 */
+                    earned_salary: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Registro añadido con advertencias de la serie */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["SalaryRecord"];
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionCasesRemoveSalaryRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                record: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registro eliminado (con advertencias actualizadas) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Salary record removed. */
+                        message?: string;
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente o registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pensionCasesAddServiceRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example 3 */
+                    entity_id: number;
+                    /**
+                     * Format: date
+                     * @example 2000-01-01
+                     */
+                    start_date: string;
+                    /**
+                     * Format: date
+                     * @description null = vínculo vigente
+                     * @example null
+                     */
+                    end_date?: string | null;
+                    /**
+                     * @description Coletilla
+                     * @example false
+                     */
+                    is_appendix?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Registro añadido con advertencias de solapamiento */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["ServiceRecord"];
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionCasesRemoveServiceRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                record: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registro eliminado (con advertencias actualizadas) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Service record removed. */
+                        message?: string;
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente o registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pensionCasesAddWorkCycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example 300 */
+                    planned_days: number;
+                    /** @example 280 */
+                    actual_days: number;
+                    /** @example 1 */
+                    cycles_count: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Ciclo añadido */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["WorkCycle"];
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionCasesRemoveWorkCycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                record: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ciclo eliminado (con advertencias actualizadas) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Work cycle removed. */
+                        message?: string;
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente o registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     peopleIndex: {
         parameters: {
             query?: {
-                /** @description Número de identidad exacto */
+                /** @description Prefijo del carné de identidad: 1 a 11 dígitos, ci_buscado% (11 dígitos equivale a la búsqueda exacta) */
                 identity?: string;
                 /** @description Fragmentos de nombre/apellido (cada palabra debe aparecer) */
                 q?: string;
@@ -3783,13 +4804,284 @@ export interface operations {
             422: components["responses"]["ValidationError"];
         };
     };
+    permissionsIndex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Catálogo de permisos con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Permission"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    permissionsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Clave natural del permiso */
+                permission: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Permiso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Permission"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Permiso inexistente o nombre malformado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rolesIndex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Directorio de roles con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Role"][];
+                        meta?: {
+                            /** @description Catálogo de permisos asignables (PermissionMatrix) */
+                            permissions?: string[];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    rolesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Rol a registrar */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Slug minúsculo (letras, dígitos, guiones bajos) que empieza por letra
+                     * @example supervisor_territorial
+                     */
+                    name: string;
+                    /** @example Supervisa la captura de una provincia */
+                    description?: string | null;
+                    /**
+                     * @example [
+                     *       "cases.view",
+                     *       "people.view"
+                     *     ]
+                     */
+                    permissions: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Rol registrado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Role"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    rolesShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rol */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Role"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Rol inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rolesDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rol eliminado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Rol inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description El rol sigue asignado a cuentas */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example The role is still assigned to accounts. Unassign it before deleting it. */
+                        message?: string;
+                        /**
+                         * Format: int64
+                         * @example 6
+                         */
+                        role_id?: number;
+                        /**
+                         * @description Cuentas que ostentan el rol, incluidas desactivadas
+                         * @example 3
+                         */
+                        users_count?: number;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    rolesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Campos a editar (parcial) */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Slug minúsculo; solo para roles personalizados
+                     * @example supervisor_nacional
+                     */
+                    name?: string;
+                    /** @example Alcance nacional */
+                    description?: string | null;
+                    /**
+                     * @description Reemplaza el conjunto completo de concesiones
+                     * @example [
+                     *       "cases.view",
+                     *       "people.view"
+                     *     ]
+                     */
+                    permissions?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Rol actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Role"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Rol inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
     usersIndex: {
         parameters: {
             query?: {
                 /** @description Texto libre sobre nombre o email (palabras en AND) */
                 q?: string;
-                /** @description Rol institucional exacto */
-                role?: "admin" | "director" | "specialist" | "operator" | "auditor";
+                /** @description Rol exacto del directorio (institucional de la sección 2.2 o personalizado, ADR-26) */
+                role?: string;
                 status?: "active" | "inactive" | "all";
                 page?: number;
                 per_page?: number;
@@ -3851,11 +5143,12 @@ export interface operations {
                      */
                     password: string;
                     /**
+                     * @description Roles del directorio: institucionales de la sección 2.2 o personalizados (ADR-26)
                      * @example [
                      *       "operator"
                      *     ]
                      */
-                    roles: ("admin" | "director" | "specialist" | "operator" | "auditor")[];
+                    roles: string[];
                 };
             };
         };
@@ -3960,11 +5253,12 @@ export interface operations {
                      */
                     email?: string;
                     /**
+                     * @description Asignación completa: institucionales de la sección 2.2 o personalizados (ADR-26)
                      * @example [
                      *       "specialist"
                      *     ]
                      */
-                    roles?: ("admin" | "director" | "specialist" | "operator" | "auditor")[];
+                    roles?: string[];
                 };
             };
         };

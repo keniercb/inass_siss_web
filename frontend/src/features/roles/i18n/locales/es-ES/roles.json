@@ -1,0 +1,23 @@
+{
+  "list": {
+    "title": "Roles y permisos",
+    "description": "Gestión de roles del sistema (institucionales y personalizados)",
+    "new": "Nuevo rol",
+    "search_placeholder": "Buscar por nombre o descripción…",
+    "empty": "No hay roles para los filtros seleccionados",
+    "filter": { "all": "Todos", "system": "Institucionales", "custom": "Personalizados" },
+    "columns": { "name": "Nombre", "description": "Descripción", "type": "Tipo", "permissions": "Permisos", "users": "Usuarios" },
+    "type": { "system": "Institucional", "custom": "Personalizado" },
+    "permissions_count": "permisos",
+    "view_permissions": "Ver permisos"
+  },
+  "create": { "title": "Crear rol personalizado", "description": "Defina el nombre, descripción y permisos del nuevo rol", "success": "Rol creado correctamente", "error": "Ocurrió un error al crear el rol", "duplicate": "Ya existe un rol con ese nombre" },
+  "edit": { "title": "Editar rol", "description": "Modifique la descripción y permisos del rol" },
+  "update": { "success": "Rol actualizado correctamente", "error": "Ocurrió un error al actualizar el rol" },
+  "delete": { "title": "Eliminar rol", "description": "Eliminar el rol '{{name}}'", "confirm": "Esta acción es irreversible. No se puede eliminar un rol si tiene usuarios asignados.", "confirm_button": "Eliminar", "success": "Rol eliminado correctamente", "error": "Ocurrió un error al eliminar el rol", "has_users": "No se puede eliminar: hay usuarios con este rol" },
+  "form": {
+    "name": "Nombre (slug)", "name_help": "Slug en minúsculas, sin espacios. Los nombres institucionales están reservados.",
+    "description": "Descripción",
+    "permissions": "Permisos", "permissions_required": "Debe asignar al menos un permiso"
+  }
+}

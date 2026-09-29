@@ -1,0 +1,23 @@
+{
+  "list": {
+    "title": "Roles and permissions",
+    "description": "Role management (institutional and custom)",
+    "new": "New role",
+    "search_placeholder": "Search by name or description…",
+    "empty": "No roles for the selected filters",
+    "filter": { "all": "All", "system": "Institutional", "custom": "Custom" },
+    "columns": { "name": "Name", "description": "Description", "type": "Type", "permissions": "Permissions", "users": "Users" },
+    "type": { "system": "Institutional", "custom": "Custom" },
+    "permissions_count": "permissions",
+    "view_permissions": "View permissions"
+  },
+  "create": { "title": "Create custom role", "description": "Define the name, description and permissions for the new role", "success": "Role created successfully", "error": "An error occurred while creating the role", "duplicate": "A role with that name already exists" },
+  "edit": { "title": "Edit role", "description": "Modify the role's description and permissions" },
+  "update": { "success": "Role updated successfully", "error": "An error occurred while updating the role" },
+  "delete": { "title": "Delete role", "description": "Delete role '{{name}}'", "confirm": "This action is irreversible. A role with assigned users cannot be deleted.", "confirm_button": "Delete", "success": "Role deleted successfully", "error": "An error occurred while deleting the role", "has_users": "Cannot delete: there are users with this role" },
+  "form": {
+    "name": "Name (slug)", "name_help": "Lowercase slug, no spaces. Institutional names are reserved.",
+    "description": "Description",
+    "permissions": "Permissions", "permissions_required": "At least one permission must be assigned"
+  }
+}

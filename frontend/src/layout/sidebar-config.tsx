@@ -11,6 +11,7 @@ import {
   Library,
   Settings,
   UserCog,
+  KeyRound,
   FolderOpen,
   MapPin,
   Banknote,
@@ -122,5 +123,11 @@ export const sidebarConfig: SidebarItem[] = [
     path: '/usuarios',
     icon: UserCog,
     permiso: 'users.view',
+  },
+  {
+    label: 'Roles y permisos',
+    path: '/roles',
+    icon: KeyRound,
+    permiso: 'roles.view',
   },
 ];
