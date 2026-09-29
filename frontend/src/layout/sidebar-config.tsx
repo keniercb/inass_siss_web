@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Users,
+  Building,
   Building2,
   FolderKanban,
   Scale,
@@ -67,6 +68,12 @@ export const sidebarConfig: SidebarItem[] = [
     label: 'Entidades',
     path: '/entidades',
     icon: Building2,
+    permiso: 'organizations.view',
+  },
+  {
+    label: 'Oficinas',
+    path: '/oficinas',
+    icon: Building,
     permiso: 'organizations.view',
   },
   {

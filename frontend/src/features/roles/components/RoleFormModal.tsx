@@ -10,6 +10,7 @@ import { usePermissions } from '../api/queries';
 import { roleSchema, PERMISSION_MODULES, ACTION_LABELS, type RoleInput } from '../schemas/role.schema';
 import type { components } from '@/types/api';
 import type { AxiosError } from 'axios';
+import { useToast } from '@/components/ui/Toast';
 
 type Role = components['schemas']['Role'];
 type Permission = components['schemas']['Permission'];
@@ -26,6 +27,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
   const isSystem = role?.is_system === true;
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
+  const toast = useToast();
   const { data: permissions } = usePermissions();
 
   // Permisos seleccionados (estado local)
@@ -73,6 +75,11 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
   };
 
   const onSubmit = form.handleSubmit(async (input) => {
+    // Validar manualmente que haya al menos 1 permiso
+    if (selectedPerms.size === 0) {
+      toast.error(t('form.permissions_required'));
+      return;
+    }
     // Injectar permisos seleccionados
     input.permissions = Array.from(selectedPerms).sort();
     try {
@@ -145,7 +152,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
           <Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button>
-          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending || (isSystem && isEdit)}>
+          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
             {createMutation.isPending || updateMutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}
           </Button>
         </div>
