@@ -131,27 +131,40 @@ export function PersonFormModal({ person, onClose }: PersonFormModalProps) {
       size="lg"
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        {/* Número de identidad (CI cubano) */}
-        <div>
-          <label htmlFor="identity_number" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.identity_number')} <span className="text-destructive">*</span>
-          </label>
-          <Input
-            id="identity_number"
-            type="text"
-            inputMode="numeric"
-            maxLength={11}
-            placeholder="85061547812"
-            disabled={isEdit}
-            error={!!form.formState.errors.identity_number}
-            {...form.register('identity_number')}
-          />
-          {form.formState.errors.identity_number && (
-            <p className="text-xs text-destructive mt-1" role="alert">
-              {String(form.formState.errors.identity_number.message)}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground mt-1">{t('form.identity_number_help')}</p>
+        {/* CI cubano + Ficha única de ciudadano (2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="identity_number" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.identity_number')} <span className="text-destructive">*</span>
+            </label>
+            <Input
+              id="identity_number"
+              type="text"
+              inputMode="numeric"
+              maxLength={11}
+              placeholder="85061547812"
+              disabled={isEdit}
+              error={!!form.formState.errors.identity_number}
+              {...form.register('identity_number')}
+            />
+            {form.formState.errors.identity_number && (
+              <p className="text-xs text-destructive mt-1" role="alert">
+                {String(form.formState.errors.identity_number.message)}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">{t('form.identity_number_help')}</p>
+          </div>
+          <div>
+            <label htmlFor="citizen_card_id" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.citizen_card_id')}
+            </label>
+            <Input
+              id="citizen_card_id"
+              type="text"
+              {...form.register('citizen_card_id')}
+            />
+            <p className="text-xs text-muted-foreground mt-1">{t('form.citizen_card_id_help')}</p>
+          </div>
         </div>
 
         {/* Nombres (2 columnas) */}
@@ -256,43 +269,43 @@ export function PersonFormModal({ person, onClose }: PersonFormModalProps) {
           </div>
         </div>
 
-        {/* Raza */}
-        <div>
-          <label htmlFor="race_id" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.race')}
-          </label>
-          <select
-            id="race_id"
-            className={selectClass}
-            value={String(form.watch('race_id') ?? '')}
-            onChange={(e) => form.setValue('race_id', e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">{tc('actions.select')}</option>
-            {races.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Dirección */}
-        <div>
-          <label htmlFor="address" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.address')} <span className="text-destructive">*</span>
-          </label>
-          <Input
-            id="address"
-            type="text"
-            placeholder="Calle 23 #45, Vedado, La Habana"
-            error={!!form.formState.errors.address}
-            {...form.register('address')}
-          />
-          {form.formState.errors.address && (
-            <p className="text-xs text-destructive mt-1" role="alert">
-              {String(form.formState.errors.address.message)}
-            </p>
-          )}
+        {/* Raza + Dirección (2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="race_id" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.race')}
+            </label>
+            <select
+              id="race_id"
+              className={selectClass}
+              value={String(form.watch('race_id') ?? '')}
+              onChange={(e) => form.setValue('race_id', e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">{tc('actions.select')}</option>
+              {races.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.address')} <span className="text-destructive">*</span>
+            </label>
+            <Input
+              id="address"
+              type="text"
+              placeholder="Calle 23 #45, Vedado, La Habana"
+              error={!!form.formState.errors.address}
+              {...form.register('address')}
+            />
+            {form.formState.errors.address && (
+              <p className="text-xs text-destructive mt-1" role="alert">
+                {String(form.formState.errors.address.message)}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Padre/Madre (desambiguación) — 2 columnas */}
@@ -309,19 +322,6 @@ export function PersonFormModal({ person, onClose }: PersonFormModalProps) {
             </label>
             <Input id="mother_name" type="text" {...form.register('mother_name')} />
           </div>
-        </div>
-
-        {/* Ficha única de ciudadano */}
-        <div>
-          <label htmlFor="citizen_card_id" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.citizen_card_id')}
-          </label>
-          <Input
-            id="citizen_card_id"
-            type="text"
-            {...form.register('citizen_card_id')}
-          />
-          <p className="text-xs text-muted-foreground mt-1">{t('form.citizen_card_id_help')}</p>
         </div>
 
         {/* Footer */}

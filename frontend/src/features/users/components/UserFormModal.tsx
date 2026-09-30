@@ -112,20 +112,32 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
   });
 
   return (
-    <Dialog open onClose={onClose} title={t(isEdit ? 'edit.title' : 'create.title')} description={t(isEdit ? 'edit.description' : 'create.description')} size="md">
+    <Dialog open onClose={onClose} title={t(isEdit ? 'edit.title' : 'create.title')} description={t(isEdit ? 'edit.description' : 'create.description')} size="lg">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('form.name')} *</label>
-          <Input type="text" error={!!form.formState.errors.name} {...form.register('name' as never)} />
-          {form.formState.errors.name && <p className="text-xs text-destructive mt-1">{String(form.formState.errors.name.message)}</p>}
-        </div>
-        {!isEdit && (
-          <>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('form.email')} *</label>
+        {/* Nombre + Email (2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('form.name')} *</label>
+            <Input type="text" error={!!form.formState.errors.name} {...form.register('name' as never)} />
+            {form.formState.errors.name && <p className="text-xs text-destructive mt-1">{String(form.formState.errors.name.message)}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('form.email')} {!isEdit && <span className="text-destructive">*</span>}</label>
+            {!isEdit ? (
               <Input type="email" error={!!(form.formState.errors as Record<string, unknown>).email} {...form.register('email' as never)} />
-              {(form.formState.errors as Record<string, { message?: string }>).email && <p className="text-xs text-destructive mt-1">{String((form.formState.errors as Record<string, { message?: string }>).email?.message)}</p>}
-            </div>
+            ) : (
+              <Input type="email" value={user?.email ?? ''} disabled />
+            )}
+            {!isEdit ? (
+              (form.formState.errors as Record<string, { message?: string }>).email && <p className="text-xs text-destructive mt-1">{String((form.formState.errors as Record<string, { message?: string }>).email?.message)}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">{t('form.email_immutable')}</p>
+            )}
+          </div>
+        </div>
+        {/* Contraseña + Oficina (2 columnas); en edición, la oficina ocupa todo el ancho */}
+        <div className="grid grid-cols-2 gap-3">
+          {!isEdit && (
             <div>
               <label className="block text-sm font-medium mb-1">{t('form.password')} *</label>
               <div className="relative">
@@ -136,25 +148,17 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
               </div>
               {(form.formState.errors as Record<string, { message?: string }>).password && <p className="text-xs text-destructive mt-1">{String((form.formState.errors as Record<string, { message?: string }>).password?.message)}</p>}
             </div>
-          </>
-        )}
-        {isEdit && (
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('form.email')}</label>
-            <Input type="email" value={user?.email ?? ''} disabled />
-            <p className="text-xs text-muted-foreground mt-1">{t('form.email_immutable')}</p>
+          )}
+          <div className={isEdit ? 'col-span-2' : ''}>
+            <label className="block text-sm font-medium mb-1">{t('form.office_id')} *</label>
+            <select className={selectClass} value={officeId} onChange={(e) => { const v = Number(e.target.value); setOfficeId(v); form.setValue('office_id' as never, v as never); }}>
+              <option value="0">{tc('actions.select')}</option>
+              {offices.map((o) => {
+                const label = [o.type?.name, o.province?.name, o.municipality?.name].filter(Boolean).join(' — ') || o.address;
+                return <option key={o.id} value={o.id}>{label}</option>;
+              })}
+            </select>
           </div>
-        )}
-        {/* Oficina */}
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('form.office_id')} *</label>
-          <select className={selectClass} value={officeId} onChange={(e) => { const v = Number(e.target.value); setOfficeId(v); form.setValue('office_id' as never, v as never); }}>
-            <option value="0">{tc('actions.select')}</option>
-            {offices.map((o) => {
-              const label = [o.type?.name, o.province?.name, o.municipality?.name].filter(Boolean).join(' — ') || o.address;
-              return <option key={o.id} value={o.id}>{label}</option>;
-            })}
-          </select>
         </div>
         {/* Roles cargados del backend (institucionales + personalizados) */}
         <div>

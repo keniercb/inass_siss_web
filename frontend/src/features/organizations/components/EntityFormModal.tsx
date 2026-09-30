@@ -149,16 +149,19 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
             </select>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('entities.form.municipality')} *</label>
-          <select className={selectClass} disabled={!selectedProvinceId} {...form.register('municipality_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}>
-            <option value="">{!selectedProvinceId ? t('agencies.form.select_province_first') : tc('actions.select')}</option>
-            {(municipalitiesData?.data ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('entities.form.address')} *</label>
-          <Input type="text" error={!!form.formState.errors.address} {...form.register('address')} />
+        {/* Municipio + Dirección (2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('entities.form.municipality')} *</label>
+            <select className={selectClass} disabled={!selectedProvinceId} {...form.register('municipality_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}>
+              <option value="">{!selectedProvinceId ? t('agencies.form.select_province_first') : tc('actions.select')}</option>
+              {(municipalitiesData?.data ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('entities.form.address')} *</label>
+            <Input type="text" error={!!form.formState.errors.address} {...form.register('address')} />
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div><label className="block text-sm font-medium mb-1">{t('entities.form.phone')}</label><Input type="text" {...form.register('phone')} /></div>
