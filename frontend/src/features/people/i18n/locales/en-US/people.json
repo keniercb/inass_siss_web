@@ -16,6 +16,7 @@
       "sex": "Sex",
       "sex_male": "M",
       "sex_female": "F",
+      "citizen_card_id": "Citizen card",
       "birth_date": "Birth date",
       "status": "Status"
     },

@@ -6,7 +6,7 @@
       "new": "Nueva entidad",
       "search_placeholder": "Buscar por código o NIT…",
       "empty": "No hay entidades para los filtros seleccionados",
-      "columns": { "code": "Código", "name": "NIT", "organization": "Organismo", "type": "Tipo", "location": "Ubicación" }
+      "columns": { "code": "Código", "tax_id_number": "NIT", "organization": "Organismo", "type": "Tipo", "location": "Ubicación", "director": "Director", "contact": "Contacto" }
     },
     "create": { "title": "Crear entidad", "description": "Complete los datos de la nueva entidad empleadora", "success": "Entidad creada correctamente", "error": "Ocurrió un error al crear la entidad", "duplicate": "Ya existe una entidad con ese código o NIT" },
     "edit": { "title": "Editar entidad", "description": "Modifique los datos de la entidad. El código no puede modificarse." },
@@ -16,7 +16,7 @@
     "detail": { "back_to_list": "Volver al listado", "not_found": "Entidad no encontrada", "tabs": { "data": "Datos", "signatures": "Firmas autorizadas", "hierarchy": "Jerarquía" }, "tabs_empty": { "signatures": "Sin firmas autorizadas", "signatures_description": "Esta entidad no tiene firmas autorizadas registradas.", "hierarchy": "Sin jerarquía", "hierarchy_description": "No hay jerarquía configurada para esta entidad." }, "fields": { "code": "Código", "tax_id_number": "NIT", "organization": "Organismo", "entity_type": "Tipo de entidad", "province": "Provincia", "municipality": "Municipio", "address": "Dirección", "phone": "Teléfono", "fax": "Fax", "email": "Email", "director": "Director", "economic_director": "Director económico", "parent_entity": "Entidad superior", "social_purpose": "Objeto social" } }
   },
   "offices": {
-    "list": { "title": "Oficinas", "description": "Oficinas del Ministerio de Trabajo", "new": "Nueva oficina", "search_placeholder": "Buscar por dirección…", "empty": "No hay oficinas para los filtros seleccionados", "columns": { "type": "Tipo", "province": "Provincia", "municipality": "Municipio", "address": "Dirección" } },
+    "list": { "title": "Oficinas", "description": "Oficinas del Ministerio de Trabajo", "new": "Nueva oficina", "search_placeholder": "Buscar por dirección…", "empty": "No hay oficinas para los filtros seleccionados", "columns": { "type": "Tipo", "province": "Provincia", "municipality": "Municipio", "address": "Dirección", "cases_count": "Expedientes", "scope_cases_count": "Ámbito" } },
     "create": { "title": "Crear oficina", "description": "Complete los datos de la nueva oficina", "success": "Oficina creada correctamente", "error": "Ocurrió un error al crear la oficina" },
     "edit": { "title": "Editar oficina", "description": "Modifique los datos de la oficina" },
     "update": { "success": "Oficina actualizada correctamente", "error": "Ocurrió un error al actualizar la oficina", "conflict": "Otro usuario ha modificado la oficina" },
