@@ -95,7 +95,10 @@ export function PersonFormModal({ person, onClose }: PersonFormModalProps) {
   const onSubmit = form.handleSubmit(async (input) => {
     try {
       if (isEdit && person) {
-        await updateMutation.mutateAsync({ id: person.id!, input });
+        // No enviar identity_number en PATCH (es inmutable tras creación,
+        // el backend rechaza con 422 si se incluye)
+        const { identity_number: _ci, ...updateInput } = input;
+        await updateMutation.mutateAsync({ id: person.id!, input: updateInput as PersonInput });
       } else {
         await createMutation.mutateAsync(input);
       }
