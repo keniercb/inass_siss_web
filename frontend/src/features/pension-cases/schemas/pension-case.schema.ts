@@ -6,10 +6,9 @@ export type SalaryRecord = components['schemas']['SalaryRecord'];
 export type ServiceRecord = components['schemas']['ServiceRecord'];
 export type WorkCycle = components['schemas']['WorkCycle'];
 
-// Schema para crear expediente (number y requested_at los genera el backend)
+// Schema para crear expediente (number, requested_at y office_id los maneja el backend)
 export const createCaseSchema = z.object({
   applicant_person_id: z.number().int().positive('El proponente es obligatorio'),
-  office_id: z.number().int().positive('La oficina es obligatoria'),
   employer_entity_id: z.number().int().positive('El centro de trabajo es obligatorio'),
   position_id: z.number().int().positive('El cargo es obligatorio'),
   occupational_category_id: z.number().int().positive('La categoría ocupacional es obligatoria'),

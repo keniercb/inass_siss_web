@@ -27,9 +27,6 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const { data: eduData } = useQuery({ queryKey: ['catalogs', 'educational-levels', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/educational-levels', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: sciCatData } = useQuery({ queryKey: ['catalogs', 'scientific-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/scientific-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
 
-  // Cargar oficinas
-  const { data: officesData } = useQuery({ queryKey: ['offices', 'all'], queryFn: async () => { const r = await http.get<{ data: CatalogItem[] }>('/offices', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
-
   // Cargar entidades
   const { data: entitiesData } = useQuery({ queryKey: ['entities', 'all'], queryFn: async () => { const r = await http.get<{ data: EntityListItem[] }>('/entities', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
 
@@ -49,7 +46,6 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   }, [personSearch]);
 
   // Estado local para selects
-  const [officeId, setOfficeId] = useState(0);
   const [entityId, setEntityId] = useState(0);
   const [positionId, setPositionId] = useState(0);
   const [occCatId, setOccCatId] = useState(0);
@@ -60,10 +56,9 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
 
   const onSubmit = async () => {
-    if (!selectedPerson || !officeId || !entityId || !positionId || !occCatId || !eduId || !sciCatId) return;
+    if (!selectedPerson || !entityId || !positionId || !occCatId || !eduId || !sciCatId || lastSalary !== '') return;
     const input: CreateCaseInput = {
       applicant_person_id: selectedPerson,
-      office_id: officeId,
       employer_entity_id: entityId,
       position_id: positionId,
       occupational_category_id: occCatId,
@@ -77,7 +72,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
     } catch { /* handled by mutation */ }
   };
 
-  const canSubmit = selectedPerson && officeId && entityId && positionId && occCatId && eduId && sciCatId && lastSalary !== '';
+  const canSubmit = selectedPerson && entityId && positionId && occCatId && eduId && sciCatId && lastSalary !== '';
 
   return (
     <Dialog open onClose={onClose} title={t('create.title')} description={t('create.description')} size="xl">
@@ -96,12 +91,8 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
             </div>
           )}
         </div>
-        {/* Oficina + Entidad */}
+        {/* Entidad */}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('form.office_id')} *</label>
-            <select className={selectClass} value={officeId} onChange={(e) => setOfficeId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(officesData?.data ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select></div>
           <div><label className="block text-sm font-medium mb-1">{t('form.employer_entity_id')} *</label>
             <select className={selectClass} value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}>
               <option value="">{tc('actions.select')}</option>{(entitiesData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.code} — {e.tax_id_number}</option>)}
