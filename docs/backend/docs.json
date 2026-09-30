@@ -3327,7 +3327,7 @@
                     "Expedientes"
                 ],
                 "summary": "Listado de expedientes",
-                "description": "Listado filtrable por estado, oficina, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6).",
+                "description": "Listado filtrable por estado, oficina, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6). Cada fila viaja con la proyección COMPLETA del promovente (regla de usuario 3).",
                 "operationId": "pensionCasesIndex",
                 "parameters": [
                     {
@@ -3465,7 +3465,7 @@
                     "Expedientes"
                 ],
                 "summary": "Apertura de un expediente",
-                "description": "Alta del expediente (RF-EXP-001) con número secuencial único (RN-009) y estado inicial submitted. El proponente debe estar vivo y activo (RF-SEG-003: 422 si falleció o está desactivado) y no puede tener otro expediente abierto (409 con el expediente abierto). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; el par año-expediente es único (422). Las advertencias (huecos salariales, solapamientos de servicios, vínculos abiertos) viajan junto a data.",
+                "description": "Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PP-YYYY-CCCCC (código de provincia de la oficina registrante, año en curso y consecutivo anual rellenado con ceros, secciones separadas por guion). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.",
                 "operationId": "pensionCasesStore",
                 "requestBody": {
                     "required": true,
@@ -3474,12 +3474,14 @@
                             "schema": {
                                 "required": [
                                     "applicant_person_id",
-                                    "office_id",
                                     "employer_entity_id",
                                     "position_id",
                                     "occupational_category_id",
                                     "educational_level_id",
                                     "scientific_category_id",
+                                    "pension_type_id",
+                                    "pension_regime_id",
+                                    "rebel_army_member",
                                     "last_salary"
                                 ],
                                 "properties": {
@@ -3488,8 +3490,10 @@
                                         "example": 7
                                     },
                                     "office_id": {
+                                        "description": "PROHIBIDO (regla 0): el expediente asume la oficina del usuario autenticado",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": null,
+                                        "nullable": true
                                     },
                                     "employer_entity_id": {
                                         "type": "integer",
@@ -3511,6 +3515,28 @@
                                         "type": "integer",
                                         "example": 2
                                     },
+                                    "pension_type_id": {
+                                        "description": "Tipo de pensión del catálogo (regla 4)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pension_regime_id": {
+                                        "description": "Régimen de pensión del catálogo (regla 4)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "rebel_army_member": {
+                                        "description": "Pertenece al Ejército Rebelde (regla 4)",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "rebel_army_join_date": {
+                                        "description": "Fecha de alta en el Ejército Rebelde: obligatoria si rebel_army_member=true, rechazada si false",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": null,
+                                        "nullable": true
+                                    },
                                     "last_salary": {
                                         "description": "Último salario, decimal exacto no negativo (RN-005)",
                                         "type": "string",
@@ -3520,11 +3546,11 @@
                                         "description": "Opcional; por defecto hoy; nunca futura",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2026-09-28",
+                                        "example": "2026-09-30",
                                         "nullable": true
                                     },
                                     "salary_records": {
-                                        "description": "Serie salarial inicial (todo o nada)",
+                                        "description": "Serie salarial inicial, máximo 15 filas (regla 1, todo o nada)",
                                         "type": "array",
                                         "items": {
                                             "properties": {
@@ -3538,7 +3564,8 @@
                                                 }
                                             },
                                             "type": "object"
-                                        }
+                                        },
+                                        "maxItems": 15
                                     },
                                     "service_records": {
                                         "description": "Historial laboral inicial (todo o nada)",
@@ -3584,6 +3611,23 @@
                                                 "cycles_count": {
                                                     "type": "integer",
                                                     "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "income_concept_records": {
+                                        "description": "Conceptos de ingreso declarados (regla 5, todo o nada): un valor por concepto",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "income_concept_id": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "amount": {
+                                                    "type": "string",
+                                                    "example": "150.00"
                                                 }
                                             },
                                             "type": "object"
@@ -4207,6 +4251,161 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Work cycle removed."
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Expediente o registro inexistente"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/income-concept-records": {
+            "post": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Alta de un concepto de ingreso",
+                "description": "Declara el valor de un concepto de ingreso del expediente (regla de usuario 5) mientras el expediente está en submitted. El par concepto-expediente es único (422 semántico) y el importe es decimal exacto no negativo (RN-005).",
+                "operationId": "pensionCasesAddIncomeConceptRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "income_concept_id",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "income_concept_id": {
+                                        "description": "Concepto del catálogo de conceptos de ingreso",
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "amount": {
+                                        "description": "Importe exacto con dos decimales (RN-005)",
+                                        "type": "string",
+                                        "example": "150.00"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Concepto declarado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/IncomeConceptRecord"
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/income-concept-records/{record}": {
+            "delete": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Baja de un concepto de ingreso",
+                "description": "Elimina el valor declarado de un concepto de ingreso (regla de usuario 5) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).",
+                "operationId": "pensionCasesRemoveIncomeConceptRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "record",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Concepto eliminado (con advertencias actualizadas)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Income concept record removed."
                                         },
                                         "warnings": {
                                             "type": "object"
@@ -7629,25 +7828,54 @@
                 },
                 "type": "object"
             },
-            "PensionCase": {
-                "title": "Expediente de pensión",
-                "description": "Expediente de pensión (RF-EXP-001): número secuencial único (RN-009), estado de la sección 2.4 y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.",
+            "IncomeConceptRecord": {
+                "title": "Concepto de ingreso del expediente",
+                "description": "Valor declarado de un concepto de ingreso del expediente (regla de usuario 5): el par expediente-concepto es único y el valor es DECIMAL(12,2) no negativo (RN-005).",
                 "properties": {
                     "id": {
-                        "description": "Pension case projection (RF-EXP-001..004): the aggregate with its\nsubrecords. The advisory analysis (missing salary years,\noverlapping and open services) travels as a sibling `warnings`\nobject of the envelope — never inside data — because it is\nderived evidence for the specialist, not case state. The decision\nfields (approval_legal_basis_id, decision_notes, decided_at,\ndecided_by, computed_amount) stay null until the S6 transitions\nwrite them.",
+                        "description": "Income concept row projection (user rule 5).",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "pension_case_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "income_concept_id": {
+                        "description": "Concepto del catálogo (Salario en divisas, Antigüedad…)",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "amount": {
+                        "description": "Importe exacto con dos decimales (RN-005)",
+                        "type": "string",
+                        "example": "150.00"
+                    }
+                },
+                "type": "object"
+            },
+            "PensionCase": {
+                "title": "Expediente de pensión",
+                "description": "Expediente de pensión (RF-EXP-001): número compuesto PP-YYYY-CCCCC — provincia de la oficina registrante, año en curso y consecutivo anual, separados por guion (regla de usuario 2/ADR-32) —, estado de la sección 2.4, clasificación de pensión y par de Ejército Rebelde (regla 4) y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.",
+                "properties": {
+                    "id": {
+                        "description": "Pension case projection (RF-EXP-001..004 + user rules 0-5): the\naggregate with its subrecords. The applicant travels as the FULL\nPerson projection (user rule 3 — reused from the People module's\nresource so the promovente is never a summary that drifts from\nthe people surface). The advisory analysis (missing salary years,\noverlapping and open services) travels as a sibling `warnings`\nobject of the envelope — never inside data — because it is\nderived evidence for the specialist, not case state. The decision\nfields (approval_legal_basis_id, decision_notes, decided_at,\ndecided_by, computed_amount) stay null until the S6 transitions\nwrite them.",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
                     },
                     "number": {
-                        "description": "Número del expediente (secuencia pension_case, único)",
+                        "description": "Número del expediente: PP-YYYY-CCCCC (provincia-año-consecutivo anual), único",
                         "type": "string",
-                        "example": "1"
+                        "example": "11-2026-00001"
                     },
                     "requested_at": {
                         "type": "string",
                         "format": "date",
-                        "example": "2026-09-28"
+                        "example": "2026-09-30"
                     },
                     "status": {
                         "description": "Estado normativo de la sección 2.4",
@@ -7666,6 +7894,7 @@
                         "example": 7
                     },
                     "office_id": {
+                        "description": "Oficina del usuario que registró el expediente (regla 0/ADR-33)",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -7695,10 +7924,34 @@
                         "format": "int64",
                         "example": 2
                     },
+                    "pension_type_id": {
+                        "description": "Tipo de pensión del catálogo (regla 4)",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "pension_regime_id": {
+                        "description": "Régimen de pensión del catálogo (regla 4)",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
                     "last_salary": {
                         "description": "Último salario, DECIMAL(12,2) no negativo (RN-005)",
                         "type": "string",
                         "example": "5000.00"
+                    },
+                    "rebel_army_member": {
+                        "description": "Pertenece al Ejército Rebelde (regla 4)",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "rebel_army_join_date": {
+                        "description": "Fecha de alta en el Ejército Rebelde: obligatoria si rebel_army_member es true",
+                        "type": "string",
+                        "format": "date",
+                        "example": null,
+                        "nullable": true
                     },
                     "approval_legal_basis_id": {
                         "description": "Resolución aprobatoria (H-05); la fija la aprobación de S6",
@@ -7739,6 +7992,7 @@
                         "nullable": true
                     },
                     "salary_records": {
+                        "description": "Serie salarial: máximo 15 filas (regla 1)",
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/SalaryRecord"
@@ -7756,25 +8010,21 @@
                             "$ref": "#/components/schemas/WorkCycle"
                         }
                     },
+                    "income_concept_records": {
+                        "description": "Conceptos de ingreso declarados (regla 5)",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IncomeConceptRecord"
+                        }
+                    },
                     "applicant": {
-                        "description": "Resumen del proponente para desambiguar",
-                        "properties": {
-                            "id": {
-                                "type": "integer",
-                                "format": "int64"
-                            },
-                            "identity_number": {
-                                "type": "string"
-                            },
-                            "first_name": {
-                                "type": "string"
-                            },
-                            "first_surname": {
-                                "type": "string"
+                        "description": "Proyección COMPLETA del promovente (regla 3)",
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Person"
                             }
-                        },
-                        "type": "object",
-                        "nullable": true
+                        ]
                     }
                 },
                 "type": "object"
@@ -7809,10 +8059,10 @@
             },
             "ServiceRecord": {
                 "title": "Registro de servicio",
-                "description": "Vínculo laboral declarado en el expediente (RF-EXP-003). end_date null = vínculo vigente; is_appendix marca la coletilla (servicio reconocido adicional). El orden end ≥ start está respaldado por CHECK y los solapamientos se detectan y advierten.",
+                "description": "Vinculo laboral declarado en el expediente (RF-EXP-003). end_date null = vinculo vigente; is_appendix marca la coletilla (servicio reconocido adicional). El orden end >= start esta respaldado por CHECK y los solapamientos se detectan y advierten. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).",
                 "properties": {
                     "id": {
-                        "description": "Work service projection (RF-EXP-003). end_date null means the\nemployment link is still open; overlaps and open links are\nadvertised in the case-level warnings, never blocked here.",
+                        "description": "Work service projection (RF-EXP-003). end_date null means the\nemployment link is still open; overlaps and open links are\nadvertised in the case-level warnings, never blocked here. The\nfull employer entity projection travels with every row (user\nrule: the service-records listing answers the entity data, not\na bare id).",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -7833,7 +8083,7 @@
                         "example": "2000-01-01"
                     },
                     "end_date": {
-                        "description": "null = vínculo vigente",
+                        "description": "null = vinculo vigente",
                         "type": "string",
                         "format": "date",
                         "example": null,
@@ -7843,6 +8093,15 @@
                         "description": "Coletilla: servicio reconocido adicional",
                         "type": "boolean",
                         "example": false
+                    },
+                    "entity": {
+                        "description": "Proyeccion completa de la entidad empleadora (regla de usuario del listado)",
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Entity"
+                            }
+                        ]
                     }
                 },
                 "type": "object"
