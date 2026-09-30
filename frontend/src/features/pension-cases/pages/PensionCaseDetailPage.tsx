@@ -133,14 +133,14 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.fields.applicant')}</h3>
           <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-            <Field label={tc('people.detail.fields.identity_number')} value={person.identity_number ?? '—'} mono />
-            <Field label={tc('people.detail.fields.citizen_card_id')} value={person.citizen_card_id ?? '—'} />
-            <Field label={tc('people.detail.fields.full_name')} value={[person.first_surname, person.second_surname, person.first_name, person.middle_name].filter(Boolean).join(' ')} />
-            <Field label={tc('people.detail.fields.sex')} value={person.sex === 'M' ? tc('people.detail.fields.sex_male') : tc('people.detail.fields.sex_female')} />
-            <Field label={tc('people.detail.fields.birth_date')} value={person.birth_date ? formatDate(person.birth_date) : '—'} />
-            <Field label={tc('people.detail.fields.address')} value={person.address ?? '—'} fullWidth />
-            <Field label={tc('people.detail.fields.father_name')} value={person.father_name ?? '—'} />
-            <Field label={tc('people.detail.fields.mother_name')} value={person.mother_name ?? '—'} />
+            <Field label={tc('people:detail.fields.identity_number')} value={person.identity_number ?? '—'} mono />
+            <Field label={tc('people:detail.fields.citizen_card_id')} value={person.citizen_card_id ?? '—'} />
+            <Field label={tc('people:detail.fields.full_name')} value={[person.first_surname, person.second_surname, person.first_name, person.middle_name].filter(Boolean).join(' ')} />
+            <Field label={tc('people:detail.fields.sex')} value={person.sex === 'M' ? tc('people:detail.fields.sex_male') : tc('people:detail.fields.sex_female')} />
+            <Field label={tc('people:detail.fields.birth_date')} value={person.birth_date ? formatDate(person.birth_date) : '—'} />
+            <Field label={tc('people:detail.fields.address')} value={person.address ?? '—'} fullWidth />
+            <Field label={tc('people:detail.fields.father_name')} value={person.father_name ?? '—'} />
+            <Field label={tc('people:detail.fields.mother_name')} value={person.mother_name ?? '—'} />
           </div>
         </div>
       )}
