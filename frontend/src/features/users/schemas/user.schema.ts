@@ -9,12 +9,14 @@ export const createUserSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio').max(100),
   email: z.string().min(1, 'El email es obligatorio').email('El email no es válido').max(100),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(100),
+  office_id: z.number().int().positive('La oficina es obligatoria'),
   roles: z.array(z.string()).optional(),
 });
 
 // Schema para editar usuario (sin password, roles editables)
 export const updateUserSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio').max(100),
+  office_id: z.number().int().positive('La oficina es obligatoria'),
   roles: z.array(z.string()).optional(),
 });
 

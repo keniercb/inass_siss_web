@@ -16,5 +16,5 @@
   "restore": { "title": "Restore user", "success": "User restored successfully", "error": "An error occurred while restoring the user" },
   "unlock": { "title": "Unlock user", "success": "User unlocked successfully", "error": "An error occurred while unlocking the user" },
   "reset_password": { "title": "Reset password", "for_user": "For user", "confirm": "Reset", "success": "Password reset successfully", "error": "An error occurred while resetting the password" },
-  "form": { "name": "Name", "email": "Email", "password": "Password", "email_immutable": "The email cannot be modified after creation", "roles": "Roles", "roles_required": "At least one role must be assigned", "new_password": "New password", "password_min": "The password must be at least 8 characters" }
+  "form": { "name": "Name", "email": "Email", "password": "Password", "email_immutable": "The email cannot be modified after creation", "office_id": "Office", "office_required": "You must select an office", "roles": "Roles", "roles_required": "At least one role must be assigned", "new_password": "New password", "password_min": "The password must be at least 8 characters" }
 }

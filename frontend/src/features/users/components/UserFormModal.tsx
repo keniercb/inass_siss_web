@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Eye, EyeOff } from 'lucide-react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
@@ -12,8 +13,12 @@ import { createUserSchema, updateUserSchema, ROLE_LABELS, type CreateUserInput, 
 import { useRoles } from '@/features/roles/api/queries';
 import type { components } from '@/types/api';
 import type { AxiosError } from 'axios';
+import { http } from '@/lib/http';
+import { cn } from '@/lib/utils';
 
 type User = components['schemas']['User'];
+
+interface OfficeItem { id: number; address: string; type?: { name: string }; province?: { name: string }; municipality?: { name: string }; }
 
 interface UserFormModalProps {
   user?: User;
@@ -32,23 +37,44 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
   const { data: rolesData } = useRoles({ per_page: 100 });
   const allRoles = rolesData?.data ?? [];
 
+  // Cargar oficinas del backend
+  const { data: officesData } = useQuery({
+    queryKey: ['offices', 'all'],
+    queryFn: async () => {
+      const r = await http.get<{ data: OfficeItem[] }>('/offices', { params: { per_page: 100 } });
+      return r.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const offices = officesData?.data ?? [];
+
   // Roles seleccionados (estado local)
   const [selectedRoles, setSelectedRoles] = useState<string[]>(user?.roles ?? []);
 
   // Toggle de visibilidad de contraseña
   const [showPassword, setShowPassword] = useState(false);
 
+  // Oficina seleccionada (estado local controlado)
+  const [officeId, setOfficeId] = useState<number>(0);
+
+  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
+
   const form = useForm<CreateUserInput | UpdateUserInput>({
     resolver: zodResolver(isEdit ? updateUserSchema : createUserSchema) as never,
     defaultValues: user
-      ? { name: user.name ?? '', roles: user.roles ?? [] }
-      : { name: '', email: '', password: '', roles: [] },
+      ? { name: user.name ?? '', office_id: (user as Record<string, unknown>).office_id as number ?? 0, roles: user.roles ?? [] }
+      : { name: '', email: '', password: '', office_id: 0, roles: [] },
   });
+
+  // Sincronizar officeId del form al estado local (para edición)
+  const formOfficeId = form.watch('office_id' as never) as unknown as number;
+  if (formOfficeId && officeId === 0 && isEdit) {
+    setOfficeId(formOfficeId);
+  }
 
   const toggleRole = (role: string) => {
     setSelectedRoles((prev) => {
       const next = prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role];
-      // Actualizar el form para que tenga el valor correcto
       form.setValue('roles' as never, next as never);
       return next;
     });
@@ -60,8 +86,14 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
       toast.error(t('form.roles_required'));
       return;
     }
-    // Injectar roles seleccionados
+    // Validar que tenga oficina
+    if (!officeId) {
+      toast.error(t('form.office_required'));
+      return;
+    }
+    // Injectar roles y office_id
     (input as Record<string, unknown>).roles = selectedRoles;
+    (input as Record<string, unknown>).office_id = officeId;
     try {
       if (isEdit && user) {
         await updateMutation.mutateAsync({ id: user.id!, input: input as UpdateUserInput });
@@ -113,6 +145,17 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
             <p className="text-xs text-muted-foreground mt-1">{t('form.email_immutable')}</p>
           </div>
         )}
+        {/* Oficina */}
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('form.office_id')} *</label>
+          <select className={selectClass} value={officeId} onChange={(e) => { const v = Number(e.target.value); setOfficeId(v); form.setValue('office_id' as never, v as never); }}>
+            <option value="0">{tc('actions.select')}</option>
+            {offices.map((o) => {
+              const label = [o.type?.name, o.province?.name, o.municipality?.name].filter(Boolean).join(' — ') || o.address;
+              return <option key={o.id} value={o.id}>{label}</option>;
+            })}
+          </select>
+        </div>
         {/* Roles cargados del backend (institucionales + personalizados) */}
         <div>
           <label className="block text-sm font-medium mb-1">{t('form.roles')} *</label>

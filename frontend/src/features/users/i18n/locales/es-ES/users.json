@@ -16,5 +16,5 @@
   "restore": { "title": "Reactivar usuario", "success": "Usuario reactivado correctamente", "error": "Ocurrió un error al reactivar el usuario" },
   "unlock": { "title": "Desbloquear usuario", "success": "Usuario desbloqueado correctamente", "error": "Ocurrió un error al desbloquear el usuario" },
   "reset_password": { "title": "Restablecer contraseña", "for_user": "Para usuario", "confirm": "Restablecer", "success": "Contraseña restablecida correctamente", "error": "Ocurrió un error al restablecer la contraseña" },
-  "form": { "name": "Nombre", "email": "Email", "password": "Contraseña", "email_immutable": "El email no puede modificarse tras la creación", "roles": "Roles", "roles_required": "Debe asignar al menos un rol", "new_password": "Nueva contraseña", "password_min": "La contraseña debe tener al menos 8 caracteres" }
+  "form": { "name": "Nombre", "email": "Email", "password": "Contraseña", "email_immutable": "El email no puede modificarse tras la creación", "office_id": "Oficina", "office_required": "Debe seleccionar una oficina", "roles": "Roles", "roles_required": "Debe asignar al menos un rol", "role_system": "sistema", "new_password": "Nueva contraseña", "password_min": "La contraseña debe tener al menos 8 caracteres" }
 }
