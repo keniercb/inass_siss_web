@@ -79,6 +79,10 @@ export interface Office {
   address: string;
   parent_office_id?: number | null;
   parent?: { id: number; address: string } | null;
+  /** Expedientes tramitados por la oficina (todo estado; ADR-28) */
+  cases_count?: number;
+  /** Expedientes en su ámbito: la oficina y sus subordinadas activas (RF-ENT-005, ADR-28) */
+  scope_cases_count?: number;
   deactivated_at?: string | null;
   created_at?: string;
   updated_at?: string;

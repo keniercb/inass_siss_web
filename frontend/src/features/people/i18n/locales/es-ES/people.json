@@ -16,6 +16,7 @@
       "sex": "Sexo",
       "sex_male": "M",
       "sex_female": "F",
+      "citizen_card_id": "Ficha única",
       "birth_date": "Fecha de nacimiento",
       "status": "Estado"
     },

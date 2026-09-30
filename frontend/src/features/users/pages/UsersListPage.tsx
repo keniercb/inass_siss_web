@@ -77,17 +77,21 @@ export function UsersListPage() {
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.name')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.email')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.roles')}</th>
+            <th className="text-left px-4 py-3 font-medium">{t('list.columns.office')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.status')}</th>
             {canManage && <th className="text-right px-4 py-3 font-medium">{tc('table.actions')}</th>}
           </tr></thead>
           <tbody className="divide-y divide-border">
-            {isLoading ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
-            : items.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t('list.empty')}</td></tr>
-            : items.map((u) => (
+            {isLoading ? <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
+            : items.length === 0 ? <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">{t('list.empty')}</td></tr>
+            : items.map((u) => {
+              const officeLabel = u.office ? [u.office.type?.name, u.office.province?.name, u.office.municipality?.name].filter(Boolean).join(' — ') || u.office.address : '—';
+              return (
               <tr key={u.id} className="hover:bg-muted/50 transition-colors">
                 <td className="px-4 py-3 font-medium">{u.name}</td>
                 <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                 <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{(u.roles ?? []).map((r) => <span key={r} className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">{ROLE_LABELS[r] ?? r}</span>)}</div></td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">{officeLabel}</td>
                 <td className="px-4 py-3">
                   {u.locked && <span className="badge badge-rejected"><Lock className="w-3 h-3" />{t('list.status.locked')}</span>}
                   {!u.locked && u.status === 'active' && <span className="badge badge-approved">{t('list.status.active')}</span>}
@@ -105,7 +109,8 @@ export function UsersListPage() {
                   </td>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
         {meta && meta.total > 0 && <Pagination currentPage={meta.current_page} lastPage={meta.last_page} perPage={meta.per_page} total={meta.total} onChange={(p, pp) => updateParams({ page: p, ...(pp ? { per_page: pp } : {}) })} />}

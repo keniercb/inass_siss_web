@@ -6,7 +6,7 @@
     "search_placeholder": "Buscar por nombre o email…",
     "empty": "No hay usuarios para los filtros seleccionados",
     "filter": { "all": "Todos", "active": "Activos", "inactive": "Desactivados", "locked": "Bloqueados" },
-    "columns": { "name": "Nombre", "email": "Email", "roles": "Roles", "status": "Estado" },
+    "columns": { "name": "Nombre", "email": "Email", "roles": "Roles", "office": "Oficina", "status": "Estado" },
     "status": { "active": "Activo", "inactive": "Desactivado", "locked": "Bloqueado" }
   },
   "create": { "title": "Crear usuario", "description": "Complete los datos de la nueva cuenta", "success": "Usuario creado correctamente", "error": "Ocurrió un error al crear el usuario", "duplicate": "Ya existe un usuario con ese email" },

@@ -72,17 +72,21 @@ export function OfficesListPage() {
             <th className="text-left px-4 py-3 font-medium">{t('offices.list.columns.province')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('offices.list.columns.municipality')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('offices.list.columns.address')}</th>
+            <th className="text-right px-4 py-3 font-medium">{t('offices.list.columns.cases_count')}</th>
+            <th className="text-right px-4 py-3 font-medium">{t('offices.list.columns.scope_cases_count')}</th>
             {canManage && <th className="text-right px-4 py-3 font-medium">{tc('table.actions')}</th>}
           </tr></thead>
           <tbody className="divide-y divide-border">
-            {isLoading ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
-            : items.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t('offices.list.empty')}</td></tr>
+            {isLoading ? <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
+            : items.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">{t('offices.list.empty')}</td></tr>
             : items.map((o) => (
               <tr key={o.id} className="hover:bg-muted/50 transition-colors">
                 <td className="px-4 py-3">{o.type?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.province?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.municipality?.name ?? '—'}</td>
                 <td className="px-4 py-3">{o.address}</td>
+                <td className="px-4 py-3 text-right font-mono text-xs">{o.cases_count ?? '—'}</td>
+                <td className="px-4 py-3 text-right font-mono text-xs">{o.scope_cases_count ?? '—'}</td>
                 {canManage && <td className="px-4 py-3 text-right"><div className="inline-flex items-center gap-1"><button onClick={() => { setEditOffice(o); setFormOpen(true); }} className="p-1.5 rounded hover:bg-muted"><Edit className="w-4 h-4" /></button><button onClick={() => setDeleteId(o.id!)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-4 h-4" /></button></div></td>}
               </tr>
             ))}
