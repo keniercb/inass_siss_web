@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2 } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { usePensionCase } from '../api/queries';
@@ -10,6 +11,12 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
 import { formatDate, formatCUP, cn } from '@/lib/utils';
+import { http } from '@/lib/http';
+import type { components } from '@/types/api';
+
+type Person = components['schemas']['Person'];
+interface EntityItem { id: number; code: string; tax_id_number: string; }
+interface EntityListResponse { data: EntityItem[]; }
 
 type Tab = 'summary' | 'subrecords' | 'history' | 'calculation';
 
@@ -50,16 +57,7 @@ export function PensionCaseDetailPage() {
       </div>
 
       {activeTab === 'summary' && (
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <Field label={t('detail.fields.number')} value={pensionCase.number ?? '—'} mono />
-          <Field label={t('detail.fields.status')} value={t(`list.status.${pensionCase.status}`)} />
-          <Field label={t('detail.fields.requested_at')} value={pensionCase.requested_at ? formatDate(pensionCase.requested_at) : '—'} />
-          <Field label={t('detail.fields.applicant')} value={applicantName} />
-          <Field label={t('detail.fields.last_salary')} value={pensionCase.last_salary != null ? formatCUP(Number(pensionCase.last_salary)) : '—'} />
-          {pensionCase.computed_amount != null && <Field label={t('detail.fields.computed_amount')} value={formatCUP(Number(pensionCase.computed_amount))} />}
-          {pensionCase.decision_notes && <Field label={t('detail.fields.decision_notes')} value={pensionCase.decision_notes} fullWidth />}
-          {pensionCase.decided_at && <Field label={t('detail.fields.decided_at')} value={formatDate(pensionCase.decided_at)} />}
-        </div>
+        <SummaryTab pensionCase={pensionCase} t={t} tc={tc} />
       )}
 
       {activeTab === 'subrecords' && (
@@ -102,6 +100,54 @@ export function PensionCaseDetailPage() {
   );
 }
 
+function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api').components['schemas']['PensionCase']; t: (key: string) => string; tc: (key: string) => string }) {
+  // Cargar datos completos del proponente
+  const { data: person } = useQuery({
+    queryKey: ['people', 'detail', pensionCase.applicant_person_id],
+    queryFn: async () => {
+      const r = await http.get<{ data: Person }>(`/people/${pensionCase.applicant_person_id}`);
+      return r.data.data;
+    },
+    enabled: !!pensionCase.applicant_person_id,
+    staleTime: 60_000,
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Datos del expediente */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.tabs.summary')}</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <Field label={t('detail.fields.number')} value={pensionCase.number ?? '—'} mono />
+          <Field label={t('detail.fields.status')} value={t(`list.status.${pensionCase.status}`)} />
+          <Field label={t('detail.fields.requested_at')} value={pensionCase.requested_at ? formatDate(pensionCase.requested_at) : '—'} />
+          <Field label={t('detail.fields.last_salary')} value={pensionCase.last_salary != null ? formatCUP(Number(pensionCase.last_salary)) : '—'} />
+          {pensionCase.computed_amount != null && <Field label={t('detail.fields.computed_amount')} value={formatCUP(Number(pensionCase.computed_amount))} />}
+          {pensionCase.decided_at && <Field label={t('detail.fields.decided_at')} value={formatDate(pensionCase.decided_at)} />}
+          {pensionCase.decision_notes && <Field label={t('detail.fields.decision_notes')} value={pensionCase.decision_notes} fullWidth />}
+        </div>
+      </div>
+
+      {/* Datos del proponente */}
+      {person && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.fields.applicant')}</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <Field label={tc('people.detail.fields.identity_number')} value={person.identity_number ?? '—'} mono />
+            <Field label={tc('people.detail.fields.citizen_card_id')} value={person.citizen_card_id ?? '—'} />
+            <Field label={tc('people.detail.fields.full_name')} value={[person.first_surname, person.second_surname, person.first_name, person.middle_name].filter(Boolean).join(' ')} />
+            <Field label={tc('people.detail.fields.sex')} value={person.sex === 'M' ? tc('people.detail.fields.sex_male') : tc('people.detail.fields.sex_female')} />
+            <Field label={tc('people.detail.fields.birth_date')} value={person.birth_date ? formatDate(person.birth_date) : '—'} />
+            <Field label={tc('people.detail.fields.address')} value={person.address ?? '—'} fullWidth />
+            <Field label={tc('people.detail.fields.father_name')} value={person.father_name ?? '—'} />
+            <Field label={tc('people.detail.fields.mother_name')} value={person.mother_name ?? '—'} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return <button onClick={onClick} className={cn('flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', active ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>{children}</button>;
 }
@@ -129,8 +175,26 @@ function SalaryRecordModal({ caseId, onClose }: { caseId: string; onClose: () =>
 function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddServiceRecord(caseId);
-  const [entityId, setEntityId] = useState('0'); const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState(''); const [isAppendix, setIsAppendix] = useState(false);
-  return <Dialog open onClose={onClose} title={t('service.add')} size="sm"><div className="space-y-4"><div><label className="block text-sm font-medium mb-1">ID entidad *</label><Input type="number" min="1" value={entityId} onChange={(e) => setEntityId(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('service.form.start_date')} *</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('service.form.end_date')}</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div><label className="flex items-center gap-2"><input type="checkbox" checked={isAppendix} onChange={(e) => setIsAppendix(e.target.checked)} className="w-4 h-4" /><span className="text-sm">{t('service.form.is_appendix')}</span></label><div className="flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!entityId || !startDate || mutation.isPending} onClick={async () => { await mutation.mutateAsync({ entity_id: Number(entityId), start_date: startDate, end_date: endDate || null, is_appendix: isAppendix } as ServiceRecordInput); onClose(); }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div></div></Dialog>;
+  const [entityId, setEntityId] = useState(0); const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState(''); const [isAppendix, setIsAppendix] = useState(false);
+  // Cargar entidades del backend
+  const { data: entitiesData } = useQuery({
+    queryKey: ['entities', 'all'],
+    queryFn: async () => { const r = await http.get<EntityListResponse>('/entities', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+  });
+  const entities = entitiesData?.data ?? [];
+  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
+  return <Dialog open onClose={onClose} title={t('service.add')} size="sm"><div className="space-y-4">
+    <div><label className="block text-sm font-medium mb-1">{t('service.form.entity_id')} *</label>
+      <select className={selectClass} value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}>
+        <option value="0">{tc('actions.select')}</option>
+        {entities.map((e) => <option key={e.id} value={e.id}>{e.code} — {e.tax_id_number}</option>)}
+      </select></div>
+    <div><label className="block text-sm font-medium mb-1">{t('service.form.start_date')} *</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+    <div><label className="block text-sm font-medium mb-1">{t('service.form.end_date')}</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+    <label className="flex items-center gap-2"><input type="checkbox" checked={isAppendix} onChange={(e) => setIsAppendix(e.target.checked)} className="w-4 h-4" /><span className="text-sm">{t('service.form.is_appendix')}</span></label>
+    <div className="flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!entityId || !startDate || mutation.isPending} onClick={async () => { await mutation.mutateAsync({ entity_id: entityId, start_date: startDate, end_date: endDate || null, is_appendix: isAppendix } as ServiceRecordInput); onClose(); }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
+  </div></Dialog>;
 }
 
 function WorkCycleModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
