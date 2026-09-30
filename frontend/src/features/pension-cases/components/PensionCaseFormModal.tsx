@@ -102,12 +102,14 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
             </div>
           )}
         </div>
-        {/* Entidad */}
+        {/* Entidad + Último salario */}
         <div className="grid grid-cols-2 gap-3">
           <div><label className="block text-sm font-medium mb-1">{t('form.employer_entity_id')} *</label>
             <select className={selectClass} value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}>
               <option value="">{tc('actions.select')}</option>{(entitiesData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.code} — {e.tax_id_number}</option>)}
             </select></div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.last_salary')} *</label>
+            <Input type="number" step="0.01" min="0" placeholder="0.00" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} /></div>
         </div>
         {/* Cargo + Categorías */}
         <div className="grid grid-cols-2 gap-3">
@@ -141,9 +143,6 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
               <option value="">{tc('actions.select')}</option>{(pensionRegimesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select></div>
         </div>
-        {/* Último salario */}
-        <div><label className="block text-sm font-medium mb-1">{t('form.last_salary')} *</label>
-          <Input type="number" step="0.01" min="0" placeholder="0.00" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} /></div>
         {/* Ejército Rebelde */}
         <div className="p-3 rounded-md border border-border space-y-3">
           <label className="flex items-center gap-2">
