@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import {
   ChevronLeft, Edit, Skull, FileText, Wallet, ShieldCheck,
   UserCheck, AlertTriangle,
@@ -13,6 +14,10 @@ import { Button } from '@/components/ui/Button';
 import { PersonFormModal } from '../components/PersonFormModal';
 import { DeathRegistrationModal } from '../components/DeathRegistrationModal';
 import { cn } from '@/lib/utils';
+import { http } from '@/lib/http';
+
+interface CatalogItem { id: number; name: string; }
+interface CatalogListResponse { data: CatalogItem[]; }
 
 type Tab = 'data' | 'cases' | 'pensioner' | 'audit';
 
@@ -179,12 +184,24 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 function DataTab({ person, t }: { person: import('@/types/api').components['schemas']['Person']; t: (key: string) => string }) {
   const ciBirthDate = person.identity_number ? getBirthDateFromCI(person.identity_number) : null;
+
+  // Cargar razas para resolver race_id → name
+  const { data: racesData } = useQuery({
+    queryKey: ['catalogs', 'races', 'all'],
+    queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/races', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+  });
+  const raceName = racesData?.data?.find((r) => r.id === person.race_id)?.name ?? '—';
+
+  const fullName = [person.first_surname, person.second_surname, person.first_name, person.middle_name].filter(Boolean).join(' ');
+
   return (
     <div className="grid grid-cols-2 gap-x-8 gap-y-4">
       <Field label={t('detail.fields.identity_number')} value={formatCI(person.identity_number ?? '')} mono />
       <Field label={t('detail.fields.citizen_card_id')} value={person.citizen_card_id ?? '—'} />
-      <Field label={t('detail.fields.full_name')} value={[person.first_surname, person.second_surname, person.first_name, person.middle_name].filter(Boolean).join(' ')} />
+      <Field label={t('detail.fields.full_name')} value={fullName} />
       <Field label={t('detail.fields.sex')} value={person.sex === 'M' ? t('detail.fields.sex_male') : t('detail.fields.sex_female')} />
+      <Field label={t('detail.fields.race')} value={raceName} />
       <Field label={t('detail.fields.birth_date')} value={person.birth_date ? formatDate(person.birth_date) : '—'} />
       {ciBirthDate && (
         <Field label={t('detail.fields.birth_date_from_ci')} value={formatDate(ciBirthDate.toISOString())} hint />
@@ -192,6 +209,7 @@ function DataTab({ person, t }: { person: import('@/types/api').components['sche
       <Field label={t('detail.fields.address')} value={person.address ?? '—'} fullWidth />
       <Field label={t('detail.fields.father_name')} value={person.father_name ?? '—'} />
       <Field label={t('detail.fields.mother_name')} value={person.mother_name ?? '—'} />
+      <Field label={t('detail.fields.deceased')} value={person.deceased ? t('detail.fields.deceased_yes') : t('detail.fields.deceased_no')} />
       {person.death_date && (
         <Field label={t('detail.fields.death_date')} value={formatDate(person.death_date)} />
       )}

@@ -36,10 +36,8 @@ export function getBirthDateFromCI(ci: string): Date | null {
 }
 
 /**
- * Formatea el CI para mostrar (con separadores legibles).
- * Ej: "85061547812" → "85 0615 4781 2"
+ * Formatea el CI para mostrar (sin espacios, tal como viene del backend).
  */
 export function formatCI(ci: string): string {
-  if (!ci || ci.length !== 11) return ci;
-  return `${ci.substring(0, 2)} ${ci.substring(2, 6)} ${ci.substring(6, 10)} ${ci.substring(10)}`;
+  return ci ?? '';
 }

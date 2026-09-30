@@ -264,7 +264,8 @@ export function PersonFormModal({ person, onClose }: PersonFormModalProps) {
           <select
             id="race_id"
             className={selectClass}
-            {...form.register('race_id', { setValueAs: (v) => v === '' ? null : v ? Number(v) : null })}
+            value={String(form.watch('race_id') ?? '')}
+            onChange={(e) => form.setValue('race_id', e.target.value ? Number(e.target.value) : null)}
           >
             <option value="">{tc('actions.select')}</option>
             {races.map((r) => (

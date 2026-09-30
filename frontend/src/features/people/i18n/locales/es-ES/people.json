@@ -105,11 +105,15 @@
       "sex": "Sexo",
       "sex_male": "Masculino",
       "sex_female": "Femenino",
+      "race": "Raza",
       "birth_date": "Fecha de nacimiento",
       "birth_date_from_ci": "Fecha de nacimiento (del CI)",
       "address": "Dirección",
       "father_name": "Nombre del padre",
       "mother_name": "Nombre de la madre",
+      "deceased": "Fallecido",
+      "deceased_yes": "Sí",
+      "deceased_no": "No",
       "death_date": "Fecha de fallecimiento"
     }
   }
