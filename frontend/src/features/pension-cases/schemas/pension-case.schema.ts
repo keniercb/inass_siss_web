@@ -15,6 +15,18 @@ export const createCaseSchema = z.object({
   educational_level_id: z.number().int().positive('El nivel educacional es obligatorio'),
   scientific_category_id: z.number().int().positive('La categoría científica es obligatoria'),
   last_salary: z.number().min(0, 'El último salario debe ser ≥ 0'),
+  pension_type_id: z.number().int().positive('El tipo de pensión es obligatorio'),
+  pension_regime_id: z.number().int().positive('El régimen de pensión es obligatorio'),
+  belongs_to_rebel_army: z.boolean().optional().default(false),
+  rebel_army_enlistment_date: z.string().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.belongs_to_rebel_army === true && !data.rebel_army_enlistment_date) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['rebel_army_enlistment_date'],
+      message: 'La fecha de alta en el Ejército Rebelde es obligatoria si pertenece al mismo',
+    });
+  }
 });
 export type CreateCaseInput = z.infer<typeof createCaseSchema>;
 

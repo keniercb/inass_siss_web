@@ -38,7 +38,12 @@
     "educational_level_id": "Nivel educacional",
     "scientific_category_id": "Categoría científica",
     "last_salary": "Último salario (CUP)",
-    "search_person": "Buscar persona por CI o nombre…"
+    "search_person": "Buscar persona por CI o nombre…",
+    "pension_type_id": "Tipo de pensión",
+    "pension_regime_id": "Régimen de pensión",
+    "belongs_to_rebel_army": "Pertenece al Ejército Rebelde",
+    "rebel_army_enlistment_date": "Fecha de alta Ejército Rebelde",
+    "rebel_army_date_required": "La fecha de alta es obligatoria si pertenece al Ejército Rebelde"
   },
   "salary": {
     "title": "Registros de salario",

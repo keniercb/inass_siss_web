@@ -26,6 +26,8 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const { data: occCatData } = useQuery({ queryKey: ['catalogs', 'occupational-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/occupational-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: eduData } = useQuery({ queryKey: ['catalogs', 'educational-levels', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/educational-levels', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: sciCatData } = useQuery({ queryKey: ['catalogs', 'scientific-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/scientific-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+  const { data: pensionTypesData } = useQuery({ queryKey: ['catalogs', 'pension-types', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/pension-types', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+  const { data: pensionRegimesData } = useQuery({ queryKey: ['catalogs', 'pension-regimes', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/pension-regimes', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
 
   // Cargar entidades
   const { data: entitiesData } = useQuery({ queryKey: ['entities', 'all'], queryFn: async () => { const r = await http.get<{ data: EntityListItem[] }>('/entities', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
@@ -52,11 +54,16 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const [eduId, setEduId] = useState(0);
   const [sciCatId, setSciCatId] = useState(0);
   const [lastSalary, setLastSalary] = useState('');
+  const [pensionTypeId, setPensionTypeId] = useState(0);
+  const [pensionRegimeId, setPensionRegimeId] = useState(0);
+  const [belongsRebelArmy, setBelongsRebelArmy] = useState(false);
+  const [rebelArmyDate, setRebelArmyDate] = useState('');
 
   const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
 
   const onSubmit = async () => {
-    if (!selectedPerson || !entityId || !positionId || !occCatId || !eduId || !sciCatId || lastSalary !== '') return;
+    if (!selectedPerson || !entityId || !positionId || !occCatId || !eduId || !sciCatId || !pensionTypeId || !pensionRegimeId || lastSalary === '') return;
+    if (belongsRebelArmy && !rebelArmyDate) return;
     const input: CreateCaseInput = {
       applicant_person_id: selectedPerson,
       employer_entity_id: entityId,
@@ -65,6 +72,10 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
       educational_level_id: eduId,
       scientific_category_id: sciCatId,
       last_salary: Number(lastSalary) || 0,
+      pension_type_id: pensionTypeId,
+      pension_regime_id: pensionRegimeId,
+      belongs_to_rebel_army: belongsRebelArmy,
+      rebel_army_enlistment_date: belongsRebelArmy ? rebelArmyDate : null,
     };
     try {
       await createMutation.mutateAsync(input);
@@ -72,7 +83,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
     } catch { /* handled by mutation */ }
   };
 
-  const canSubmit = selectedPerson && entityId && positionId && occCatId && eduId && sciCatId && lastSalary !== '';
+  const canSubmit = selectedPerson && entityId && positionId && occCatId && eduId && sciCatId && pensionTypeId && pensionRegimeId && lastSalary !== '' && (!belongsRebelArmy || rebelArmyDate !== '');
 
   return (
     <Dialog open onClose={onClose} title={t('create.title')} description={t('create.description')} size="xl">
@@ -119,9 +130,34 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
               <option value="">{tc('actions.select')}</option>{(sciCatData?.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select></div>
         </div>
+        {/* Tipo de pensión + Régimen de pensión */}
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="block text-sm font-medium mb-1">{t('form.pension_type_id')} *</label>
+            <select className={selectClass} value={pensionTypeId} onChange={(e) => setPensionTypeId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>{(pensionTypesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select></div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.pension_regime_id')} *</label>
+            <select className={selectClass} value={pensionRegimeId} onChange={(e) => setPensionRegimeId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>{(pensionRegimesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select></div>
+        </div>
         {/* Último salario */}
         <div><label className="block text-sm font-medium mb-1">{t('form.last_salary')} *</label>
           <Input type="number" step="0.01" min="0" placeholder="0.00" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} /></div>
+        {/* Ejército Rebelde */}
+        <div className="p-3 rounded-md border border-border space-y-3">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={belongsRebelArmy} onChange={(e) => { setBelongsRebelArmy(e.target.checked); if (!e.target.checked) setRebelArmyDate(''); }} className="w-4 h-4 rounded border-input" />
+            <span className="text-sm font-medium">{t('form.belongs_to_rebel_army')}</span>
+          </label>
+          {belongsRebelArmy && (
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('form.rebel_army_enlistment_date')} *</label>
+              <Input type="date" value={rebelArmyDate} onChange={(e) => setRebelArmyDate(e.target.value)} />
+              {!rebelArmyDate && <p className="text-xs text-destructive mt-1">{t('form.rebel_army_date_required')}</p>}
+            </div>
+          )}
+        </div>
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
           <Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button>
           <Button type="button" disabled={!canSubmit || createMutation.isPending} onClick={onSubmit}>{createMutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button>

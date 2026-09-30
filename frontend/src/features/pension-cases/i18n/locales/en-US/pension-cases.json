@@ -38,7 +38,12 @@
     "educational_level_id": "Educational level",
     "scientific_category_id": "Scientific category",
     "last_salary": "Last salary (CUP)",
-    "search_person": "Search person by ID or name…"
+    "search_person": "Search person by ID or name…",
+    "pension_type_id": "Pension type",
+    "pension_regime_id": "Pension regime",
+    "belongs_to_rebel_army": "Belongs to Rebel Army",
+    "rebel_army_enlistment_date": "Rebel Army enlistment date",
+    "rebel_army_date_required": "The enlistment date is required if belongs to Rebel Army"
   },
   "salary": {
     "title": "Salary records",
