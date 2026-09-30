@@ -62,29 +62,30 @@ export function AuthorizedSignatureFormModal({ entityId, onClose }: AuthorizedSi
   const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
 
   return (
-    <Dialog open onClose={onClose} title={t('signatures.create.title')} description={t('signatures.create.description')} size="md">
+    <Dialog open onClose={onClose} title={t('signatures.create.title')} description={t('signatures.create.description')} size="lg">
       <div className="space-y-4">
-        {/* Person search */}
-        <div className="relative">
-          <label className="block text-sm font-medium mb-1">{t('signatures.form.person')} *</label>
-          <Input type="text" placeholder={selectedPerson ? `${personSearch}` : 'Buscar persona por CI o nombre…'} value={personSearch} onChange={(e) => { setPersonSearch(e.target.value); setShowResults(true); setSelectedPerson(null); }} onFocus={() => setShowResults(true)} onBlur={() => setTimeout(() => setShowResults(false), 200)} />
-          {showResults && personResults.length > 0 && (
-            <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-48 overflow-y-auto">
-              {personResults.map((p) => (
-                <button key={p.id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b border-border last:border-0" onClick={() => { setSelectedPerson(p.id); setPersonSearch(`${p.first_name} ${p.first_surname} (${p.identity_number})`); setShowResults(false); }}>
-                  <span className="font-mono text-xs">{p.identity_number}</span> — {p.first_name} {p.first_surname}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* Position */}
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('signatures.form.position')} *</label>
-          <select className={selectClass} value={positionId} onChange={(e) => setPositionId(Number(e.target.value))}>
-            <option value="">{tc('actions.select')}</option>
-            {(positionsData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+        {/* Person search + Position (2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative">
+            <label className="block text-sm font-medium mb-1">{t('signatures.form.person')} *</label>
+            <Input type="text" placeholder={selectedPerson ? `${personSearch}` : 'Buscar persona por CI o nombre…'} value={personSearch} onChange={(e) => { setPersonSearch(e.target.value); setShowResults(true); setSelectedPerson(null); }} onFocus={() => setShowResults(true)} onBlur={() => setTimeout(() => setShowResults(false), 200)} />
+            {showResults && personResults.length > 0 && (
+              <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-48 overflow-y-auto">
+                {personResults.map((p) => (
+                  <button key={p.id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b border-border last:border-0" onClick={() => { setSelectedPerson(p.id); setPersonSearch(`${p.first_name} ${p.first_surname} (${p.identity_number})`); setShowResults(false); }}>
+                    <span className="font-mono text-xs">{p.identity_number}</span> — {p.first_name} {p.first_surname}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('signatures.form.position')} *</label>
+            <select className={selectClass} value={positionId} onChange={(e) => setPositionId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>
+              {(positionsData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
         </div>
         {/* Validity */}
         <div className="grid grid-cols-2 gap-3">

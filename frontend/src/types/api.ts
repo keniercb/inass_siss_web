@@ -362,7 +362,7 @@ export interface paths {
         put?: never;
         /**
          * Registro de una oficina
-         * @description Alta con validación de referencias, coherencia geográfica (RN-004) y jerarquía opcional acíclica (RN-003). Toda escritura aterriza en la bitácora.
+         * @description Alta con validación de referencias, coherencia geográfica (RN-004) y la estructura territorial (ADR-31): una sola oficina nacional, una provincial por provincia, una municipal por provincia y municipio; las provinciales dependen de la nacional (que debe existir) y las municipales de la provincial de su provincia — el parent se deriva del tipo, se puede omitir y una contradicción responde 422. Toda escritura aterriza en la bitácora.
          */
         post: operations["officesStore"];
         delete?: never;
@@ -414,7 +414,7 @@ export interface paths {
         head?: never;
         /**
          * Edición de una oficina
-         * @description Edición parcial con auditoría de valores previos. Las referencias, la coherencia RN-004 y la aciclicidad RN-003 se revalidan contra el estado resultante.
+         * @description Edición parcial con auditoría de valores previos. Las referencias y la coherencia RN-004 se revalidan contra el estado resultante, la unicidad por ámbito se recalcula excluyendo la propia oficina y el parent se re-deriva del tipo resultante; los cambios de tipo o territorio se rechazan mientras la oficina tenga hijas activas. Para tipos fuera de la tríada territorial rige la jerarquía opcional acíclica (RN-003).
          */
         patch: operations["officesUpdate"];
         trace?: never;
@@ -428,13 +428,13 @@ export interface paths {
         };
         /**
          * Listado de expedientes
-         * @description Listado filtrable por estado, oficina, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6).
+         * @description Listado filtrable por estado, oficina, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6). Cada fila viaja con la proyección COMPLETA del promovente (regla de usuario 3).
          */
         get: operations["pensionCasesIndex"];
         put?: never;
         /**
          * Apertura de un expediente
-         * @description Alta del expediente (RF-EXP-001) con número secuencial único (RN-009) y estado inicial submitted. El proponente debe estar vivo y activo (RF-SEG-003: 422 si falleció o está desactivado) y no puede tener otro expediente abierto (409 con el expediente abierto). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; el par año-expediente es único (422). Las advertencias (huecos salariales, solapamientos de servicios, vínculos abiertos) viajan junto a data.
+         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PP-YYYY-CCCCC (código de provincia de la oficina registrante, año en curso y consecutivo anual rellenado con ceros, secciones separadas por guion). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
          */
         post: operations["pensionCasesStore"];
         delete?: never;
@@ -578,6 +578,46 @@ export interface paths {
          * @description Elimina un ciclo de trabajo (S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).
          */
         delete: operations["pensionCasesRemoveWorkCycle"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/income-concept-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alta de un concepto de ingreso
+         * @description Declara el valor de un concepto de ingreso del expediente (regla de usuario 5) mientras el expediente está en submitted. El par concepto-expediente es único (422 semántico) y el importe es decimal exacto no negativo (RN-005).
+         */
+        post: operations["pensionCasesAddIncomeConceptRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/income-concept-records/{record}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Baja de un concepto de ingreso
+         * @description Elimina el valor declarado de un concepto de ingreso (regla de usuario 5) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).
+         */
+        delete: operations["pensionCasesRemoveIncomeConceptRecord"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1315,7 +1355,7 @@ export interface components {
                  * @example 5
                  */
                 id?: number;
-                /** @example 18506150012 */
+                /** @example 85061510002 */
                 identity_number?: string;
                 /** @example Juan Carlos Pérez Gómez */
                 full_name?: string;
@@ -1513,14 +1553,45 @@ export interface components {
             scope_cases_count?: number;
         };
         /**
+         * Concepto de ingreso del expediente
+         * @description Valor declarado de un concepto de ingreso del expediente (regla de usuario 5): el par expediente-concepto es único y el valor es DECIMAL(12,2) no negativo (RN-005).
+         */
+        IncomeConceptRecord: {
+            /**
+             * Format: int64
+             * @description Income concept row projection (user rule 5).
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            pension_case_id?: number;
+            /**
+             * Format: int64
+             * @description Concepto del catálogo (Salario en divisas, Antigüedad…)
+             * @example 3
+             */
+            income_concept_id?: number;
+            /**
+             * @description Importe exacto con dos decimales (RN-005)
+             * @example 150.00
+             */
+            amount?: string;
+        };
+        /**
          * Expediente de pensión
-         * @description Expediente de pensión (RF-EXP-001): número secuencial único (RN-009), estado de la sección 2.4 y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.
+         * @description Expediente de pensión (RF-EXP-001): número compuesto PP-YYYY-CCCCC — provincia de la oficina registrante, año en curso y consecutivo anual, separados por guion (regla de usuario 2/ADR-32) —, estado de la sección 2.4, clasificación de pensión y par de Ejército Rebelde (regla 4) y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.
          */
         PensionCase: {
             /**
              * Format: int64
-             * @description Pension case projection (RF-EXP-001..004): the aggregate with its
-             *     subrecords. The advisory analysis (missing salary years,
+             * @description Pension case projection (RF-EXP-001..004 + user rules 0-5): the
+             *     aggregate with its subrecords. The applicant travels as the FULL
+             *     Person projection (user rule 3 — reused from the People module's
+             *     resource so the promovente is never a summary that drifts from
+             *     the people surface). The advisory analysis (missing salary years,
              *     overlapping and open services) travels as a sibling `warnings`
              *     object of the envelope — never inside data — because it is
              *     derived evidence for the specialist, not case state. The decision
@@ -1531,13 +1602,13 @@ export interface components {
              */
             id?: number;
             /**
-             * @description Número del expediente (secuencia pension_case, único)
-             * @example 1
+             * @description Número del expediente: PP-YYYY-CCCCC (provincia-año-consecutivo anual), único
+             * @example 11-2026-00001
              */
             number?: string;
             /**
              * Format: date
-             * @example 2026-09-28
+             * @example 2026-09-30
              */
             requested_at?: string;
             /**
@@ -1553,6 +1624,7 @@ export interface components {
             applicant_person_id?: number;
             /**
              * Format: int64
+             * @description Oficina del usuario que registró el expediente (regla 0/ADR-33)
              * @example 1
              */
             office_id?: number;
@@ -1582,10 +1654,33 @@ export interface components {
              */
             scientific_category_id?: number;
             /**
+             * Format: int64
+             * @description Tipo de pensión del catálogo (regla 4)
+             * @example 1
+             */
+            pension_type_id?: number;
+            /**
+             * Format: int64
+             * @description Régimen de pensión del catálogo (regla 4)
+             * @example 1
+             */
+            pension_regime_id?: number;
+            /**
              * @description Último salario, DECIMAL(12,2) no negativo (RN-005)
              * @example 5000.00
              */
             last_salary?: string;
+            /**
+             * @description Pertenece al Ejército Rebelde (regla 4)
+             * @example false
+             */
+            rebel_army_member?: boolean;
+            /**
+             * Format: date
+             * @description Fecha de alta en el Ejército Rebelde: obligatoria si rebel_army_member es true
+             * @example null
+             */
+            rebel_army_join_date?: string | null;
             /**
              * Format: int64
              * @description Resolución aprobatoria (H-05); la fija la aprobación de S6
@@ -1618,17 +1713,14 @@ export interface components {
              * @example null
              */
             calculation_setting_id?: number | null;
+            /** @description Serie salarial: máximo 15 filas (regla 1) */
             salary_records?: components["schemas"]["SalaryRecord"][];
             service_records?: components["schemas"]["ServiceRecord"][];
             work_cycles?: components["schemas"]["WorkCycle"][];
-            /** @description Resumen del proponente para desambiguar */
-            applicant?: {
-                /** Format: int64 */
-                id?: number;
-                identity_number?: string;
-                first_name?: string;
-                first_surname?: string;
-            } | null;
+            /** @description Conceptos de ingreso declarados (regla 5) */
+            income_concept_records?: components["schemas"]["IncomeConceptRecord"][];
+            /** @description Proyección COMPLETA del promovente (regla 3) */
+            applicant?: components["schemas"]["Person"] | null;
         };
         /**
          * Registro de salario
@@ -1659,14 +1751,17 @@ export interface components {
         };
         /**
          * Registro de servicio
-         * @description Vínculo laboral declarado en el expediente (RF-EXP-003). end_date null = vínculo vigente; is_appendix marca la coletilla (servicio reconocido adicional). El orden end ≥ start está respaldado por CHECK y los solapamientos se detectan y advierten.
+         * @description Vinculo laboral declarado en el expediente (RF-EXP-003). end_date null = vinculo vigente; is_appendix marca la coletilla (servicio reconocido adicional). El orden end >= start esta respaldado por CHECK y los solapamientos se detectan y advierten. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).
          */
         ServiceRecord: {
             /**
              * Format: int64
              * @description Work service projection (RF-EXP-003). end_date null means the
              *     employment link is still open; overlaps and open links are
-             *     advertised in the case-level warnings, never blocked here.
+             *     advertised in the case-level warnings, never blocked here. The
+             *     full employer entity projection travels with every row (user
+             *     rule: the service-records listing answers the entity data, not
+             *     a bare id).
              * @example 1
              */
             id?: number;
@@ -1687,7 +1782,7 @@ export interface components {
             start_date?: string;
             /**
              * Format: date
-             * @description null = vínculo vigente
+             * @description null = vinculo vigente
              * @example null
              */
             end_date?: string | null;
@@ -1696,6 +1791,8 @@ export interface components {
              * @example false
              */
             is_appendix?: boolean;
+            /** @description Proyeccion completa de la entidad empleadora (regla de usuario del listado) */
+            entity?: components["schemas"]["Entity"] | null;
         };
         /**
          * Ciclo de trabajo
@@ -1735,8 +1832,8 @@ export interface components {
              */
             id?: number;
             /**
-             * @description Carné de identidad: 11 dígitos, único e inmutable (RN-001)
-             * @example 18506150012
+             * @description Carné de identidad: 11 dígitos (mes 01-12 y día 01-31 validados, sexo por paridad del dígito 10), único e inmutable (RN-001)
+             * @example 85061510002
              */
             identity_number?: string;
             /**
@@ -1869,7 +1966,7 @@ export interface components {
             id?: number;
             /**
              * @description Carné de identidad de la persona vinculada (RN-001)
-             * @example 18506150012
+             * @example 85061510002
              */
             identity_number?: string;
             /**
@@ -3579,8 +3676,8 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Nacional/provincial/municipal (catálogo)
-                     * @example 1
+                     * @description Nacional/provincial/municipal (catálogo); la tríada territorial gobierna la unicidad y el parent
+                     * @example 2
                      */
                     office_type_id: number;
                     /** @example 12 */
@@ -3592,7 +3689,7 @@ export interface operations {
                     municipality_id: number;
                     /** @example Calle Martí #100, Holguín */
                     address: string;
-                    /** @description Oficina superior (RN-003: sin ciclos) */
+                    /** @description Derivado del tipo: omitir o enviar el id que corresponde (provincial -> nacional, municipal -> provincial de la provincia, nacional sin parent) */
                     parent_office_id?: number | null;
                 };
             };
@@ -3734,7 +3831,7 @@ export interface operations {
                     province_id?: number;
                     municipality_id?: number;
                     address?: string;
-                    /** @description null desarraiga la oficina; el nuevo padre no puede cerrar un ciclo (RN-003) */
+                    /** @description En la tríada territorial se deriva del tipo (una contradicción responde 422); en tipos genéricos null desarraiga la oficina sin cerrar ciclos (RN-003) */
                     parent_office_id?: number | null;
                 };
             };
@@ -3819,8 +3916,11 @@ export interface operations {
                 "application/json": {
                     /** @example 7 */
                     applicant_person_id: number;
-                    /** @example 1 */
-                    office_id: number;
+                    /**
+                     * @description PROHIBIDO (regla 0): el expediente asume la oficina del usuario autenticado
+                     * @example null
+                     */
+                    office_id?: number | null;
                     /** @example 3 */
                     employer_entity_id: number;
                     /** @example 2 */
@@ -3832,6 +3932,27 @@ export interface operations {
                     /** @example 2 */
                     scientific_category_id: number;
                     /**
+                     * @description Tipo de pensión del catálogo (regla 4)
+                     * @example 1
+                     */
+                    pension_type_id: number;
+                    /**
+                     * @description Régimen de pensión del catálogo (regla 4)
+                     * @example 1
+                     */
+                    pension_regime_id: number;
+                    /**
+                     * @description Pertenece al Ejército Rebelde (regla 4)
+                     * @example false
+                     */
+                    rebel_army_member: boolean;
+                    /**
+                     * Format: date
+                     * @description Fecha de alta en el Ejército Rebelde: obligatoria si rebel_army_member=true, rechazada si false
+                     * @example null
+                     */
+                    rebel_army_join_date?: string | null;
+                    /**
                      * @description Último salario, decimal exacto no negativo (RN-005)
                      * @example 5000.00
                      */
@@ -3839,10 +3960,10 @@ export interface operations {
                     /**
                      * Format: date
                      * @description Opcional; por defecto hoy; nunca futura
-                     * @example 2026-09-28
+                     * @example 2026-09-30
                      */
                     requested_at?: string | null;
-                    /** @description Serie salarial inicial (todo o nada) */
+                    /** @description Serie salarial inicial, máximo 15 filas (regla 1, todo o nada) */
                     salary_records?: {
                         /** @example 2024 */
                         year?: number;
@@ -3874,6 +3995,13 @@ export interface operations {
                         actual_days?: number;
                         /** @example 1 */
                         cycles_count?: number;
+                    }[];
+                    /** @description Conceptos de ingreso declarados (regla 5, todo o nada): un valor por concepto */
+                    income_concept_records?: {
+                        /** @example 3 */
+                        income_concept_id?: number;
+                        /** @example 150.00 */
+                        amount?: string;
                     }[];
                 };
             };
@@ -4266,6 +4394,106 @@ export interface operations {
             };
         };
     };
+    pensionCasesAddIncomeConceptRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Concepto del catálogo de conceptos de ingreso
+                     * @example 3
+                     */
+                    income_concept_id: number;
+                    /**
+                     * @description Importe exacto con dos decimales (RN-005)
+                     * @example 150.00
+                     */
+                    amount: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Concepto declarado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["IncomeConceptRecord"];
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionCasesRemoveIncomeConceptRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                record: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Concepto eliminado (con advertencias actualizadas) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Income concept record removed. */
+                        message?: string;
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente o registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     peopleIndex: {
         parameters: {
             query?: {
@@ -4324,7 +4552,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @example 18506150012 */
+                    /** @example 85061510002 */
                     identity_number: string;
                     /** @example Juan */
                     first_name: string;

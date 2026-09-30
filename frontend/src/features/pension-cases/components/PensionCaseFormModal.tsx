@@ -74,8 +74,8 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
       last_salary: Number(lastSalary) || 0,
       pension_type_id: pensionTypeId,
       pension_regime_id: pensionRegimeId,
-      belongs_to_rebel_army: belongsRebelArmy,
-      rebel_army_enlistment_date: belongsRebelArmy ? rebelArmyDate : null,
+      rebel_army_member: belongsRebelArmy,
+      rebel_army_join_date: belongsRebelArmy ? rebelArmyDate : null,
     };
     try {
       await createMutation.mutateAsync(input);
@@ -147,11 +147,11 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
         <div className="p-3 rounded-md border border-border space-y-3">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={belongsRebelArmy} onChange={(e) => { setBelongsRebelArmy(e.target.checked); if (!e.target.checked) setRebelArmyDate(''); }} className="w-4 h-4 rounded border-input" />
-            <span className="text-sm font-medium">{t('form.belongs_to_rebel_army')}</span>
+            <span className="text-sm font-medium">{t('form.rebel_army_member')}</span>
           </label>
           {belongsRebelArmy && (
             <div>
-              <label className="block text-sm font-medium mb-1">{t('form.rebel_army_enlistment_date')} *</label>
+              <label className="block text-sm font-medium mb-1">{t('form.rebel_army_join_date')} *</label>
               <Input type="date" value={rebelArmyDate} onChange={(e) => setRebelArmyDate(e.target.value)} />
               {!rebelArmyDate && <p className="text-xs text-destructive mt-1">{t('form.rebel_army_date_required')}</p>}
             </div>

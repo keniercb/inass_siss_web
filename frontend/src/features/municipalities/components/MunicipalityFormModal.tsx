@@ -117,7 +117,7 @@ export function MunicipalityFormModal<TResource, TCreateInput, TUpdateInput>({
       onClose={onClose}
       title={t(isEdit ? 'edit.title' : 'create.title')}
       description={t(isEdit ? 'edit.description' : 'create.description')}
-      size="md"
+      size="lg"
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         {/* Checkbox Isla de la Juventud */}
@@ -138,56 +138,57 @@ export function MunicipalityFormModal<TResource, TCreateInput, TUpdateInput>({
           </p>
         </div>
 
-        {/* Provincia */}
-        <div>
-          <label htmlFor="province_id" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.province')}
-            {!isSpecial && <span className="text-destructive ml-1">*</span>}
-          </label>
-          <select
-            id="province_id"
-            disabled={isSpecial || isEdit}
-            className={cn(
-              'flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-              form.formState.errors.province_id ? 'border-destructive' : 'border-input',
+        {/* Provincia + Código (2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="province_id" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.province')}
+              {!isSpecial && <span className="text-destructive ml-1">*</span>}
+            </label>
+            <select
+              id="province_id"
+              disabled={isSpecial || isEdit}
+              className={cn(
+                'flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+                form.formState.errors.province_id ? 'border-destructive' : 'border-input',
+              )}
+              {...form.register('province_id', { setValueAs: (v) => v === '' ? null : Number(v) })}
+              value={String(form.watch('province_id') ?? '')}
+            >
+              <option value="">{tc('actions.select')}</option>
+              {provinces.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            {form.formState.errors.province_id && (
+              <p className="text-xs text-destructive mt-1" role="alert">
+                {String(form.formState.errors.province_id.message)}
+              </p>
             )}
-            {...form.register('province_id', { setValueAs: (v) => v === '' ? null : Number(v) })}
-            value={String(form.watch('province_id') ?? '')}
-          >
-            <option value="">{tc('actions.select')}</option>
-            {provinces.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-          {form.formState.errors.province_id && (
-            <p className="text-xs text-destructive mt-1" role="alert">
-              {String(form.formState.errors.province_id.message)}
-            </p>
-          )}
-        </div>
+          </div>
 
-        {/* Código */}
-        <div>
-          <label htmlFor="code" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.code')} <span className="text-destructive">*</span>
-          </label>
-          <Input
-            id="code"
-            type="text"
-            placeholder="0101"
-            disabled={isEdit}
-            error={!!form.formState.errors.code}
-            {...form.register('code')}
-          />
-          {form.formState.errors.code && (
-            <p className="text-xs text-destructive mt-1" role="alert">
-              {String(form.formState.errors.code.message)}
-            </p>
-          )}
+          <div>
+            <label htmlFor="code" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.code')} <span className="text-destructive">*</span>
+            </label>
+            <Input
+              id="code"
+              type="text"
+              placeholder="0101"
+              disabled={isEdit}
+              error={!!form.formState.errors.code}
+              {...form.register('code')}
+            />
+            {form.formState.errors.code && (
+              <p className="text-xs text-destructive mt-1" role="alert">
+                {String(form.formState.errors.code.message)}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Nombre */}

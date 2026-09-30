@@ -102,17 +102,18 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
   return (
     <Dialog open onClose={onClose} title={t(isEdit ? 'edit.title' : 'create.title')} description={t(isEdit ? 'edit.description' : 'create.description')} size="xl">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        {/* Nombre */}
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('form.name')} *</label>
-          <Input type="text" placeholder="supervisor_territorial" disabled={isSystem || isEdit} error={!!form.formState.errors.name} {...form.register('name')} />
-          {form.formState.errors.name && <p className="text-xs text-destructive mt-1">{String(form.formState.errors.name.message)}</p>}
-          <p className="text-xs text-muted-foreground mt-1">{t('form.name_help')}</p>
-        </div>
-        {/* Descripción */}
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('form.description')}</label>
-          <Input type="text" placeholder="Supervisa la captura de una provincia" disabled={isSystem} {...form.register('description')} />
+        {/* Nombre + Descripción (2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('form.name')} *</label>
+            <Input type="text" placeholder="supervisor_territorial" disabled={isSystem || isEdit} error={!!form.formState.errors.name} {...form.register('name')} />
+            {form.formState.errors.name && <p className="text-xs text-destructive mt-1">{String(form.formState.errors.name.message)}</p>}
+            <p className="text-xs text-muted-foreground mt-1">{t('form.name_help')}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('form.description')}</label>
+            <Input type="text" placeholder="Supervisa la captura de una provincia" disabled={isSystem} {...form.register('description')} />
+          </div>
         </div>
         {/* Permisos agrupados por módulo */}
         <div>

@@ -153,105 +153,107 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
       size="lg"
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        {/* Provincia */}
-        <div>
-          <label htmlFor="province_id" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.province')} <span className="text-destructive">*</span>
-          </label>
-          <select
-            id="province_id"
-            className={cn(selectClass, form.formState.errors.province_id && 'border-destructive')}
-            disabled={isEdit}
-            value={selectedProvinceId ?? ''}
-            onChange={(e) => {
-              const v = e.target.value ? Number(e.target.value) : null;
-              setSelectedProvinceId(v);
-              form.setValue('province_id', v ?? 0);
-            }}
-          >
-            <option value="">{tc('actions.select')}</option>
-            {provinces.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
+        {/* Provincia + Municipio (cascading, 2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="province_id" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.province')} <span className="text-destructive">*</span>
+            </label>
+            <select
+              id="province_id"
+              className={cn(selectClass, form.formState.errors.province_id && 'border-destructive')}
+              disabled={isEdit}
+              value={selectedProvinceId ?? ''}
+              onChange={(e) => {
+                const v = e.target.value ? Number(e.target.value) : null;
+                setSelectedProvinceId(v);
+                form.setValue('province_id', v ?? 0);
+              }}
+            >
+              <option value="">{tc('actions.select')}</option>
+              {provinces.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            {form.formState.errors.province_id && (
+              <p className="text-xs text-destructive mt-1" role="alert">
+                {String(form.formState.errors.province_id.message)}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="municipality_id" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.municipality')} <span className="text-destructive">*</span>
+            </label>
+            <select
+              id="municipality_id"
+              disabled={!selectedProvinceId}
+              className={cn(selectClass, form.formState.errors.municipality_id && 'border-destructive')}
+              {...form.register('municipality_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}
+            >
+              <option value="">
+                {!selectedProvinceId ? t('form.select_province_first') : tc('actions.select')}
               </option>
-            ))}
-          </select>
-          {form.formState.errors.province_id && (
-            <p className="text-xs text-destructive mt-1" role="alert">
-              {String(form.formState.errors.province_id.message)}
-            </p>
-          )}
+              {municipalities.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            {form.formState.errors.municipality_id && (
+              <p className="text-xs text-destructive mt-1" role="alert">
+                {String(form.formState.errors.municipality_id.message)}
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Municipio (filtrado por provincia) */}
-        <div>
-          <label htmlFor="municipality_id" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.municipality')} <span className="text-destructive">*</span>
-          </label>
-          <select
-            id="municipality_id"
-            disabled={!selectedProvinceId}
-            className={cn(selectClass, form.formState.errors.municipality_id && 'border-destructive')}
-            {...form.register('municipality_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}
-          >
-            <option value="">
-              {!selectedProvinceId ? t('form.select_province_first') : tc('actions.select')}
-            </option>
-            {municipalities.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-          {form.formState.errors.municipality_id && (
-            <p className="text-xs text-destructive mt-1" role="alert">
-              {String(form.formState.errors.municipality_id.message)}
-            </p>
-          )}
-        </div>
+        {/* Tipo de agencia + Código (2 columnas) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="agency_type_id" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.agency_type')} <span className="text-destructive">*</span>
+            </label>
+            <select
+              id="agency_type_id"
+              className={cn(selectClass, form.formState.errors.agency_type_id && 'border-destructive')}
+              {...form.register('agency_type_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}
+            >
+              <option value="">{tc('actions.select')}</option>
+              {agencyTypes.map((at) => (
+                <option key={at.id} value={at.id}>
+                  {at.name}
+                </option>
+              ))}
+            </select>
+            {form.formState.errors.agency_type_id && (
+              <p className="text-xs text-destructive mt-1" role="alert">
+                {String(form.formState.errors.agency_type_id.message)}
+              </p>
+            )}
+          </div>
 
-        {/* Tipo de agencia */}
-        <div>
-          <label htmlFor="agency_type_id" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.agency_type')} <span className="text-destructive">*</span>
-          </label>
-          <select
-            id="agency_type_id"
-            className={cn(selectClass, form.formState.errors.agency_type_id && 'border-destructive')}
-            {...form.register('agency_type_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}
-          >
-            <option value="">{tc('actions.select')}</option>
-            {agencyTypes.map((at) => (
-              <option key={at.id} value={at.id}>
-                {at.name}
-              </option>
-            ))}
-          </select>
-          {form.formState.errors.agency_type_id && (
-            <p className="text-xs text-destructive mt-1" role="alert">
-              {String(form.formState.errors.agency_type_id.message)}
-            </p>
-          )}
-        </div>
-
-        {/* Código */}
-        <div>
-          <label htmlFor="code" className="block text-sm font-medium text-foreground mb-1">
-            {t('form.code')} <span className="text-destructive">*</span>
-          </label>
-          <Input
-            id="code"
-            type="text"
-            placeholder="BPA0101"
-            disabled={isEdit}
-            error={!!form.formState.errors.code}
-            {...form.register('code')}
-          />
-          {form.formState.errors.code && (
-            <p className="text-xs text-destructive mt-1" role="alert">
-              {String(form.formState.errors.code.message)}
-            </p>
-          )}
+          <div>
+            <label htmlFor="code" className="block text-sm font-medium text-foreground mb-1">
+              {t('form.code')} <span className="text-destructive">*</span>
+            </label>
+            <Input
+              id="code"
+              type="text"
+              placeholder="BPA0101"
+              disabled={isEdit}
+              error={!!form.formState.errors.code}
+              {...form.register('code')}
+            />
+            {form.formState.errors.code && (
+              <p className="text-xs text-destructive mt-1" role="alert">
+                {String(form.formState.errors.code.message)}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Nombre */}

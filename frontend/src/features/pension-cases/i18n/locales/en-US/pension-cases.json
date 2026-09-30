@@ -41,9 +41,9 @@
     "search_person": "Search person by ID or name…",
     "pension_type_id": "Pension type",
     "pension_regime_id": "Pension regime",
-    "belongs_to_rebel_army": "Belongs to Rebel Army",
-    "rebel_army_enlistment_date": "Rebel Army enlistment date",
-    "rebel_army_date_required": "The enlistment date is required if belongs to Rebel Army"
+    "rebel_army_member": "Belongs to Rebel Army",
+    "rebel_army_join_date": "Rebel Army join date",
+    "rebel_army_date_required": "The join date is required if belongs to Rebel Army"
   },
   "salary": {
     "title": "Salary records",
@@ -68,5 +68,13 @@
     "remove_success": "Cycle removed", "remove_error": "Error removing cycle",
     "columns": { "planned_days": "Planned days", "actual_days": "Actual days", "cycles_count": "Cycles" },
     "form": { "planned_days": "Planned days", "actual_days": "Actual days", "cycles_count": "Cycle count" }
+  },
+  "income_concept": {
+    "title": "Income concepts",
+    "add": "Add concept",
+    "add_success": "Income concept added", "add_error": "Error adding concept",
+    "remove_success": "Concept removed", "remove_error": "Error removing concept",
+    "columns": { "income_concept": "Concept", "amount": "Amount" },
+    "form": { "income_concept_id": "Income concept", "amount": "Amount (CUP)" }
   }
 }

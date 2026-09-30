@@ -5,8 +5,10 @@ export type PensionCase = components['schemas']['PensionCase'];
 export type SalaryRecord = components['schemas']['SalaryRecord'];
 export type ServiceRecord = components['schemas']['ServiceRecord'];
 export type WorkCycle = components['schemas']['WorkCycle'];
+export type IncomeConceptRecord = components['schemas']['IncomeConceptRecord'];
 
 // Schema para crear expediente (number, requested_at y office_id los maneja el backend)
+// Campos alineados con docs.json: rebel_army_member + rebel_army_join_date
 export const createCaseSchema = z.object({
   applicant_person_id: z.number().int().positive('El proponente es obligatorio'),
   employer_entity_id: z.number().int().positive('El centro de trabajo es obligatorio'),
@@ -17,13 +19,13 @@ export const createCaseSchema = z.object({
   last_salary: z.number().min(0, 'El último salario debe ser ≥ 0'),
   pension_type_id: z.number().int().positive('El tipo de pensión es obligatorio'),
   pension_regime_id: z.number().int().positive('El régimen de pensión es obligatorio'),
-  belongs_to_rebel_army: z.boolean().optional().default(false),
-  rebel_army_enlistment_date: z.string().optional().nullable(),
+  rebel_army_member: z.boolean().optional().default(false),
+  rebel_army_join_date: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
-  if (data.belongs_to_rebel_army === true && !data.rebel_army_enlistment_date) {
+  if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ['rebel_army_enlistment_date'],
+      path: ['rebel_army_join_date'],
       message: 'La fecha de alta en el Ejército Rebelde es obligatoria si pertenece al mismo',
     });
   }
@@ -51,6 +53,13 @@ export const workCycleSchema = z.object({
   cycles_count: z.number().int().min(0, 'La cantidad de ciclos debe ser ≥ 0'),
 });
 export type WorkCycleInput = z.infer<typeof workCycleSchema>;
+
+// Subregistro IncomeConceptRecord (regla de usuario 5)
+export const incomeConceptRecordSchema = z.object({
+  income_concept_id: z.number().int().positive('El concepto de ingreso es obligatorio'),
+  amount: z.number().min(0, 'El importe debe ser ≥ 0'),
+});
+export type IncomeConceptRecordInput = z.infer<typeof incomeConceptRecordSchema>;
 
 // Metadata de estados del expediente
 export const CASE_STATUS_META: Record<string, { label: string; badgeClass: string }> = {

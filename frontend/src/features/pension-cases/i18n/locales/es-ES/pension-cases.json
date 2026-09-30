@@ -41,8 +41,8 @@
     "search_person": "Buscar persona por CI o nombre…",
     "pension_type_id": "Tipo de pensión",
     "pension_regime_id": "Régimen de pensión",
-    "belongs_to_rebel_army": "Pertenece al Ejército Rebelde",
-    "rebel_army_enlistment_date": "Fecha de alta Ejército Rebelde",
+    "rebel_army_member": "Pertenece al Ejército Rebelde",
+    "rebel_army_join_date": "Fecha de alta Ejército Rebelde",
     "rebel_army_date_required": "La fecha de alta es obligatoria si pertenece al Ejército Rebelde"
   },
   "salary": {
@@ -68,5 +68,13 @@
     "remove_success": "Ciclo eliminado", "remove_error": "Error al eliminar ciclo",
     "columns": { "planned_days": "Días plan", "actual_days": "Días reales", "cycles_count": "Ciclos" },
     "form": { "planned_days": "Días plan", "actual_days": "Días reales", "cycles_count": "Cantidad de ciclos" }
+  },
+  "income_concept": {
+    "title": "Conceptos de ingreso",
+    "add": "Añadir concepto",
+    "add_success": "Concepto de ingreso añadido", "add_error": "Error al añadir concepto",
+    "remove_success": "Concepto eliminado", "remove_error": "Error al eliminar concepto",
+    "columns": { "income_concept": "Concepto", "amount": "Importe" },
+    "form": { "income_concept_id": "Concepto de ingreso", "amount": "Importe (CUP)" }
   }
 }

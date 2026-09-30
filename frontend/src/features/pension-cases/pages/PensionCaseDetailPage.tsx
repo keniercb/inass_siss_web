@@ -5,8 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2 } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { usePensionCase } from '../api/queries';
-import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle } from '../api/mutations';
-import { CASE_STATUS_META, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput } from '../schemas/pension-case.schema';
+import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle, useAddIncomeConceptRecord, useRemoveIncomeConceptRecord } from '../api/mutations';
+import { CASE_STATUS_META, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput, type IncomeConceptRecordInput } from '../schemas/pension-case.schema';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
@@ -17,8 +17,11 @@ import type { components } from '@/types/api';
 type Person = components['schemas']['Person'];
 interface EntityItem { id: number; code: string; tax_id_number: string; }
 interface EntityListResponse { data: EntityItem[]; }
+interface CatalogItem { id: number; name: string; }
+interface CatalogListResponse { data: CatalogItem[]; }
 
 type Tab = 'summary' | 'subrecords' | 'history' | 'calculation';
+type SubModalKind = 'salary' | 'service' | 'cycle' | 'income' | null;
 
 export function PensionCaseDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -27,9 +30,17 @@ export function PensionCaseDetailPage() {
   const can = usePermiso();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('summary');
-  const [subModal, setSubModal] = useState<'salary' | 'service' | 'cycle' | null>(null);
+  const [subModal, setSubModal] = useState<SubModalKind>(null);
 
   const { data: pensionCase, isLoading, isError } = usePensionCase(id);
+  // Cargar catálogo de conceptos de ingreso para etiquetar las filas
+  const { data: incomeConceptsData } = useQuery({
+    queryKey: ['catalogs', 'income-concepts', 'all'],
+    queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/income-concepts', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+  });
+  const incomeConceptMap = new Map<number, string>((incomeConceptsData?.data ?? []).map((c) => [c.id, c.name]));
+  const incomeConceptLabel = (id?: number | null) => (id != null ? (incomeConceptMap.get(id) ?? `#${id}`) : '—');
   const canEdit = can('cases.edit');
 
   if (isLoading) return <div className="max-w-7xl mx-auto"><p className="text-muted-foreground">{tc('status.loading')}…</p></div>;
@@ -86,6 +97,14 @@ export function PensionCaseDetailPage() {
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
           </SubrecordSection>
+          {/* Conceptos de ingreso */}
+          <SubrecordSection title={t('income_concept.title')} onAdd={canEdit ? () => setSubModal('income') : undefined} addLabel={t('income_concept.add')}>
+            {(pensionCase.income_concept_records ?? []).length > 0 ? (
+              <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('income_concept.columns.income_concept')}</th><th className="text-left px-3 py-2">{t('income_concept.columns.amount')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
+                <tbody className="divide-y divide-border">{(pensionCase.income_concept_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{incomeConceptLabel(r.income_concept_id)}</td><td className="px-3 py-2">{formatCUP(Number(r.amount ?? 0))}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => useRemoveIncomeConceptRecord(id).mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
+              </table>
+            ) : <p className="text-sm text-muted-foreground py-2">—</p>}
+          </SubrecordSection>
         </div>
       )}
 
@@ -96,6 +115,7 @@ export function PensionCaseDetailPage() {
       {subModal === 'salary' && <SalaryRecordModal caseId={id} onClose={() => setSubModal(null)} />}
       {subModal === 'service' && <ServiceRecordModal caseId={id} onClose={() => setSubModal(null)} />}
       {subModal === 'cycle' && <WorkCycleModal caseId={id} onClose={() => setSubModal(null)} />}
+      {subModal === 'income' && <IncomeConceptRecordModal caseId={id} onClose={() => setSubModal(null)} />}
     </div>
   );
 }
@@ -202,4 +222,27 @@ function WorkCycleModal({ caseId, onClose }: { caseId: string; onClose: () => vo
   const mutation = useAddWorkCycle(caseId);
   const [planned, setPlanned] = useState(''); const [actual, setActual] = useState(''); const [count, setCount] = useState('');
   return <Dialog open onClose={onClose} title={t('cycle.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('cycle.form.planned_days')} *</label><Input type="number" min="0" value={planned} onChange={(e) => setPlanned(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('cycle.form.actual_days')} *</label><Input type="number" min="0" value={actual} onChange={(e) => setActual(e.target.value)} /></div><div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('cycle.form.cycles_count')} *</label><Input type="number" min="0" value={count} onChange={(e) => setCount(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!planned || !actual || !count || mutation.isPending} onClick={async () => { await mutation.mutateAsync({ planned_days: Number(planned), actual_days: Number(actual), cycles_count: Number(count) } as WorkCycleInput); onClose(); }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div></div></Dialog>;
+}
+
+function IncomeConceptRecordModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
+  const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
+  const mutation = useAddIncomeConceptRecord(caseId);
+  const [conceptId, setConceptId] = useState(0); const [amount, setAmount] = useState('');
+  // Cargar catálogo de conceptos de ingreso
+  const { data: conceptsData } = useQuery({
+    queryKey: ['catalogs', 'income-concepts', 'all'],
+    queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/income-concepts', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+  });
+  const concepts = conceptsData?.data ?? [];
+  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
+  return <Dialog open onClose={onClose} title={t('income_concept.add')} size="md"><div className="grid grid-cols-2 gap-3">
+    <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('income_concept.form.income_concept_id')} *</label>
+      <select className={selectClass} value={conceptId} onChange={(e) => setConceptId(Number(e.target.value))}>
+        <option value="0">{tc('actions.select')}</option>
+        {concepts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+      </select></div>
+    <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('income_concept.form.amount')} *</label><Input type="number" step="0.01" min="0" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!conceptId || !amount || mutation.isPending} onClick={async () => { await mutation.mutateAsync({ income_concept_id: conceptId, amount: Number(amount) } as IncomeConceptRecordInput); onClose(); }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
+  </div></Dialog>;
 }

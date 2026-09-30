@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
 import type { components } from '@/types/api';
-import type { CreateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput } from '../schemas/pension-case.schema';
+import type { CreateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput, IncomeConceptRecordInput } from '../schemas/pension-case.schema';
 import type { AxiosError } from 'axios';
 
 type PensionCase = components['schemas']['PensionCase'];
@@ -114,5 +114,35 @@ export function useRemoveWorkCycle(caseId: number | string) {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('cycle.remove_success')); },
     onError: () => { toast.error(t('cycle.remove_error')); },
+  });
+}
+
+export function useAddIncomeConceptRecord(caseId: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pension-cases');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (input: IncomeConceptRecordInput) => {
+      await http.post(`/pension-cases/${caseId}/income-concept-records`, input);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('income_concept.add_success')); },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
+      if (ae.response?.status === 422) return;
+      toast.error(t('income_concept.add_error'));
+    },
+  });
+}
+
+export function useRemoveIncomeConceptRecord(caseId: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pension-cases');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (recordId: number | string) => {
+      await http.delete(`/pension-cases/${caseId}/income-concept-records/${recordId}`);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('income_concept.remove_success')); },
+    onError: () => { toast.error(t('income_concept.remove_error')); },
   });
 }
