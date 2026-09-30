@@ -2973,7 +2973,7 @@
                     "Estructura"
                 ],
                 "summary": "Registro de una oficina",
-                "description": "Alta con validación de referencias, coherencia geográfica (RN-004) y jerarquía opcional acíclica (RN-003). Toda escritura aterriza en la bitácora.",
+                "description": "Alta con validación de referencias, coherencia geográfica (RN-004) y la estructura territorial (ADR-31): una sola oficina nacional, una provincial por provincia, una municipal por provincia y municipio; las provinciales dependen de la nacional (que debe existir) y las municipales de la provincial de su provincia — el parent se deriva del tipo, se puede omitir y una contradicción responde 422. Toda escritura aterriza en la bitácora.",
                 "operationId": "officesStore",
                 "requestBody": {
                     "required": true,
@@ -2988,9 +2988,9 @@
                                 ],
                                 "properties": {
                                     "office_type_id": {
-                                        "description": "Nacional/provincial/municipal (catálogo)",
+                                        "description": "Nacional/provincial/municipal (catálogo); la tríada territorial gobierna la unicidad y el parent",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 2
                                     },
                                     "province_id": {
                                         "type": "integer",
@@ -3006,7 +3006,7 @@
                                         "example": "Calle Martí #100, Holguín"
                                     },
                                     "parent_office_id": {
-                                        "description": "Oficina superior (RN-003: sin ciclos)",
+                                        "description": "Derivado del tipo: omitir o enviar el id que corresponde (provincial -> nacional, municipal -> provincial de la provincia, nacional sin parent)",
                                         "type": "integer",
                                         "nullable": true
                                     }
@@ -3240,7 +3240,7 @@
                     "Estructura"
                 ],
                 "summary": "Edición de una oficina",
-                "description": "Edición parcial con auditoría de valores previos. Las referencias, la coherencia RN-004 y la aciclicidad RN-003 se revalidan contra el estado resultante.",
+                "description": "Edición parcial con auditoría de valores previos. Las referencias y la coherencia RN-004 se revalidan contra el estado resultante, la unicidad por ámbito se recalcula excluyendo la propia oficina y el parent se re-deriva del tipo resultante; los cambios de tipo o territorio se rechazan mientras la oficina tenga hijas activas. Para tipos fuera de la tríada territorial rige la jerarquía opcional acíclica (RN-003).",
                 "operationId": "officesUpdate",
                 "parameters": [
                     {
@@ -3272,7 +3272,7 @@
                                         "type": "string"
                                     },
                                     "parent_office_id": {
-                                        "description": "null desarraiga la oficina; el nuevo padre no puede cerrar un ciclo (RN-003)",
+                                        "description": "En la tríada territorial se deriva del tipo (una contradicción responde 422); en tipos genéricos null desarraiga la oficina sin cerrar ciclos (RN-003)",
                                         "type": "integer",
                                         "nullable": true
                                     }
@@ -4403,7 +4403,7 @@
                                 "properties": {
                                     "identity_number": {
                                         "type": "string",
-                                        "example": "18506150012"
+                                        "example": "85061510002"
                                     },
                                     "first_name": {
                                         "type": "string",
@@ -7343,7 +7343,7 @@
                             },
                             "identity_number": {
                                 "type": "string",
-                                "example": "18506150012"
+                                "example": "85061510002"
                             },
                             "full_name": {
                                 "type": "string",
@@ -7888,9 +7888,9 @@
                         "example": 1
                     },
                     "identity_number": {
-                        "description": "Carné de identidad: 11 dígitos, único e inmutable (RN-001)",
+                        "description": "Carné de identidad: 11 dígitos (mes 01-12 y día 01-31 validados, sexo por paridad del dígito 10), único e inmutable (RN-001)",
                         "type": "string",
-                        "example": "18506150012"
+                        "example": "85061510002"
                     },
                     "first_name": {
                         "description": "Primer nombre",
@@ -8050,7 +8050,7 @@
                     "identity_number": {
                         "description": "Carné de identidad de la persona vinculada (RN-001)",
                         "type": "string",
-                        "example": "18506150012"
+                        "example": "85061510002"
                     },
                     "full_name": {
                         "description": "Nombre de visualización compuesto de los cuatro campos de nombre",
