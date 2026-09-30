@@ -258,9 +258,12 @@ export function ResourceListPage<
                   {config.columns.map((col) => {
                     const colId = (col as { id?: string }).id ?? '';
                     const value = (item as Record<string, unknown>)[colId];
+                    // Mostrar '—' para valores nulos/vacíos; los strings/numbers
+                    // con contenido se renderizan tal cual; otros tipos se stringify.
+                    const display = value == null || value === '' ? '—' : typeof value === 'string' || typeof value === 'number' ? value : String(value);
                     return (
                       <td key={colId || Math.random().toString()} className="px-4 py-3">
-                        {typeof value === 'string' || typeof value === 'number' ? value : null}
+                        {display}
                       </td>
                     );
                   })}

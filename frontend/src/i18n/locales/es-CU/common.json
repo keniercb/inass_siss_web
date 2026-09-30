@@ -53,6 +53,10 @@
     "actions": "Acciones",
     "no_data": "No hay registros"
   },
+  "booleans": {
+    "yes": "Sí",
+    "no": "No"
+  },
   "user": {
     "my_profile": "Mi perfil",
     "settings": "Configuración",

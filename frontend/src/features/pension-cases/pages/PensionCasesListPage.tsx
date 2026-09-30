@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Search, Plus, Eye } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -11,6 +12,22 @@ import { Pagination } from '@/components/crud/Pagination';
 import { PensionCaseFormModal } from '../components/PensionCaseFormModal';
 import { CASE_STATUS_META } from '../schemas/pension-case.schema';
 import { formatDate } from '@/lib/utils';
+import { http } from '@/lib/http';
+
+interface CatalogItem { id: number; name: string; }
+interface CatalogListResponse { data: CatalogItem[]; }
+
+// Hook para cargar catálogos pequeños (lookup por id → nombre)
+function useCatalogLookup(type: string) {
+  return useQuery({
+    queryKey: ['catalogs', type, 'all'],
+    queryFn: async () => {
+      const r = await http.get<CatalogListResponse>(`/catalogs/${type}`, { params: { per_page: 100 } });
+      return r.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 export function PensionCasesListPage() {
   const { t } = useTranslation('pension-cases');
@@ -19,6 +36,12 @@ export function PensionCasesListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [formOpen, setFormOpen] = useState(false);
+
+  // Cargar catálogos para resolver nombres de tipo y régimen de pensión
+  const { data: pensionTypesData } = useCatalogLookup('pension-types');
+  const { data: pensionRegimesData } = useCatalogLookup('pension-regimes');
+  const pensionTypeMap = new Map<number, string>((pensionTypesData?.data ?? []).map((c) => [c.id, c.name]));
+  const pensionRegimeMap = new Map<number, string>((pensionRegimesData?.data ?? []).map((c) => [c.id, c.name]));
 
   const page = parseInt(searchParams.get('page') ?? '1', 10);
   const per_page = parseInt(searchParams.get('per_page') ?? '15', 10);
@@ -44,6 +67,8 @@ export function PensionCasesListPage() {
     setSearchParams(np);
   };
 
+  const COLSPAN = 7;
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -65,20 +90,26 @@ export function PensionCasesListPage() {
           <thead><tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.number')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.applicant')}</th>
+            <th className="text-left px-4 py-3 font-medium">{t('list.columns.pension_type')}</th>
+            <th className="text-left px-4 py-3 font-medium">{t('list.columns.pension_regime')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.status')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.requested_at')}</th>
             <th className="text-right px-4 py-3 font-medium">{tc('table.actions')}</th>
           </tr></thead>
           <tbody className="divide-y divide-border">
-            {isLoading ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
-            : items.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t('list.empty')}</td></tr>
+            {isLoading ? <tr><td colSpan={COLSPAN} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
+            : items.length === 0 ? <tr><td colSpan={COLSPAN} className="px-4 py-8 text-center text-muted-foreground">{t('list.empty')}</td></tr>
             : items.map((c) => {
               const statusMeta = CASE_STATUS_META[c.status ?? 'submitted'] ?? { label: c.status ?? '—', badgeClass: '' };
               const applicantName = c.applicant ? `${c.applicant.first_surname ?? ''} ${c.applicant.first_name ?? ''}`.trim() : '—';
+              const pensionTypeLabel = c.pension_type_id != null ? (pensionTypeMap.get(c.pension_type_id) ?? `#${c.pension_type_id}`) : '—';
+              const pensionRegimeLabel = c.pension_regime_id != null ? (pensionRegimeMap.get(c.pension_regime_id) ?? `#${c.pension_regime_id}`) : '—';
               return (
                 <tr key={c.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/expedientes/${c.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs">{c.number}</td>
                   <td className="px-4 py-3 font-medium">{applicantName}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{pensionTypeLabel}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{pensionRegimeLabel}</td>
                   <td className="px-4 py-3"><span className={`badge ${statusMeta.badgeClass}`}>{t(`list.status.${c.status}`)}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{c.requested_at ? formatDate(c.requested_at) : '—'}</td>
                   <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}><button onClick={() => navigate(`/expedientes/${c.id}`)} className="p-1.5 rounded hover:bg-muted" title={tc('actions.view')}><Eye className="w-4 h-4" /></button></td>

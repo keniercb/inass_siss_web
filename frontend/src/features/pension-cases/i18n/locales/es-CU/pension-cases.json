@@ -6,7 +6,7 @@
     "search_placeholder": "Buscar por número o proponente…",
     "empty": "No hay expedientes para los filtros seleccionados",
     "filter": { "all": "Todos", "submitted": "Solicitud", "under_review": "Revisión", "approved": "Aprobados", "rejected": "Denegados" },
-    "columns": { "number": "Número", "applicant": "Proponente", "status": "Estado", "requested_at": "Fecha solicitud" },
+    "columns": { "number": "Número", "applicant": "Proponente", "pension_type": "Tipo de pensión", "pension_regime": "Régimen", "status": "Estado", "requested_at": "Fecha solicitud" },
     "status": { "submitted": "Solicitud", "under_review": "Revisión", "approved": "Aprobado", "rejected": "Denegado" }
   },
   "create": { "title": "Nuevo expediente", "description": "Complete los datos del expediente. El número se genera automáticamente.", "success": "Expediente creado correctamente", "error": "Ocurrió un error al crear el expediente" },
@@ -26,8 +26,13 @@
       "position": "Cargo", "occupational_category": "Categoría ocupacional",
       "educational_level": "Nivel educacional", "scientific_category": "Categoría científica",
       "last_salary": "Último salario", "computed_amount": "Cuantía calculada",
-      "decision_notes": "Notas de decisión", "decided_at": "Fecha decisión"
-    }
+      "decision_notes": "Notas de decisión", "decided_at": "Fecha decisión",
+      "decided_by": "Decidido por", "approval_legal_basis": "Base legal aprobatoria",
+      "calculation_setting": "Versión de parámetros",
+      "pension_type": "Tipo de pensión", "pension_regime": "Régimen de pensión",
+      "rebel_army_member": "Pertenece al Ejército Rebelde", "rebel_army_join_date": "Fecha de alta"
+    },
+    "section": { "case_data": "Datos del expediente", "rebel_army": "Ejército Rebelde", "decision": "Decisión" }
   },
   "form": {
     "applicant_person_id": "Proponente",

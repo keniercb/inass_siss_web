@@ -19,6 +19,7 @@ interface EntityItem { id: number; code: string; tax_id_number: string; }
 interface EntityListResponse { data: EntityItem[]; }
 interface CatalogItem { id: number; name: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
+interface OfficeItem { id: number; address: string; type?: { name: string }; province?: { name: string }; municipality?: { name: string }; }
 
 type Tab = 'summary' | 'subrecords' | 'history' | 'calculation';
 type SubModalKind = 'salary' | 'service' | 'cycle' | 'income' | null;
@@ -132,21 +133,90 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
     staleTime: 60_000,
   });
 
+  // Cargar catálogos y entidades para resolver IDs a nombres legibles
+  const useCatalog = (type: string) => useQuery({
+    queryKey: ['catalogs', type, 'all'],
+    queryFn: async () => { const r = await http.get<CatalogListResponse>(`/catalogs/${type}`, { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: pensionTypesData } = useCatalog('pension-types');
+  const { data: pensionRegimesData } = useCatalog('pension-regimes');
+  const { data: positionsData } = useCatalog('positions');
+  const { data: occCatsData } = useCatalog('occupational-categories');
+  const { data: eduLevelsData } = useCatalog('educational-levels');
+  const { data: sciCatsData } = useCatalog('scientific-categories');
+  const { data: entitiesData } = useQuery({
+    queryKey: ['entities', 'all'],
+    queryFn: async () => { const r = await http.get<EntityListResponse>('/entities', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: officesData } = useQuery({
+    queryKey: ['offices', 'all'],
+    queryFn: async () => { const r = await http.get<{ data: OfficeItem[] }>('/offices', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: legalBasesData } = useQuery({
+    queryKey: ['legal-bases', 'all'],
+    queryFn: async () => { const r = await http.get<{ data: { id: number; title: string }[] }>('/legal-bases', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const lookup = (data: { data?: CatalogItem[] | EntityItem[] | OfficeItem[] | { id: number; title: string }[] } | undefined, id?: number | null, fallback?: (item: never) => string): string => {
+    if (!id || !data?.data) return '—';
+    const item = (data.data as never[]).find((x) => (x as { id: number }).id === id);
+    if (!item) return `#${id}`;
+    if (fallback) return fallback(item);
+    return (item as { name?: string; title?: string }).name ?? (item as { title?: string }).title ?? `#${id}`;
+  };
+
+  const isApproved = pensionCase.status === 'approved' || pensionCase.status === 'rejected';
+
   return (
     <div className="space-y-6">
       {/* Datos del expediente */}
       <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.tabs.summary')}</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.case_data')}</h3>
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
           <Field label={t('detail.fields.number')} value={pensionCase.number ?? '—'} mono />
           <Field label={t('detail.fields.status')} value={t(`list.status.${pensionCase.status}`)} />
           <Field label={t('detail.fields.requested_at')} value={pensionCase.requested_at ? formatDate(pensionCase.requested_at) : '—'} />
           <Field label={t('detail.fields.last_salary')} value={pensionCase.last_salary != null ? formatCUP(Number(pensionCase.last_salary)) : '—'} />
-          {pensionCase.computed_amount != null && <Field label={t('detail.fields.computed_amount')} value={formatCUP(Number(pensionCase.computed_amount))} />}
-          {pensionCase.decided_at && <Field label={t('detail.fields.decided_at')} value={formatDate(pensionCase.decided_at)} />}
-          {pensionCase.decision_notes && <Field label={t('detail.fields.decision_notes')} value={pensionCase.decision_notes} fullWidth />}
+          <Field label={t('detail.fields.pension_type')} value={lookup(pensionTypesData, pensionCase.pension_type_id)} />
+          <Field label={t('detail.fields.pension_regime')} value={lookup(pensionRegimesData, pensionCase.pension_regime_id)} />
+          <Field label={t('detail.fields.employer_entity')} value={lookup(entitiesData, pensionCase.employer_entity_id, (e) => `${(e as EntityItem).code} — ${(e as EntityItem).tax_id_number}`)} />
+          <Field label={t('detail.fields.office')} value={lookup(officesData, pensionCase.office_id, (o) => { const off = o as OfficeItem; return [off.type?.name, off.province?.name, off.municipality?.name].filter(Boolean).join(' — ') || off.address; })} />
+          <Field label={t('detail.fields.position')} value={lookup(positionsData, pensionCase.position_id)} />
+          <Field label={t('detail.fields.occupational_category')} value={lookup(occCatsData, pensionCase.occupational_category_id)} />
+          <Field label={t('detail.fields.educational_level')} value={lookup(eduLevelsData, pensionCase.educational_level_id)} />
+          <Field label={t('detail.fields.scientific_category')} value={lookup(sciCatsData, pensionCase.scientific_category_id)} />
         </div>
       </div>
+
+      {/* Ejército Rebelde */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.rebel_army')}</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <Field label={t('detail.fields.rebel_army_member')} value={pensionCase.rebel_army_member ? tc('booleans.yes') : tc('booleans.no')} />
+          {pensionCase.rebel_army_member && (
+            <Field label={t('detail.fields.rebel_army_join_date')} value={pensionCase.rebel_army_join_date ? formatDate(pensionCase.rebel_army_join_date) : '—'} />
+          )}
+        </div>
+      </div>
+
+      {/* Decisión (solo si hay datos de decisión) */}
+      {isApproved && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.decision')}</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <Field label={t('detail.fields.decided_at')} value={pensionCase.decided_at ? formatDate(pensionCase.decided_at) : '—'} />
+            <Field label={t('detail.fields.decided_by')} value={pensionCase.decided_by != null ? `Usuario #${pensionCase.decided_by}` : '—'} />
+            {pensionCase.computed_amount != null && <Field label={t('detail.fields.computed_amount')} value={formatCUP(Number(pensionCase.computed_amount))} />}
+            <Field label={t('detail.fields.approval_legal_basis')} value={lookup(legalBasesData, pensionCase.approval_legal_basis_id, (lb) => (lb as { title: string }).title)} />
+            {pensionCase.calculation_setting_id != null && <Field label={t('detail.fields.calculation_setting')} value={`#${pensionCase.calculation_setting_id}`} />}
+            {pensionCase.decision_notes && <Field label={t('detail.fields.decision_notes')} value={pensionCase.decision_notes} fullWidth />}
+          </div>
+        </div>
+      )}
 
       {/* Datos del proponente */}
       {person && (
