@@ -1,0 +1,67 @@
+{
+  "list": {
+    "title": "Pension cases",
+    "description": "Pension cases with state machine",
+    "new": "New case",
+    "search_placeholder": "Search by number or applicant…",
+    "empty": "No cases for the selected filters",
+    "filter": { "all": "All", "submitted": "Submitted", "under_review": "Under review", "approved": "Approved", "rejected": "Rejected" },
+    "columns": { "number": "Number", "applicant": "Applicant", "status": "Status", "requested_at": "Request date" },
+    "status": { "submitted": "Submitted", "under_review": "Under review", "approved": "Approved", "rejected": "Rejected" }
+  },
+  "create": { "title": "New case", "description": "Fill in the case data. The number is generated automatically.", "success": "Case created successfully", "error": "An error occurred while creating the case" },
+  "detail": {
+    "back_to_list": "Back to list",
+    "not_found": "Case not found",
+    "tabs": { "summary": "Summary", "subrecords": "Subrecords", "history": "History", "calculation": "Calculation" },
+    "tabs_empty": {
+      "history": "No history",
+      "history_description": "State transitions will appear here (FE-S6).",
+      "calculation": "No calculation",
+      "calculation_description": "The calculation simulator will be available (FE-S7)."
+    },
+    "fields": {
+      "number": "Number", "status": "Status", "requested_at": "Request date",
+      "applicant": "Applicant", "office": "Office", "employer_entity": "Employer entity",
+      "position": "Position", "occupational_category": "Occupational category",
+      "educational_level": "Educational level", "scientific_category": "Scientific category",
+      "last_salary": "Last salary", "computed_amount": "Computed amount",
+      "decision_notes": "Decision notes", "decided_at": "Decision date"
+    }
+  },
+  "form": {
+    "applicant_person_id": "Applicant",
+    "office_id": "Processing office",
+    "employer_entity_id": "Employer entity",
+    "position_id": "Position",
+    "occupational_category_id": "Occupational category",
+    "educational_level_id": "Educational level",
+    "scientific_category_id": "Scientific category",
+    "last_salary": "Last salary (CUP)",
+    "search_person": "Search person by ID or name…"
+  },
+  "salary": {
+    "title": "Salary records",
+    "add": "Add salary",
+    "add_success": "Salary record added", "add_error": "Error adding record",
+    "remove_success": "Record removed", "remove_error": "Error removing record",
+    "columns": { "year": "Year", "earned_salary": "Earned salary" },
+    "form": { "year": "Year", "earned_salary": "Earned salary (CUP)" }
+  },
+  "service": {
+    "title": "Service records",
+    "add": "Add service",
+    "add_success": "Service record added", "add_error": "Error adding record",
+    "remove_success": "Record removed", "remove_error": "Error removing record",
+    "columns": { "entity": "Entity", "start_date": "Start", "end_date": "End", "is_appendix": "Appendix" },
+    "form": { "entity_id": "Entity", "start_date": "Start date", "end_date": "End date", "is_appendix": "Appendix" }
+  },
+  "cycle": {
+    "title": "Work cycles",
+    "add": "Add cycle",
+    "add_success": "Work cycle added", "add_error": "Error adding cycle",
+    "remove_success": "Cycle removed", "remove_error": "Error removing cycle",
+    "columns": { "planned_days": "Planned days", "actual_days": "Actual days", "cycles_count": "Cycles" },
+    "form": { "planned_days": "Planned days", "actual_days": "Actual days", "cycles_count": "Cycle count" }
+  }
+}

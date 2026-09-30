@@ -1,0 +1,141 @@
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { Dialog } from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { useCreateCase } from '../api/mutations';
+import { type CreateCaseInput } from '../schemas/pension-case.schema';
+import { cn } from '@/lib/utils';
+import { http } from '@/lib/http';
+
+interface CatalogItem { id: number; name: string; }
+interface CatalogListResponse { data: CatalogItem[]; }
+interface PersonListItem { id: number; identity_number: string; first_name: string; first_surname: string; }
+interface EntityListItem { id: number; code: string; tax_id_number: string; }
+
+interface PensionCaseFormModalProps { onClose: () => void; }
+
+export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
+  const { t } = useTranslation('pension-cases');
+  const { t: tc } = useTranslation('common');
+  const createMutation = useCreateCase();
+
+  // Cargar catálogos para selects
+  const { data: positionsData } = useQuery({ queryKey: ['catalogs', 'positions', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/positions', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+  const { data: occCatData } = useQuery({ queryKey: ['catalogs', 'occupational-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/occupational-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+  const { data: eduData } = useQuery({ queryKey: ['catalogs', 'educational-levels', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/educational-levels', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+  const { data: sciCatData } = useQuery({ queryKey: ['catalogs', 'scientific-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/scientific-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+
+  // Cargar oficinas
+  const { data: officesData } = useQuery({ queryKey: ['offices', 'all'], queryFn: async () => { const r = await http.get<{ data: CatalogItem[] }>('/offices', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+
+  // Cargar entidades
+  const { data: entitiesData } = useQuery({ queryKey: ['entities', 'all'], queryFn: async () => { const r = await http.get<{ data: EntityListItem[] }>('/entities', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+
+  // Búsqueda de persona (proponente)
+  const [personSearch, setPersonSearch] = useState('');
+  const [personResults, setPersonResults] = useState<PersonListItem[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<number | null>(null);
+  const [showResults, setShowResults] = useState(false);
+
+  useEffect(() => {
+    if (personSearch.length < 3) { setPersonResults([]); return; }
+    const timer = setTimeout(async () => {
+      const r = await http.get<{ data: PersonListItem[] }>('/people', { params: { search: personSearch, per_page: 10 } });
+      setPersonResults(r.data.data);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [personSearch]);
+
+  // Estado local para selects
+  const [officeId, setOfficeId] = useState(0);
+  const [entityId, setEntityId] = useState(0);
+  const [positionId, setPositionId] = useState(0);
+  const [occCatId, setOccCatId] = useState(0);
+  const [eduId, setEduId] = useState(0);
+  const [sciCatId, setSciCatId] = useState(0);
+  const [lastSalary, setLastSalary] = useState('');
+
+  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
+
+  const onSubmit = async () => {
+    if (!selectedPerson || !officeId || !entityId || !positionId || !occCatId || !eduId || !sciCatId) return;
+    const input: CreateCaseInput = {
+      applicant_person_id: selectedPerson,
+      office_id: officeId,
+      employer_entity_id: entityId,
+      position_id: positionId,
+      occupational_category_id: occCatId,
+      educational_level_id: eduId,
+      scientific_category_id: sciCatId,
+      last_salary: Number(lastSalary) || 0,
+    };
+    try {
+      await createMutation.mutateAsync(input);
+      onClose();
+    } catch { /* handled by mutation */ }
+  };
+
+  const canSubmit = selectedPerson && officeId && entityId && positionId && occCatId && eduId && sciCatId && lastSalary !== '';
+
+  return (
+    <Dialog open onClose={onClose} title={t('create.title')} description={t('create.description')} size="xl">
+      <div className="space-y-4">
+        {/* Proponente (búsqueda de persona) */}
+        <div className="relative">
+          <label className="block text-sm font-medium mb-1">{t('form.applicant_person_id')} *</label>
+          <Input type="text" placeholder={t('form.search_person')} value={personSearch} onChange={(e) => { setPersonSearch(e.target.value); setShowResults(true); setSelectedPerson(null); }} onFocus={() => setShowResults(true)} onBlur={() => setTimeout(() => setShowResults(false), 200)} />
+          {showResults && personResults.length > 0 && (
+            <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-48 overflow-y-auto">
+              {personResults.map((p) => (
+                <button key={p.id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b border-border last:border-0" onClick={() => { setSelectedPerson(p.id); setPersonSearch(`${p.first_name} ${p.first_surname} (${p.identity_number})`); setShowResults(false); }}>
+                  <span className="font-mono text-xs">{p.identity_number}</span> — {p.first_name} {p.first_surname}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* Oficina + Entidad */}
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="block text-sm font-medium mb-1">{t('form.office_id')} *</label>
+            <select className={selectClass} value={officeId} onChange={(e) => setOfficeId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>{(officesData?.data ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select></div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.employer_entity_id')} *</label>
+            <select className={selectClass} value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>{(entitiesData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.code} — {e.tax_id_number}</option>)}
+            </select></div>
+        </div>
+        {/* Cargo + Categorías */}
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="block text-sm font-medium mb-1">{t('form.position_id')} *</label>
+            <select className={selectClass} value={positionId} onChange={(e) => setPositionId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>{(positionsData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select></div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.occupational_category_id')} *</label>
+            <select className={selectClass} value={occCatId} onChange={(e) => setOccCatId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>{(occCatData?.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="block text-sm font-medium mb-1">{t('form.educational_level_id')} *</label>
+            <select className={selectClass} value={eduId} onChange={(e) => setEduId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>{(eduData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select></div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.scientific_category_id')} *</label>
+            <select className={selectClass} value={sciCatId} onChange={(e) => setSciCatId(Number(e.target.value))}>
+              <option value="">{tc('actions.select')}</option>{(sciCatData?.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select></div>
+        </div>
+        {/* Último salario */}
+        <div><label className="block text-sm font-medium mb-1">{t('form.last_salary')} *</label>
+          <Input type="number" step="0.01" min="0" placeholder="0.00" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} /></div>
+        <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+          <Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button>
+          <Button type="button" disabled={!canSubmit || createMutation.isPending} onClick={onSubmit}>{createMutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button>
+        </div>
+      </div>
+    </Dialog>
+  );
+}

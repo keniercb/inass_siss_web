@@ -1,0 +1,67 @@
+{
+  "list": {
+    "title": "Expedientes",
+    "description": "Expedientes de pensión con máquina de estados",
+    "new": "Nuevo expediente",
+    "search_placeholder": "Buscar por número o proponente…",
+    "empty": "No hay expedientes para los filtros seleccionados",
+    "filter": { "all": "Todos", "submitted": "Solicitud", "under_review": "Revisión", "approved": "Aprobados", "rejected": "Denegados" },
+    "columns": { "number": "Número", "applicant": "Proponente", "status": "Estado", "requested_at": "Fecha solicitud" },
+    "status": { "submitted": "Solicitud", "under_review": "Revisión", "approved": "Aprobado", "rejected": "Denegado" }
+  },
+  "create": { "title": "Nuevo expediente", "description": "Complete los datos del expediente. El número se genera automáticamente.", "success": "Expediente creado correctamente", "error": "Ocurrió un error al crear el expediente" },
+  "detail": {
+    "back_to_list": "Volver al listado",
+    "not_found": "Expediente no encontrado",
+    "tabs": { "summary": "Resumen", "subrecords": "Subregistros", "history": "Historial", "calculation": "Cálculo" },
+    "tabs_empty": {
+      "history": "Sin historial",
+      "history_description": "Las transiciones de estado aparecerán aquí (FE-S6).",
+      "calculation": "Sin cálculo",
+      "calculation_description": "El simulador de cálculo estará disponible (FE-S7)."
+    },
+    "fields": {
+      "number": "Número", "status": "Estado", "requested_at": "Fecha solicitud",
+      "applicant": "Proponente", "office": "Oficina", "employer_entity": "Centro de trabajo",
+      "position": "Cargo", "occupational_category": "Categoría ocupacional",
+      "educational_level": "Nivel educacional", "scientific_category": "Categoría científica",
+      "last_salary": "Último salario", "computed_amount": "Cuantía calculada",
+      "decision_notes": "Notas de decisión", "decided_at": "Fecha decisión"
+    }
+  },
+  "form": {
+    "applicant_person_id": "Proponente",
+    "office_id": "Oficina tramitadora",
+    "employer_entity_id": "Centro de trabajo",
+    "position_id": "Cargo",
+    "occupational_category_id": "Categoría ocupacional",
+    "educational_level_id": "Nivel educacional",
+    "scientific_category_id": "Categoría científica",
+    "last_salary": "Último salario (CUP)",
+    "search_person": "Buscar persona por CI o nombre…"
+  },
+  "salary": {
+    "title": "Registros de salario",
+    "add": "Añadir salario",
+    "add_success": "Registro de salario añadido", "add_error": "Error al añadir registro",
+    "remove_success": "Registro eliminado", "remove_error": "Error al eliminar registro",
+    "columns": { "year": "Año", "earned_salary": "Salario devengado" },
+    "form": { "year": "Año", "earned_salary": "Salario devengado (CUP)" }
+  },
+  "service": {
+    "title": "Registros de servicio",
+    "add": "Añadir servicio",
+    "add_success": "Registro de servicio añadido", "add_error": "Error al añadir registro",
+    "remove_success": "Registro eliminado", "remove_error": "Error al eliminar registro",
+    "columns": { "entity": "Entidad", "start_date": "Inicio", "end_date": "Fin", "is_appendix": "Coletilla" },
+    "form": { "entity_id": "Entidad", "start_date": "Fecha inicio", "end_date": "Fecha fin", "is_appendix": "Coletilla" }
+  },
+  "cycle": {
+    "title": "Ciclos de trabajo",
+    "add": "Añadir ciclo",
+    "add_success": "Ciclo de trabajo añadido", "add_error": "Error al añadir ciclo",
+    "remove_success": "Ciclo eliminado", "remove_error": "Error al eliminar ciclo",
+    "columns": { "planned_days": "Días plan", "actual_days": "Días reales", "cycles_count": "Ciclos" },
+    "form": { "planned_days": "Días plan", "actual_days": "Días reales", "cycles_count": "Cantidad de ciclos" }
+  }
+}

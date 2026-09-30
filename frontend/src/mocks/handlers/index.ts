@@ -7,6 +7,7 @@ import { peopleHandlers } from './people';
 import { organizationsHandlers, legalBasisHandlers } from './organizations';
 import { usersHandlers } from './users';
 import { rolesHandlers } from './roles';
+import { pensionCasesHandlers } from './pension-cases';
 
 // Handlers MSW de todos los módulos
 export const handlers = [
@@ -20,4 +21,5 @@ export const handlers = [
   ...legalBasisHandlers,
   ...usersHandlers,
   ...rolesHandlers,
+  ...pensionCasesHandlers,
 ];

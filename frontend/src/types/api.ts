@@ -380,7 +380,7 @@ export interface paths {
         };
         /**
          * Árbol de la jerarquía de oficinas
-         * @description Jerarquía completa como árbol anidado (RF-ENT-005) con profundidad máxima de 5 niveles y el corte anunciado (deeper=true). El conteo de expedientes tramitados por oficina se incorpora con el módulo PensionCases (F3, ADR-22).
+         * @description Jerarquía completa como árbol anidado (RF-ENT-005) con profundidad máxima de 5 niveles y el corte anunciado (deeper=true). Cada nodo incluye el conteo de expedientes tramitados por la oficina (cases_count) y por su ámbito (scope_cases_count: la oficina y sus subordinadas activas, ADR-28).
          */
         get: operations["officesTree"];
         put?: never;
@@ -400,7 +400,7 @@ export interface paths {
         };
         /**
          * Detalle de una oficina
-         * @description Devuelve la oficina activa con ese id (las desactivadas responden 404).
+         * @description Devuelve la oficina activa con ese id (las desactivadas responden 404) con el conteo de expedientes tramitados por la oficina y por su ámbito (RF-ENT-005, ADR-28).
          */
         get: operations["officesShow"];
         put?: never;
@@ -724,7 +724,7 @@ export interface paths {
         };
         /**
          * Usuario autenticado
-         * @description Devuelve el usuario asociado al token Bearer de la solicitud (RF-SEG-001).
+         * @description Devuelve el usuario asociado al token Bearer de la solicitud (RF-SEG-001) con su oficina territorial de pertenencia (ADR-29): data.office porta la oficina activa a la que pertenece la cuenta — null si no tiene ninguna —, la base que el filtrado por ámbito territorial del Sprint 6 consumirá.
          */
         get: operations["authMe"];
         put?: never;
@@ -882,7 +882,7 @@ export interface paths {
         put?: never;
         /**
          * Registrar una cuenta
-         * @description Crea la cuenta con contraseña inicial sujeta a la política de contraseñas (RF-SEC-001) y al menos un rol institucional. El email queda reservado: una cuenta activa o desactivada con esa dirección responde 422. Requiere users.manage (Administrador); la creación queda en la bitácora (contraseña redactada).
+         * @description Crea la cuenta con contraseña inicial sujeta a la política de contraseñas (RF-SEC-001), al menos un rol del directorio y la oficina territorial opcional (ADR-29, debe estar activa). El email queda reservado: una cuenta activa o desactivada con esa dirección responde 422. Requiere users.manage (Administrador); la creación queda en la bitácora (contraseña redactada).
          */
         post: operations["usersStore"];
         delete?: never;
@@ -914,7 +914,7 @@ export interface paths {
         head?: never;
         /**
          * Editar una cuenta (nombre y roles)
-         * @description Actualiza el nombre y/o la asignación completa de roles. El email es inmutable: enviar uno distinto responde 422. El sistema impide dejarlo sin ningún administrador activo (422). Requiere users.manage; la edición y el cambio de roles quedan en la bitácora con los valores previos.
+         * @description Actualiza el nombre, la asignación completa de roles y/o la oficina territorial (ADR-29: presente — incluso null — reasigna o limpia; ausente queda intacta). El email es inmutable: enviar uno distinto responde 422. El sistema impide dejarlo sin ningún administrador activo (422). Requiere users.manage; la edición, el cambio de roles y el de oficina quedan en la bitácora con los valores previos.
          */
         patch: operations["usersUpdate"];
         trace?: never;
@@ -1448,7 +1448,7 @@ export interface components {
         };
         /**
          * Oficina
-         * @description Oficina del Ministerio (RF-ENT-002). La pareja municipio-provincia es coherente (RN-04) y la jerarquía (parent) acíclica (RN-003).
+         * @description Oficina del Ministerio (RF-ENT-002). La pareja municipio-provincia es coherente (RN-04) y la jerarquía (parent) acíclica (RN-003). El detalle incluye el conteo de expedientes tramitados por la oficina y por su ámbito (RF-ENT-005, ADR-28).
          */
         Office: {
             /**
@@ -1501,6 +1501,16 @@ export interface components {
             parent_office_id?: number | null;
             /** @description Resumen de la oficina superior */
             parent?: Record<string, never> | null;
+            /**
+             * @description Expedientes tramitados por la oficina (todo estado; ADR-28)
+             * @example 3
+             */
+            cases_count?: number;
+            /**
+             * @description Expedientes en su ámbito: la oficina y sus subordinadas activas (RF-ENT-005, ADR-28)
+             * @example 7
+             */
+            scope_cases_count?: number;
         };
         /**
          * Expediente de pensión
@@ -1950,6 +1960,8 @@ export interface components {
             permissions?: string[];
             /** @description Persona del registro único vinculada a la cuenta (RF-SEG-004); null mientras no exista asociación */
             person?: components["schemas"]["LinkedPerson"] | null;
+            /** @description Oficina territorial de pertenencia (ADR-29): /auth/me y la gestión de cuentas la devuelven; null si la cuenta no pertenece a ninguna oficina activa */
+            office?: components["schemas"]["Office"] | null;
             /**
              * @description Ciclo de vida de la cuenta: inactive = desactivada (borrado lógico, RF-AUD-004)
              * @enum {string}
@@ -3623,6 +3635,10 @@ export interface operations {
                             id?: number;
                             address?: string;
                             type?: Record<string, never> | null;
+                            /** @description Expedientes tramitados por la oficina (todo estado) */
+                            cases_count?: number;
+                            /** @description Expedientes en su ámbito (ella y sus subordinadas activas) */
+                            scope_cases_count?: number;
                             children?: Record<string, never>[];
                             /** @description Presente solo en nodos cortados al nivel máximo */
                             deeper?: boolean;
@@ -5149,6 +5165,12 @@ export interface operations {
                      *     ]
                      */
                     roles: string[];
+                    /**
+                     * Format: int64
+                     * @description Oficina territorial de pertenencia (ADR-29); debe estar activa
+                     * @example 3
+                     */
+                    office_id?: number | null;
                 };
             };
         };
@@ -5259,6 +5281,12 @@ export interface operations {
                      *     ]
                      */
                     roles?: string[];
+                    /**
+                     * Format: int64
+                     * @description Oficina territorial (ADR-29): null limpia la pertenencia; ausente la deja intacta; debe estar activa
+                     * @example 5
+                     */
+                    office_id?: number | null;
                 };
             };
         };

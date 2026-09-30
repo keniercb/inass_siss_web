@@ -49,6 +49,11 @@ import roles_esCU from '@/features/roles/i18n/locales/es-CU/roles.json';
 import roles_esES from '@/features/roles/i18n/locales/es-ES/roles.json';
 import roles_enUS from '@/features/roles/i18n/locales/en-US/roles.json';
 
+// Feature: pension-cases
+import pensionCases_esCU from '@/features/pension-cases/i18n/locales/es-CU/pension-cases.json';
+import pensionCases_esES from '@/features/pension-cases/i18n/locales/es-ES/pension-cases.json';
+import pensionCases_enUS from '@/features/pension-cases/i18n/locales/en-US/pension-cases.json';
+
 // Feature: settings
 import settings_esCU from '@/features/settings/i18n/locales/es-CU/settings.json';
 import settings_esES from '@/features/settings/i18n/locales/es-ES/settings.json';
@@ -74,28 +79,28 @@ void i18n
         municipalities: municipalities_esCU, agencies: agencies_esCU,
         settings: settings_esCU, people: people_esCU,
         organizations: organizations_esCU, 'legal-basis': legalBasis_esCU,
-        users: users_esCU, roles: roles_esCU,
+        users: users_esCU, roles: roles_esCU, 'pension-cases': pensionCases_esCU,
       },
       'es-ES': {
         common: common_esES, auth: auth_esES, catalogs: catalogs_esES,
         municipalities: municipalities_esES, agencies: agencies_esES,
         settings: settings_esES, people: people_esES,
         organizations: organizations_esES, 'legal-basis': legalBasis_esES,
-        users: users_esES, roles: roles_esES,
+        users: users_esES, roles: roles_esES, 'pension-cases': pensionCases_esES,
       },
       'en-US': {
         common: common_enUS, auth: auth_enUS, catalogs: catalogs_enUS,
         municipalities: municipalities_enUS, agencies: agencies_enUS,
         settings: settings_enUS, people: people_enUS,
         organizations: organizations_enUS, 'legal-basis': legalBasis_enUS,
-        users: users_enUS, roles: roles_enUS,
+        users: users_enUS, roles: roles_enUS, 'pension-cases': pensionCases_enUS,
       },
     },
     // En tests: forzar es-CU. En dev/prod: usar detector.
     lng: IS_TEST_ENV ? DEFAULT_LANGUAGE : undefined,
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: [...SUPPORTED_LANGUAGES],
-    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings', 'people', 'organizations', 'legal-basis', 'users', 'roles'],
+    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings', 'people', 'organizations', 'legal-basis', 'users', 'roles', 'pension-cases'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,

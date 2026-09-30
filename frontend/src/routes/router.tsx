@@ -19,6 +19,8 @@ import { OfficesListPage } from '@/features/organizations/pages/OfficesListPage'
 import { LegalBasisListPage } from '@/features/legal-basis/pages/LegalBasisListPage';
 import { UsersListPage } from '@/features/users/pages/UsersListPage';
 import { RolesListPage } from '@/features/roles/pages/RolesListPage';
+import { PensionCasesListPage } from '@/features/pension-cases/pages/PensionCasesListPage';
+import { PensionCaseDetailPage } from '@/features/pension-cases/pages/PensionCaseDetailPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -153,11 +155,15 @@ export const router = createBrowserRouter([
         path: 'expedientes',
         element: (
           <ProtectedRoute permiso="cases.view">
-            <ModulePlaceholder
-              title="Expedientes"
-              description="Expedientes de pensión con máquina de estados"
-              sprint="FE-S5"
-            />
+            <PensionCasesListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'expedientes/:id',
+        element: (
+          <ProtectedRoute permiso="cases.view">
+            <PensionCaseDetailPage />
           </ProtectedRoute>
         ),
       },
