@@ -35,8 +35,11 @@ export function EntityDetailPage() {
       <button onClick={() => navigate('/entidades')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"><ChevronLeft className="w-4 h-4" />{t('entities.detail.back_to_list')}</button>
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">{entity.code} — {entity.tax_id_number}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{entity.organization?.name} · {entity.entity_type?.name}</p>
+          <h1 className="text-2xl font-semibold text-foreground">{entity.name ?? entity.code}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            <span className="font-mono">{entity.code}</span> · NIT: <span className="font-mono">{entity.tax_id_number}</span>
+          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">{entity.organization?.name} · {entity.entity_type?.name}</p>
         </div>
         {canManage && <Button variant="outline" onClick={() => setEditOpen(true)}><Edit className="w-4 h-4" />{tc('actions.edit')}</Button>}
       </div>
@@ -50,6 +53,7 @@ export function EntityDetailPage() {
 
       {activeTab === 'data' && (
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          {entity.name && <Field label={t('entities.detail.fields.name')} value={entity.name} fullWidth />}
           <Field label={t('entities.detail.fields.code')} value={entity.code} mono />
           <Field label={t('entities.detail.fields.tax_id_number')} value={entity.tax_id_number} mono />
           <Field label={t('entities.detail.fields.organization')} value={entity.organization?.name ?? '—'} />

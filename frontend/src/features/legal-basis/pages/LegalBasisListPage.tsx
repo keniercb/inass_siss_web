@@ -91,12 +91,13 @@ export function LegalBasisListPage() {
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.year')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.issuing_organization')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.effective_date')}</th>
+            <th className="text-left px-4 py-3 font-medium">{t('list.columns.reference')}</th>
             <th className="text-left px-4 py-3 font-medium">{t('list.columns.status')}</th>
             {canManage && <th className="text-right px-4 py-3 font-medium">{tc('table.actions')}</th>}
           </tr></thead>
           <tbody className="divide-y divide-border">
-            {isLoading ? <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
-            : items.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">{t('list.empty')}</td></tr>
+            {isLoading ? <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
+            : items.length === 0 ? <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">{t('list.empty')}</td></tr>
             : items.map((lb) => {
               const isVigent = !lb.derogation_date;
               return (
@@ -106,6 +107,7 @@ export function LegalBasisListPage() {
                   <td className="px-4 py-3">{lb.year}</td>
                   <td className="px-4 py-3 text-muted-foreground">{lb.issuing_organization?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{formatDate(lb.effective_date)}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{lb.reference ?? '—'}</td>
                   <td className="px-4 py-3">{isVigent ? <span className="badge badge-approved"><CheckCircle className="w-3 h-3" />{t('list.status.vigent')}</span> : <span className="badge badge-rejected">{t('list.status.derogated')}</span>}</td>
                   {canManage && <td className="px-4 py-3 text-right"><div className="inline-flex items-center gap-1"><button onClick={() => { setEditItem(lb); setFormOpen(true); }} className="p-1.5 rounded hover:bg-muted"><Edit className="w-4 h-4" /></button><button onClick={() => setDeleteId(lb.id!)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-4 h-4" /></button></div></td>}
                 </tr>

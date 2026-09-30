@@ -258,9 +258,19 @@ export function ResourceListPage<
                   {config.columns.map((col) => {
                     const colId = (col as { id?: string }).id ?? '';
                     const value = (item as Record<string, unknown>)[colId];
-                    // Mostrar '—' para valores nulos/vacíos; los strings/numbers
-                    // con contenido se renderizan tal cual; otros tipos se stringify.
-                    const display = value == null || value === '' ? '—' : typeof value === 'string' || typeof value === 'number' ? value : String(value);
+                    // Mostrar '—' para valores nulos/vacíos; strings/numbers directos;
+                    // objetos anidados (type, province, organization, etc.) → extraer .name
+                    let display: React.ReactNode = '—';
+                    if (value == null || value === '') {
+                      display = '—';
+                    } else if (typeof value === 'string' || typeof value === 'number') {
+                      display = value;
+                    } else if (typeof value === 'object') {
+                      const obj = value as { name?: string; code?: string; title?: string };
+                      display = obj.name ?? obj.code ?? obj.title ?? '—';
+                    } else {
+                      display = String(value);
+                    }
                     return (
                       <td key={colId || Math.random().toString()} className="px-4 py-3">
                         {display}

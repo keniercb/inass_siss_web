@@ -434,7 +434,7 @@ export interface paths {
         put?: never;
         /**
          * Apertura de un expediente
-         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PP-YYYY-CCCCC (código de provincia de la oficina registrante, año en curso y consecutivo anual rellenado con ceros, secciones separadas por guion). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
+         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
          */
         post: operations["pensionCasesStore"];
         delete?: never;
@@ -1180,7 +1180,7 @@ export interface components {
              */
             id?: number;
             /**
-             * @description Clave natural inmutable; presente solo en catálogos con código
+             * @description Clave natural inmutable presente en TODOS los catálogos (Task 31); null solo en filas legadas previas al código
              * @example EDAD
              */
             code?: string | null;
@@ -1409,6 +1409,11 @@ export interface components {
              */
             code?: string;
             /**
+             * @description Nombre denominativo de la entidad
+             * @example Empresa Nacional de Servicios Técnicos
+             */
+            name?: string;
+            /**
              * @description NIT único e inmutable
              * @example 11000012345
              */
@@ -1582,7 +1587,7 @@ export interface components {
         };
         /**
          * Expediente de pensión
-         * @description Expediente de pensión (RF-EXP-001): número compuesto PP-YYYY-CCCCC — provincia de la oficina registrante, año en curso y consecutivo anual, separados por guion (regla de usuario 2/ADR-32) —, estado de la sección 2.4, clasificación de pensión y par de Ejército Rebelde (regla 4) y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.
+         * @description Expediente de pensión (RF-EXP-001): número compuesto PPMMAACCCCC — provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio, once dígitos contiguos (regla de usuario 2/ADR-34) —, estado de la sección 2.4, clasificación de pensión y par de Ejército Rebelde (regla 4) y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.
          */
         PensionCase: {
             /**
@@ -1602,8 +1607,8 @@ export interface components {
              */
             id?: number;
             /**
-             * @description Número del expediente: PP-YYYY-CCCCC (provincia-año-consecutivo anual), único
-             * @example 11-2026-00001
+             * @description Número del expediente: PPMMAACCCCC (provincia-municipio-año-consecutivo territorial), único
+             * @example 11032600001
              */
             number?: string;
             /**

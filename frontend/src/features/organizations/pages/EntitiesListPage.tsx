@@ -69,6 +69,7 @@ export function EntitiesListPage() {
           <thead>
             <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
               <th className="text-left px-4 py-3 font-medium">{t('entities.list.columns.code')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('entities.list.columns.name')}</th>
               <th className="text-left px-4 py-3 font-medium">{t('entities.list.columns.tax_id_number')}</th>
               <th className="text-left px-4 py-3 font-medium">{t('entities.list.columns.organization')}</th>
               <th className="text-left px-4 py-3 font-medium">{t('entities.list.columns.type')}</th>
@@ -79,16 +80,17 @@ export function EntitiesListPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {isLoading ? (<tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>)
-            : isError ? (<tr><td colSpan={8} className="px-4 py-8 text-center text-destructive">{tc('errors.server')}</td></tr>)
-            : items.length === 0 ? (<tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">{t('entities.list.empty')}</td></tr>)
+            {isLoading ? (<tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>)
+            : isError ? (<tr><td colSpan={9} className="px-4 py-8 text-center text-destructive">{tc('errors.server')}</td></tr>)
+            : items.length === 0 ? (<tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">{t('entities.list.empty')}</td></tr>)
             : items.map((e) => {
               const directorName = e.director ? `${e.director.first_surname ?? ''} ${e.director.first_name ?? ''}`.trim() : null;
               const contact = [e.phone, e.email].filter(Boolean).join(' · ') || null;
               return (
               <tr key={e.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/entidades/${e.id}`)}>
                 <td className="px-4 py-3 font-mono text-xs">{e.code}</td>
-                <td className="px-4 py-3 font-medium font-mono text-xs">{e.tax_id_number}</td>
+                <td className="px-4 py-3 font-medium">{e.name ?? '—'}</td>
+                <td className="px-4 py-3 font-mono text-xs">{e.tax_id_number}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.organization?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.entity_type?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.province?.name}{e.municipality ? `, ${e.municipality.name}` : ''}</td>

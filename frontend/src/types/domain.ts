@@ -46,6 +46,8 @@ export const PENSIONER_STATUS_META: Record<PensionerStatus, { label: string; bad
 export interface Entity {
   id: number;
   code: string;
+  /** Nombre denominativo de la entidad (Task 31 en docs.json) */
+  name?: string;
   tax_id_number: string; // NIT
   organization_id: number;
   organization?: { id: number; code: string; name: string };
