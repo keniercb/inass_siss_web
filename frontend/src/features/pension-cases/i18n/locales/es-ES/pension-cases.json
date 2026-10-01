@@ -48,7 +48,10 @@
     "pension_regime_id": "Régimen de pensión",
     "rebel_army_member": "Pertenece al Ejército Rebelde",
     "rebel_army_join_date": "Fecha de alta Ejército Rebelde",
-    "rebel_army_date_required": "La fecha de alta es obligatoria si pertenece al Ejército Rebelde"
+    "rebel_army_date_required": "La fecha de alta es obligatoria si pertenece al Ejército Rebelde",
+    "person_not_found": "No se encontró persona con CI {{ci}}. Puede registrarla ahora mismo.",
+    "register_new_person": "Registrar nueva persona con CI {{ci}}",
+    "person_selected": "Proponente seleccionado"
   },
   "salary": {
     "title": "Registros de salario",

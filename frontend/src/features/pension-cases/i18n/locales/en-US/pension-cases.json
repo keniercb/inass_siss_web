@@ -48,7 +48,10 @@
     "pension_regime_id": "Pension regime",
     "rebel_army_member": "Belongs to Rebel Army",
     "rebel_army_join_date": "Rebel Army join date",
-    "rebel_army_date_required": "The join date is required if belongs to Rebel Army"
+    "rebel_army_date_required": "The join date is required if belongs to Rebel Army",
+    "person_not_found": "No person found with ID {{ci}}. You can register it now.",
+    "register_new_person": "Register new person with ID {{ci}}",
+    "person_selected": "Applicant selected"
   },
   "salary": {
     "title": "Salary records",

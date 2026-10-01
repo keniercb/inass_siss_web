@@ -25,6 +25,10 @@ interface CatalogListResponse {
 
 interface PersonFormModalProps {
   person?: Person;
+  /** CI cubano pre-cargado (caso de registro desde otro formulario, p. ej. expediente) */
+  initialIdentityNumber?: string;
+  /** Callback opcional con la persona creada (solo en modo create) */
+  onCreated?: (person: Person) => void;
   onClose: () => void;
 }
 
@@ -40,7 +44,7 @@ interface PersonFormModalProps {
  *  - citizen_card_id opcional único (ficha única de ciudadano)
  *  - Mapeo de errores 422 del backend a campos
  */
-export function PersonFormModal({ person, onClose }: PersonFormModalProps) {
+export function PersonFormModal({ person, initialIdentityNumber, onCreated, onClose }: PersonFormModalProps) {
   const { t } = useTranslation('people');
   const { t: tc } = useTranslation('common');
   const isEdit = !!person;
@@ -77,7 +81,7 @@ export function PersonFormModal({ person, onClose }: PersonFormModalProps) {
           citizen_card_id: person.citizen_card_id ?? '',
         }
       : {
-          identity_number: '',
+          identity_number: initialIdentityNumber ?? '',
           first_name: '',
           middle_name: '',
           first_surname: '',
@@ -100,7 +104,8 @@ export function PersonFormModal({ person, onClose }: PersonFormModalProps) {
         const { identity_number: _ci, ...updateInput } = input;
         await updateMutation.mutateAsync({ id: person.id!, input: updateInput as PersonInput });
       } else {
-        await createMutation.mutateAsync(input);
+        const created = await createMutation.mutateAsync(input);
+        if (onCreated && created) onCreated(created);
       }
       onClose();
     } catch (err) {

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
+import { UserPlus, Search as SearchIcon } from 'lucide-react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useCreateCase } from '../api/mutations';
 import { type CreateCaseInput } from '../schemas/pension-case.schema';
+import { PersonFormModal } from '@/features/people/components/PersonFormModal';
+import { isValidCubanCI } from '@/lib/cuban-ci';
 import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
@@ -13,6 +16,7 @@ interface CatalogItem { id: number; name: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
 interface PersonListItem { id: number; identity_number: string; first_name: string; first_surname: string; }
 interface EntityListItem { id: number; code: string; tax_id_number: string; }
+type PersonDetail = import('@/types/api').components['schemas']['Person'];
 
 interface PensionCaseFormModalProps { onClose: () => void; }
 
@@ -35,17 +39,32 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   // Búsqueda de persona (proponente)
   const [personSearch, setPersonSearch] = useState('');
   const [personResults, setPersonResults] = useState<PersonListItem[]>([]);
+  const [personSearched, setPersonSearched] = useState(false); // true después de una búsqueda
   const [selectedPerson, setSelectedPerson] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [showPersonForm, setShowPersonForm] = useState(false);
 
   useEffect(() => {
-    if (personSearch.length < 3) { setPersonResults([]); return; }
+    if (personSearch.length < 3) { setPersonResults([]); setPersonSearched(false); return; }
     const timer = setTimeout(async () => {
       const r = await http.get<{ data: PersonListItem[] }>('/people', { params: { search: personSearch, per_page: 10 } });
       setPersonResults(r.data.data);
+      setPersonSearched(true);
     }, 300);
     return () => clearTimeout(timer);
   }, [personSearch]);
+
+  // ¿La búsqueda actual es un CI válido (11 dígitos) sin resultados?
+  const isCISearchWithoutResults = personSearched && personResults.length === 0 && isValidCubanCI(personSearch.trim());
+
+  const handlePersonCreated = (person: PersonDetail) => {
+    setSelectedPerson(person.id ?? null);
+    setPersonSearch(`${person.first_name ?? ''} ${person.first_surname ?? ''} (${person.identity_number ?? ''})`.trim());
+    setPersonResults([]);
+    setPersonSearched(false);
+    setShowResults(false);
+    setShowPersonForm(false);
+  };
 
   // Estado local para selects
   const [entityId, setEntityId] = useState(0);
@@ -91,7 +110,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
         {/* Proponente (búsqueda de persona) */}
         <div className="relative">
           <label className="block text-sm font-medium mb-1">{t('form.applicant_person_id')} *</label>
-          <Input type="text" placeholder={t('form.search_person')} value={personSearch} onChange={(e) => { setPersonSearch(e.target.value); setShowResults(true); setSelectedPerson(null); }} onFocus={() => setShowResults(true)} onBlur={() => setTimeout(() => setShowResults(false), 200)} />
+          <Input type="text" placeholder={t('form.search_person')} value={personSearch} onChange={(e) => { setPersonSearch(e.target.value); setShowResults(true); setSelectedPerson(null); setPersonSearched(false); }} onFocus={() => setShowResults(true)} onBlur={() => setTimeout(() => setShowResults(false), 200)} />
           {showResults && personResults.length > 0 && (
             <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-48 overflow-y-auto">
               {personResults.map((p) => (
@@ -100,6 +119,25 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
                 </button>
               ))}
             </div>
+          )}
+          {/* No se encontró persona con el CI proporcionado — ofrecer registro */}
+          {showResults && isCISearchWithoutResults && (
+            <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal p-3 space-y-2">
+              <div className="flex items-start gap-2 text-sm">
+                <SearchIcon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-muted-foreground">
+                  {t('form.person_not_found', { ci: personSearch.trim() })}
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowPersonForm(true)} className="w-full">
+                <UserPlus className="w-4 h-4" />
+                {t('form.register_new_person', { ci: personSearch.trim() })}
+              </Button>
+            </div>
+          )}
+          {/* Indicador visual cuando la persona está seleccionada */}
+          {selectedPerson && !showResults && (
+            <p className="text-xs text-success mt-1">✓ {t('form.person_selected')}</p>
           )}
         </div>
         {/* Entidad + Último salario */}
@@ -162,6 +200,15 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
           <Button type="button" disabled={!canSubmit || createMutation.isPending} onClick={onSubmit}>{createMutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button>
         </div>
       </div>
+      {/* Modal de creación de persona (modal sobre modal) — solo si el usuario
+          eligió registrar una nueva persona porque no se encontró con el CI */}
+      {showPersonForm && (
+        <PersonFormModal
+          initialIdentityNumber={personSearch.trim()}
+          onCreated={handlePersonCreated}
+          onClose={() => setShowPersonForm(false)}
+        />
+      )}
     </Dialog>
   );
 }
