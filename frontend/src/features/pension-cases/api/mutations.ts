@@ -21,7 +21,11 @@ export function useCreateCase() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'list'] }); toast.success(t('create.success')); },
     onError: (err: unknown) => {
       const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422) return;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        const allMessages = Object.values(ae.response.data.errors).flat();
+        if (allMessages.length > 0) toast.errorDetail(t('create.error'), allMessages.join(' · '));
+        return;
+      }
       toast.error(t('create.error'));
     },
   });
@@ -38,7 +42,11 @@ export function useAddSalaryRecord(caseId: number | string) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('salary.add_success')); },
     onError: (err: unknown) => {
       const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422) return;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        const allMessages = Object.values(ae.response.data.errors).flat();
+        if (allMessages.length > 0) toast.errorDetail(t('salary.add_error'), allMessages.join(' · '));
+        return;
+      }
       toast.error(t('salary.add_error'));
     },
   });
@@ -68,7 +76,11 @@ export function useAddServiceRecord(caseId: number | string) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('service.add_success')); },
     onError: (err: unknown) => {
       const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422) return;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        const allMessages = Object.values(ae.response.data.errors).flat();
+        if (allMessages.length > 0) toast.errorDetail(t('service.add_error'), allMessages.join(' · '));
+        return;
+      }
       toast.error(t('service.add_error'));
     },
   });
@@ -98,7 +110,11 @@ export function useAddWorkCycle(caseId: number | string) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('cycle.add_success')); },
     onError: (err: unknown) => {
       const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422) return;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        const allMessages = Object.values(ae.response.data.errors).flat();
+        if (allMessages.length > 0) toast.errorDetail(t('cycle.add_error'), allMessages.join(' · '));
+        return;
+      }
       toast.error(t('cycle.add_error'));
     },
   });
@@ -128,7 +144,11 @@ export function useAddIncomeConceptRecord(caseId: number | string) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('income_concept.add_success')); },
     onError: (err: unknown) => {
       const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422) return;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        const allMessages = Object.values(ae.response.data.errors).flat();
+        if (allMessages.length > 0) toast.errorDetail(t('income_concept.add_error'), allMessages.join(' · '));
+        return;
+      }
       toast.error(t('income_concept.add_error'));
     },
   });

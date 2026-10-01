@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useToast } from '@/components/ui/Toast';
 import { useCreateCase } from '../api/mutations';
 import { type CreateCaseInput } from '../schemas/pension-case.schema';
 import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
@@ -13,7 +12,7 @@ import { http } from '@/lib/http';
 
 interface CatalogItem { id: number; name: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
-interface EntityListItem { id: number; code: string; tax_id_number: string; }
+interface EntityListItem { id: number; code: string; name?: string; tax_id_number: string; }
 
 // Firma autorizada resumida (GET /authorized-signatures?entity_id=X&status=active)
 interface AuthorizedSignatureItem {
@@ -31,7 +30,6 @@ interface PensionCaseFormModalProps { onClose: () => void; }
 export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const { t } = useTranslation('pension-cases');
   const { t: tc } = useTranslation('common');
-  const toast = useToast();
   const createMutation = useCreateCase();
 
   // Cargar catálogos para selects
@@ -106,16 +104,9 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
     try {
       await createMutation.mutateAsync(input);
       onClose();
-    } catch (err) {
-      // Errores del backend (422 de validación, 409 de duplicado, etc.) → toast
-      const ae = err as import('axios').AxiosError<{ errors?: Record<string, string[]>; message?: string }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const allMessages = Object.values(ae.response.data.errors).flat();
-        if (allMessages.length > 0) {
-          toast.errorDetail(t('create.error'), allMessages.join(' · '));
-        }
-      }
-      // Otros errores: el mutation.onError del hook ya muestra toast genérico
+    } catch {
+      /* Errores del backend (422/409/500) son mostrados por mutation.onError
+         que ahora muestra toast.errorDetail con los mensajes de validación. */
     }
   };
 
@@ -135,7 +126,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
         <div className="grid grid-cols-2 gap-3">
           <div><label className="block text-sm font-medium mb-1">{t('form.employer_entity_id')} *</label>
             <select className={selectClass} value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(entitiesData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.code} — {e.tax_id_number}</option>)}
+              <option value="">{tc('actions.select')}</option>{(entitiesData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.code} — {e.name ?? e.tax_id_number}</option>)}
             </select></div>
           <div><label className="block text-sm font-medium mb-1">{t('form.last_salary')} *</label>
             <Input type="number" step="0.01" min="0" placeholder="0.00" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} /></div>

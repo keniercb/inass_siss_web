@@ -15,7 +15,7 @@ import { http } from '@/lib/http';
 import type { components } from '@/types/api';
 
 type Person = components['schemas']['Person'];
-interface EntityItem { id: number; code: string; tax_id_number: string; }
+interface EntityItem { id: number; code: string; name?: string; tax_id_number: string; }
 interface EntityListResponse { data: EntityItem[]; }
 interface CatalogItem { id: number; name: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
@@ -186,7 +186,7 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
           <Field label={t('detail.fields.last_salary')} value={pensionCase.last_salary != null ? formatCUP(Number(pensionCase.last_salary)) : '—'} />
           <Field label={t('detail.fields.pension_type')} value={lookup(pensionTypesData, pensionCase.pension_type_id)} />
           <Field label={t('detail.fields.pension_regime')} value={lookup(pensionRegimesData, pensionCase.pension_regime_id)} />
-          <Field label={t('detail.fields.employer_entity')} value={lookup(entitiesData, pensionCase.employer_entity_id, (e) => `${(e as EntityItem).code} — ${(e as EntityItem).tax_id_number}`)} />
+          <Field label={t('detail.fields.employer_entity')} value={lookup(entitiesData, pensionCase.employer_entity_id, (e) => `${(e as EntityItem).code} — ${(e as EntityItem).name ?? (e as EntityItem).tax_id_number}`)} />
           <Field label={t('detail.fields.office')} value={lookup(officesData, pensionCase.office_id, (o) => { const off = o as OfficeItem; return [off.type?.name, off.province?.name, off.municipality?.name].filter(Boolean).join(' — ') || off.address; })} />
           <Field label={t('detail.fields.position')} value={lookup(positionsData, pensionCase.position_id)} />
           <Field label={t('detail.fields.occupational_category')} value={lookup(occCatsData, pensionCase.occupational_category_id)} />
@@ -262,7 +262,7 @@ function SalaryRecordModal({ caseId, onClose }: { caseId: string; onClose: () =>
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddSalaryRecord(caseId);
   const [year, setYear] = useState(''); const [salary, setSalary] = useState('');
-  return <Dialog open onClose={onClose} title={t('salary.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('salary.form.year')} *</label><Input type="number" min="1950" max={new Date().getFullYear() + 1} value={year} onChange={(e) => setYear(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('salary.form.earned_salary')} *</label><Input type="number" step="0.01" min="0" value={salary} onChange={(e) => setSalary(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!year || !salary || mutation.isPending} onClick={async () => { await mutation.mutateAsync({ year: Number(year), earned_salary: Number(salary) } as SalaryRecordInput); onClose(); }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div></div></Dialog>;
+  return <Dialog open onClose={onClose} title={t('salary.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('salary.form.year')} *</label><Input type="number" min="1950" max={new Date().getFullYear() + 1} value={year} onChange={(e) => setYear(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('salary.form.earned_salary')} *</label><Input type="number" step="0.01" min="0" value={salary} onChange={(e) => setSalary(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!year || !salary || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ year: Number(year), earned_salary: Number(salary) } as SalaryRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div></div></Dialog>;
 }
 
 function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
@@ -281,12 +281,12 @@ function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () =
     <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('service.form.entity_id')} *</label>
       <select className={selectClass} value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}>
         <option value="0">{tc('actions.select')}</option>
-        {entities.map((e) => <option key={e.id} value={e.id}>{e.code} — {e.tax_id_number}</option>)}
+        {entities.map((e) => <option key={e.id} value={e.id}>{e.code} — {e.name ?? e.tax_id_number}</option>)}
       </select></div>
     <div><label className="block text-sm font-medium mb-1">{t('service.form.start_date')} *</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
     <div><label className="block text-sm font-medium mb-1">{t('service.form.end_date')}</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
     <label className="col-span-2 flex items-center gap-2 pt-1"><input type="checkbox" checked={isAppendix} onChange={(e) => setIsAppendix(e.target.checked)} className="w-4 h-4" /><span className="text-sm">{t('service.form.is_appendix')}</span></label>
-    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!entityId || !startDate || mutation.isPending} onClick={async () => { await mutation.mutateAsync({ entity_id: entityId, start_date: startDate, end_date: endDate || null, is_appendix: isAppendix } as ServiceRecordInput); onClose(); }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
+    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!entityId || !startDate || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ entity_id: entityId, start_date: startDate, end_date: endDate || null, is_appendix: isAppendix } as ServiceRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
   </div></Dialog>;
 }
 
@@ -294,7 +294,7 @@ function WorkCycleModal({ caseId, onClose }: { caseId: string; onClose: () => vo
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddWorkCycle(caseId);
   const [planned, setPlanned] = useState(''); const [actual, setActual] = useState(''); const [count, setCount] = useState('');
-  return <Dialog open onClose={onClose} title={t('cycle.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('cycle.form.planned_days')} *</label><Input type="number" min="0" value={planned} onChange={(e) => setPlanned(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('cycle.form.actual_days')} *</label><Input type="number" min="0" value={actual} onChange={(e) => setActual(e.target.value)} /></div><div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('cycle.form.cycles_count')} *</label><Input type="number" min="0" value={count} onChange={(e) => setCount(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!planned || !actual || !count || mutation.isPending} onClick={async () => { await mutation.mutateAsync({ planned_days: Number(planned), actual_days: Number(actual), cycles_count: Number(count) } as WorkCycleInput); onClose(); }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div></div></Dialog>;
+  return <Dialog open onClose={onClose} title={t('cycle.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('cycle.form.planned_days')} *</label><Input type="number" min="0" value={planned} onChange={(e) => setPlanned(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('cycle.form.actual_days')} *</label><Input type="number" min="0" value={actual} onChange={(e) => setActual(e.target.value)} /></div><div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('cycle.form.cycles_count')} *</label><Input type="number" min="0" value={count} onChange={(e) => setCount(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!planned || !actual || !count || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ planned_days: Number(planned), actual_days: Number(actual), cycles_count: Number(count) } as WorkCycleInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div></div></Dialog>;
 }
 
 function IncomeConceptRecordModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
@@ -316,6 +316,6 @@ function IncomeConceptRecordModal({ caseId, onClose }: { caseId: string; onClose
         {concepts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select></div>
     <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('income_concept.form.amount')} *</label><Input type="number" step="0.01" min="0" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!conceptId || !amount || mutation.isPending} onClick={async () => { await mutation.mutateAsync({ income_concept_id: conceptId, amount: Number(amount) } as IncomeConceptRecordInput); onClose(); }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
+    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!conceptId || !amount || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ income_concept_id: conceptId, amount: Number(amount) } as IncomeConceptRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
   </div></Dialog>;
 }

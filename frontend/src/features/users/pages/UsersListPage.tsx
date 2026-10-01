@@ -118,7 +118,7 @@ export function UsersListPage() {
       {formOpen && <UserFormModal user={editUser ?? undefined} onClose={() => { setFormOpen(false); setEditUser(null); }} />}
       {deleteId !== null && (
         <Dialog open onClose={() => setDeleteId(null)} title={t('delete.title')} size="sm">
-          <div className="space-y-4"><p className="text-sm">{t('delete.confirm')}</p><div className="flex items-center justify-end gap-2"><Button type="button" variant="outline" onClick={() => setDeleteId(null)}>{tc('actions.cancel')}</Button><Button type="button" variant="destructive" onClick={async () => { await deleteMutation.mutateAsync(deleteId); setDeleteId(null); }} disabled={deleteMutation.isPending}>{deleteMutation.isPending ? tc('status.loading') + '…' : t('delete.confirm_button')}</Button></div></div>
+          <div className="space-y-4"><p className="text-sm">{t('delete.confirm')}</p><div className="flex items-center justify-end gap-2"><Button type="button" variant="outline" onClick={() => setDeleteId(null)}>{tc('actions.cancel')}</Button><Button type="button" variant="destructive" onClick={async () => { try { await deleteMutation.mutateAsync(deleteId); } catch { /* error handled by mutation.onError */ } setDeleteId(null); }} disabled={deleteMutation.isPending}>{deleteMutation.isPending ? tc('status.loading') + '…' : t('delete.confirm_button')}</Button></div></div>
         </Dialog>
       )}
       {resetPasswordUser && (
@@ -134,7 +134,7 @@ export function UsersListPage() {
               </div>
               {resetPassword.length > 0 && resetPassword.length < 8 && <p className="text-xs text-destructive">{t('form.password_min')}</p>}
             </div>
-            <div className="flex items-center justify-end gap-2"><Button type="button" variant="outline" onClick={() => { setResetPasswordUser(null); setResetPassword(''); setShowResetPassword(false); }}>{tc('actions.cancel')}</Button><Button type="button" disabled={resetPassword.length < 8 || resetPwdMutation.isPending} onClick={async () => { await resetPwdMutation.mutateAsync({ id: resetPasswordUser.id!, input: { password: resetPassword } }); setResetPasswordUser(null); setResetPassword(''); setShowResetPassword(false); }}>{resetPwdMutation.isPending ? tc('status.loading') + '…' : t('reset_password.confirm')}</Button></div>
+            <div className="flex items-center justify-end gap-2"><Button type="button" variant="outline" onClick={() => { setResetPasswordUser(null); setResetPassword(''); setShowResetPassword(false); }}>{tc('actions.cancel')}</Button><Button type="button" disabled={resetPassword.length < 8 || resetPwdMutation.isPending} onClick={async () => { try { await resetPwdMutation.mutateAsync({ id: resetPasswordUser.id!, input: { password: resetPassword } }); } catch { /* error handled by mutation.onError */ } setResetPasswordUser(null); setResetPassword(''); setShowResetPassword(false); }}>{resetPwdMutation.isPending ? tc('status.loading') + '…' : t('reset_password.confirm')}</Button></div>
           </div>
         </Dialog>
       )}
