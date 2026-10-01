@@ -57,6 +57,11 @@
     "yes": "Sí",
     "no": "No"
   },
+  "catalog_search": {
+    "not_found": "No se encontró '{{query}}'.",
+    "create_new": "Crear nuevo",
+    "selected": "Seleccionado"
+  },
   "user": {
     "my_profile": "Mi perfil",
     "settings": "Configuración",

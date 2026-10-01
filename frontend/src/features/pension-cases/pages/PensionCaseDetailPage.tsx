@@ -44,6 +44,12 @@ export function PensionCaseDetailPage() {
   const incomeConceptLabel = (id?: number | null) => (id != null ? (incomeConceptMap.get(id) ?? `#${id}`) : '—');
   const canEdit = can('cases.edit');
 
+  // Mutaciones de eliminación de subregistros (al nivel del componente, no en onClick)
+  const removeSalaryMutation = useRemoveSalaryRecord(id);
+  const removeServiceMutation = useRemoveServiceRecord(id);
+  const removeWorkCycleMutation = useRemoveWorkCycle(id);
+  const removeIncomeConceptMutation = useRemoveIncomeConceptRecord(id);
+
   if (isLoading) return <div className="max-w-7xl mx-auto"><p className="text-muted-foreground">{tc('status.loading')}…</p></div>;
   if (isError || !pensionCase) return <div className="max-w-7xl mx-auto text-center py-12"><h1 className="text-xl font-semibold mb-2">{t('detail.not_found')}</h1><button onClick={() => navigate('/expedientes')} className="text-primary hover:underline">{t('detail.back_to_list')}</button></div>;
 
@@ -78,7 +84,7 @@ export function PensionCaseDetailPage() {
           <SubrecordSection title={t('salary.title')} onAdd={canEdit ? () => setSubModal('salary') : undefined} addLabel={t('salary.add')}>
             {(pensionCase.salary_records ?? []).length > 0 ? (
               <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('salary.columns.year')}</th><th className="text-left px-3 py-2">{t('salary.columns.earned_salary')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
-                <tbody className="divide-y divide-border">{(pensionCase.salary_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{r.year}</td><td className="px-3 py-2">{formatCUP(Number(r.earned_salary ?? 0))}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => useRemoveSalaryRecord(id).mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
+                <tbody className="divide-y divide-border">{(pensionCase.salary_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{r.year}</td><td className="px-3 py-2">{formatCUP(Number(r.earned_salary ?? 0))}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeSalaryMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
           </SubrecordSection>
@@ -88,7 +94,7 @@ export function PensionCaseDetailPage() {
               <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('service.columns.entity')}</th><th className="text-left px-3 py-2">{t('service.columns.start_date')}</th><th className="text-left px-3 py-2">{t('service.columns.end_date')}</th><th className="text-left px-3 py-2">{t('service.columns.is_appendix')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
                 <tbody className="divide-y divide-border">{(pensionCase.service_records ?? []).map((r) => {
                   const entityLabel = r.entity ? (r.entity.name ?? `${r.entity.code ?? ''} ${r.entity.tax_id_number ?? ''}`.trim()) : (r.entity_id ? `#${r.entity_id}` : '—');
-                  return (<tr key={r.id}><td className="px-3 py-2 text-xs">{entityLabel}</td><td className="px-3 py-2">{r.start_date ? formatDate(r.start_date) : '—'}</td><td className="px-3 py-2">{r.end_date ? formatDate(r.end_date) : '—'}</td><td className="px-3 py-2">{r.is_appendix ? '✓' : '—'}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => useRemoveServiceRecord(id).mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>);
+                  return (<tr key={r.id}><td className="px-3 py-2 text-xs">{entityLabel}</td><td className="px-3 py-2">{r.start_date ? formatDate(r.start_date) : '—'}</td><td className="px-3 py-2">{r.end_date ? formatDate(r.end_date) : '—'}</td><td className="px-3 py-2">{r.is_appendix ? '✓' : '—'}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeServiceMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>);
                 })}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
@@ -97,7 +103,7 @@ export function PensionCaseDetailPage() {
           <SubrecordSection title={t('cycle.title')} onAdd={canEdit ? () => setSubModal('cycle') : undefined} addLabel={t('cycle.add')}>
             {(pensionCase.work_cycles ?? []).length > 0 ? (
               <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('cycle.columns.planned_days')}</th><th className="text-left px-3 py-2">{t('cycle.columns.actual_days')}</th><th className="text-left px-3 py-2">{t('cycle.columns.cycles_count')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
-                <tbody className="divide-y divide-border">{(pensionCase.work_cycles ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{r.planned_days}</td><td className="px-3 py-2">{r.actual_days}</td><td className="px-3 py-2">{r.cycles_count}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => useRemoveWorkCycle(id).mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
+                <tbody className="divide-y divide-border">{(pensionCase.work_cycles ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{r.planned_days}</td><td className="px-3 py-2">{r.actual_days}</td><td className="px-3 py-2">{r.cycles_count}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeWorkCycleMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
           </SubrecordSection>
@@ -105,7 +111,7 @@ export function PensionCaseDetailPage() {
           <SubrecordSection title={t('income_concept.title')} onAdd={canEdit ? () => setSubModal('income') : undefined} addLabel={t('income_concept.add')}>
             {(pensionCase.income_concept_records ?? []).length > 0 ? (
               <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('income_concept.columns.income_concept')}</th><th className="text-left px-3 py-2">{t('income_concept.columns.amount')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
-                <tbody className="divide-y divide-border">{(pensionCase.income_concept_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{incomeConceptLabel(r.income_concept_id)}</td><td className="px-3 py-2">{formatCUP(Number(r.amount ?? 0))}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => useRemoveIncomeConceptRecord(id).mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
+                <tbody className="divide-y divide-border">{(pensionCase.income_concept_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{incomeConceptLabel(r.income_concept_id)}</td><td className="px-3 py-2">{formatCUP(Number(r.amount ?? 0))}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeIncomeConceptMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
           </SubrecordSection>

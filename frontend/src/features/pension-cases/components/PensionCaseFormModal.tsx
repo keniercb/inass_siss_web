@@ -37,11 +37,11 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   // Estado local
   const [selectedPerson, setSelectedPerson] = useState<number | null>(null);
   const [entityId, setEntityId] = useState(0);
-  // "Solicitado por" — persona autorizada del centro de trabajo seleccionado.
-  // El backend no incluye este campo en el request de POST /pension-cases todavía
-  // (docs.json por actualizar); cuando se publique, añadir `requested_by_person_id`
-  // (o el nombre que defina el backend) al CreateCaseInput y al payload.
+  // "Solicitado por" — persona autorizada del centro de trabajo.
+  // El backend usa `persona_por` (texto libre, no ID) — enviamos el nombre
+  // completo de la persona seleccionada desde las firmas autorizadas.
   const [requestedByPersonId, setRequestedByPersonId] = useState<number | null>(null);
+  const [personaPor, setPersonaPor] = useState<string | null>(null);
   // Cargar firmas autorizadas activas del centro de trabajo seleccionado
   const { data: signaturesData, isLoading: isLoadingSignatures } = useQuery<AuthorizedSignatureListResponse>({
     queryKey: ['authorized-signatures', 'by-entity', entityId],
@@ -59,6 +59,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   // Resetear "solicitado por" cuando cambia el centro de trabajo
   useEffect(() => {
     setRequestedByPersonId(null);
+    setPersonaPor(null);
   }, [entityId]);
   const [positionId, setPositionId] = useState(0);
   const [occCatId, setOccCatId] = useState(0);
@@ -87,11 +88,8 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
       pension_regime_id: pensionRegimeId,
       rebel_army_member: belongsRebelArmy,
       rebel_army_join_date: belongsRebelArmy ? rebelArmyDate : null,
+      persona_por: personaPor,
     };
-    // TODO(docs.json por actualizar): cuando el backend publique el campo
-    // `requested_by_person_id` (o equivalente) en el POST /pension-cases,
-    // añadirlo al input y al CreateCaseInput:
-    //   ... (requested_by_person_id: requestedByPersonId) ...
     try {
       await createMutation.mutateAsync(input);
       onClose();
@@ -129,7 +127,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
             className={selectClass}
             value={requestedByPersonId ?? 0}
             disabled={!entityId || isLoadingSignatures || signatures.length === 0}
-            onChange={(e) => setRequestedByPersonId(e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) => { const pid = e.target.value ? Number(e.target.value) : null; setRequestedByPersonId(pid); const sig = signatures.find((s) => s.person.id === pid); setPersonaPor(sig ? (sig.person.full_name ?? `${sig.person.first_name ?? ''} ${sig.person.first_surname ?? ''}`.trim() ?? null) : null); }}
           >
             <option value="">{!entityId ? t('form.requested_by_disabled') : isLoadingSignatures ? tc('status.loading') + '…' : signatures.length === 0 ? t('form.requested_by_empty') : tc('actions.select')}</option>
             {signatures.map((s) => {

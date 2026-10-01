@@ -60,7 +60,6 @@ export function CatalogSearchSelect({
   onSelect,
   allowCreate = true,
 }: CatalogSearchSelectProps) {
-  const { t } = useTranslation('people');
   const { t: tc } = useTranslation('common');
   const toast = useToast();
 
@@ -166,7 +165,7 @@ export function CatalogSearchSelect({
           <div className="flex items-start gap-2 text-sm">
             <SearchIcon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
             <p className="text-muted-foreground">
-              {t('search.not_found', { ci: search.trim() })}
+              {tc('catalog_search.not_found', { query: search.trim() })}
             </p>
           </div>
           <Button
@@ -177,7 +176,7 @@ export function CatalogSearchSelect({
             className="w-full"
           >
             <Plus className="w-4 h-4" />
-            {t('search.register_new', { ci: search.trim() })}
+            {tc('catalog_search.create_new')}
           </Button>
         </div>
       )}
