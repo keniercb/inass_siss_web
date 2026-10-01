@@ -71,7 +71,14 @@ export function PersonSearchWithCreate({
   useEffect(() => {
     if (search.length < 3) { setResults([]); setSearched(false); return; }
     const timer = setTimeout(async () => {
-      const r = await http.get<{ data: PersonListItem[] }>('/people', { params: { search, per_page: 10 } });
+      // Backend /people espera: `identity` (CI exacto, 11 dígitos) o `q` (texto libre).
+      // Si el input es un CI cubano válido, usamos identity para matching exacto;
+      // si no, usamos q para búsqueda por nombre/apellido (contiene).
+      const trimmed = search.trim();
+      const params = isValidCubanCI(trimmed)
+        ? { identity: trimmed, per_page: 10 }
+        : { q: trimmed, per_page: 10 };
+      const r = await http.get<{ data: PersonListItem[] }>('/people', { params });
       setResults(r.data.data);
       setSearched(true);
     }, 300);

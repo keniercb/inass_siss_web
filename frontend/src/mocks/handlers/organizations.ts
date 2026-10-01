@@ -19,6 +19,11 @@ const offices = new Map<number, Office>([
 const signatures = new Map<number, AuthorizedSignature & { entity_id: number }>([
   [1, { id: 1, entity_id: 1, person_id: 2, person: { id: 2, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2024-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
   [2, { id: 2, entity_id: 1, person_id: 1, person: { id: 1, identity_number: '85061547812', first_name: 'Ana', first_surname: 'Pérez' }, position_id: 2, position: { id: 2, name: 'Director Económico' }, valid_from: '2024-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  // Firmas para entidad 2 (Unidad Empresarial de Base Marianao)
+  [3, { id: 3, entity_id: 2, person_id: 5, person: { id: 5, identity_number: '72051548124', first_name: 'Roberto', first_surname: 'Hernández' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2025-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  // Firmas para entidad 3 (Gestión Territorial Holguín)
+  [4, { id: 4, entity_id: 3, person_id: 4, person: { id: 4, identity_number: '89021256123', first_name: 'Pedro', first_surname: 'Sánchez' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2025-06-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  [5, { id: 5, entity_id: 3, person_id: 2, person: { id: 2, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' }, position_id: 2, position: { id: 2, name: 'Director Económico' }, valid_from: '2025-06-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
 ]);
 
 let nextEntityId = 100;
@@ -97,6 +102,41 @@ export const organizationsHandlers = [
     const updated: Office = { ...o, ...body, updated_at: new Date().toISOString() } as Office; offices.set(id, updated); return HttpResponse.json({ data: updated });
   }),
   http.delete(`${API_BASE}/offices/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const o = offices.get(id); if (!o) return HttpResponse.json({ message: 'Not found.' }, { status: 404 }); if (id <= 3) return HttpResponse.json({ message: 'Has references.' }, { status: 409 }); o.deactivated_at = new Date().toISOString(); return HttpResponse.json({ message: 'Deactivated.' }); }),
+
+  // GET /authorized-signatures — listado top-level filtrable (alineado con docs.json)
+  // Params soportados: entity_id, person_id, position_id, status, page, per_page
+  // status: 'active' | 'future' | 'expired' (derivado de valid_from/valid_to vs hoy)
+  http.get(`${API_BASE}/authorized-signatures`, ({ request }) => {
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') ?? '1', 10);
+    const perPage = parseInt(url.searchParams.get('per_page') ?? '15', 10);
+    const entityId = url.searchParams.get('entity_id');
+    const personId = url.searchParams.get('person_id');
+    const positionId = url.searchParams.get('position_id');
+    const statusFilter = url.searchParams.get('status');
+
+    const today = new Date().toISOString().split('T')[0] ?? '';
+    let items = Array.from(signatures.values()).map((s) => {
+      // Derivar status a partir de la ventana de vigencia (vs reloj compartido)
+      let status: 'active' | 'future' | 'expired' = 'active';
+      if (s.valid_from && s.valid_from > today) status = 'future';
+      else if (s.valid_to && s.valid_to < today) status = 'expired';
+      return { ...s, status };
+    });
+
+    if (entityId) items = items.filter((s) => s.entity_id === parseInt(entityId, 10));
+    if (personId) items = items.filter((s) => s.person_id === parseInt(personId, 10));
+    if (positionId) items = items.filter((s) => s.position_id === parseInt(positionId, 10));
+    if (statusFilter) items = items.filter((s) => s.status === statusFilter);
+
+    const total = items.length;
+    const start = (page - 1) * perPage;
+    const paged = items.slice(start, start + perPage);
+    return HttpResponse.json({
+      data: paged,
+      meta: { current_page: page, per_page: perPage, total, last_page: Math.max(1, Math.ceil(total / perPage)) },
+    });
+  }),
 ];
 
 // Legal bases

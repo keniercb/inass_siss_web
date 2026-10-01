@@ -3,10 +3,10 @@
     "title": "Pension cases",
     "description": "Pension cases with state machine",
     "new": "New case",
-    "search_placeholder": "Search by number or applicant…",
+    "search_placeholder": "Search by number or claimant…",
     "empty": "No cases for the selected filters",
     "filter": { "all": "All", "submitted": "Submitted", "under_review": "Under review", "approved": "Approved", "rejected": "Rejected" },
-    "columns": { "number": "Number", "applicant": "Applicant", "pension_type": "Pension type", "pension_regime": "Regime", "status": "Status", "requested_at": "Request date" },
+    "columns": { "number": "Number", "applicant": "Claimant", "pension_type": "Pension type", "pension_regime": "Regime", "status": "Status", "requested_at": "Request date" },
     "status": { "submitted": "Submitted", "under_review": "Under review", "approved": "Approved", "rejected": "Rejected" }
   },
   "create": { "title": "New case", "description": "Fill in the case data. The number is generated automatically.", "success": "Case created successfully", "error": "An error occurred while creating the case" },
@@ -22,7 +22,7 @@
     },
     "fields": {
       "number": "Number", "status": "Status", "requested_at": "Request date",
-      "applicant": "Applicant", "office": "Office", "employer_entity": "Employer entity",
+      "applicant": "Claimant", "office": "Office", "employer_entity": "Employer entity",
       "position": "Position", "occupational_category": "Occupational category",
       "educational_level": "Educational level", "scientific_category": "Scientific category",
       "last_salary": "Last salary", "computed_amount": "Computed amount",
@@ -35,9 +35,13 @@
     "section": { "case_data": "Case data", "rebel_army": "Rebel Army", "decision": "Decision" }
   },
   "form": {
-    "applicant_person_id": "Applicant",
+    "applicant_person_id": "Claimant",
     "office_id": "Processing office",
     "employer_entity_id": "Employer entity",
+    "requested_by": "Requested by",
+    "requested_by_help": "Person requesting the procedure (loaded from the authorized signatures of the selected employer entity).",
+    "requested_by_disabled": "Select the employer entity first",
+    "requested_by_empty": "The selected employer entity has no active authorized signatures. Register them from the entity detail page.",
     "position_id": "Position",
     "occupational_category_id": "Occupational category",
     "educational_level_id": "Educational level",

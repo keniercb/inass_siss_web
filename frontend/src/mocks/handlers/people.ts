@@ -98,11 +98,18 @@ let nextId = 1000;
 
 export const peopleHandlers = [
   // GET /people — listado con búsqueda y filtros
+  // Parámetros soportados (alineados con docs.json):
+  //  - identity (CI exacto, 11 dígitos) → filtrar por identity_number
+  //  - q (texto libre) → filtrar por nombre/apellido (contiene)
+  //  - search (legacy) → si 11 dígitos = identity, sino = q (mantenemos por
+  //    compatibilidad con componentes que aún no migraron)
   http.get(`${API_BASE}/people`, ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') ?? '1', 10);
     const perPage = parseInt(url.searchParams.get('per_page') ?? '15', 10);
-    const search = url.searchParams.get('search') ?? '';
+    const identity = url.searchParams.get('identity') ?? '';
+    const q = url.searchParams.get('q') ?? '';
+    const searchLegacy = url.searchParams.get('search') ?? '';
     const sort = url.searchParams.get('sort') ?? 'first_surname';
     const order = url.searchParams.get('order') ?? 'asc';
 
@@ -113,18 +120,33 @@ export const peopleHandlers = [
     if (deceased === 'true' || deceased === '1') items = items.filter((p) => p.deceased);
     else if (deceased === 'false' || deceased === '0') items = items.filter((p) => !p.deceased);
 
-    // Búsqueda: si es 11 dígitos, búsqueda por CI exacto; si no, por nombre
-    if (search) {
-      if (/^\d{11}$/.test(search)) {
-        items = items.filter((p) => p.identity_number === search);
+    // Búsqueda por CI exacto (parámetro `identity`)
+    if (identity) {
+      items = items.filter((p) => p.identity_number === identity);
+    }
+    // Búsqueda por texto libre (parámetro `q`)
+    if (q) {
+      const needle = q.toLowerCase();
+      items = items.filter((p) => {
+        const fullName = [p.first_surname, p.second_surname, p.first_name, p.middle_name]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return fullName.includes(needle);
+      });
+    }
+    // Legacy: `search` (si 11 dígitos = identity, sino = q)
+    if (searchLegacy && !identity && !q) {
+      if (/^\d{11}$/.test(searchLegacy)) {
+        items = items.filter((p) => p.identity_number === searchLegacy);
       } else {
-        const q = search.toLowerCase();
+        const needle = searchLegacy.toLowerCase();
         items = items.filter((p) => {
           const fullName = [p.first_surname, p.second_surname, p.first_name, p.middle_name]
             .filter(Boolean)
             .join(' ')
             .toLowerCase();
-          return fullName.includes(q);
+          return fullName.includes(needle);
         });
       }
     }

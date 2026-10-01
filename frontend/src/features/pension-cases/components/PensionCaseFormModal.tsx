@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
@@ -13,6 +13,17 @@ import { http } from '@/lib/http';
 interface CatalogItem { id: number; name: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
 interface EntityListItem { id: number; code: string; tax_id_number: string; }
+
+// Firma autorizada resumida (GET /authorized-signatures?entity_id=X&status=active)
+interface AuthorizedSignatureItem {
+  id: number;
+  person: { id: number; identity_number: string; full_name?: string; first_name?: string; first_surname?: string };
+  position: { id: number; name: string };
+}
+interface AuthorizedSignatureListResponse {
+  data: AuthorizedSignatureItem[];
+  meta: { current_page: number; per_page: number; total: number; last_page: number };
+}
 
 interface PensionCaseFormModalProps { onClose: () => void; }
 
@@ -35,6 +46,29 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   // Estado local
   const [selectedPerson, setSelectedPerson] = useState<number | null>(null);
   const [entityId, setEntityId] = useState(0);
+  // "Solicitado por" — persona autorizada del centro de trabajo seleccionado.
+  // El backend no incluye este campo en el request de POST /pension-cases todavía
+  // (docs.json por actualizar); cuando se publique, añadir `requested_by_person_id`
+  // (o el nombre que defina el backend) al CreateCaseInput y al payload.
+  const [requestedByPersonId, setRequestedByPersonId] = useState<number | null>(null);
+  // Cargar firmas autorizadas activas del centro de trabajo seleccionado
+  const { data: signaturesData, isLoading: isLoadingSignatures } = useQuery<AuthorizedSignatureListResponse>({
+    queryKey: ['authorized-signatures', 'by-entity', entityId],
+    queryFn: async () => {
+      const r = await http.get<AuthorizedSignatureListResponse>('/authorized-signatures', {
+        params: { entity_id: entityId, status: 'active', per_page: 50 },
+      });
+      return r.data;
+    },
+    enabled: !!entityId,
+    staleTime: 60_000,
+  });
+  const signatures = signaturesData?.data ?? [];
+
+  // Resetear "solicitado por" cuando cambia el centro de trabajo
+  useEffect(() => {
+    setRequestedByPersonId(null);
+  }, [entityId]);
   const [positionId, setPositionId] = useState(0);
   const [occCatId, setOccCatId] = useState(0);
   const [eduId, setEduId] = useState(0);
@@ -89,6 +123,23 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
             </select></div>
           <div><label className="block text-sm font-medium mb-1">{t('form.last_salary')} *</label>
             <Input type="number" step="0.01" min="0" placeholder="0.00" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} /></div>
+        </div>
+        {/* Solicitado por — persona autorizada del centro de trabajo (carga condicional) */}
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('form.requested_by')}</label>
+          <select
+            className={selectClass}
+            value={requestedByPersonId ?? 0}
+            disabled={!entityId || isLoadingSignatures || signatures.length === 0}
+            onChange={(e) => setRequestedByPersonId(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">{!entityId ? t('form.requested_by_disabled') : isLoadingSignatures ? tc('status.loading') + '…' : signatures.length === 0 ? t('form.requested_by_empty') : tc('actions.select')}</option>
+            {signatures.map((s) => {
+              const label = s.person.full_name ?? `${s.person.first_name ?? ''} ${s.person.first_surname ?? ''}`.trim() ?? s.person.identity_number;
+              return <option key={s.id} value={s.person.id}>{label} — {s.position.name}</option>;
+            })}
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">{t('form.requested_by_help')}</p>
         </div>
         {/* Cargo + Categorías */}
         <div className="grid grid-cols-2 gap-3">

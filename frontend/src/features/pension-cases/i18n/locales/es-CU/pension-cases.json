@@ -3,10 +3,10 @@
     "title": "Expedientes",
     "description": "Expedientes de pensión con máquina de estados",
     "new": "Nuevo expediente",
-    "search_placeholder": "Buscar por número o proponente…",
+    "search_placeholder": "Buscar por número o promovente…",
     "empty": "No hay expedientes para los filtros seleccionados",
     "filter": { "all": "Todos", "submitted": "Solicitud", "under_review": "Revisión", "approved": "Aprobados", "rejected": "Denegados" },
-    "columns": { "number": "Número", "applicant": "Proponente", "pension_type": "Tipo de pensión", "pension_regime": "Régimen", "status": "Estado", "requested_at": "Fecha solicitud" },
+    "columns": { "number": "Número", "applicant": "Promovente", "pension_type": "Tipo de pensión", "pension_regime": "Régimen", "status": "Estado", "requested_at": "Fecha solicitud" },
     "status": { "submitted": "Solicitud", "under_review": "Revisión", "approved": "Aprobado", "rejected": "Denegado" }
   },
   "create": { "title": "Nuevo expediente", "description": "Complete los datos del expediente. El número se genera automáticamente.", "success": "Expediente creado correctamente", "error": "Ocurrió un error al crear el expediente" },
@@ -22,7 +22,7 @@
     },
     "fields": {
       "number": "Número", "status": "Estado", "requested_at": "Fecha solicitud",
-      "applicant": "Proponente", "office": "Oficina", "employer_entity": "Centro de trabajo",
+      "applicant": "Promovente", "office": "Oficina", "employer_entity": "Centro de trabajo",
       "position": "Cargo", "occupational_category": "Categoría ocupacional",
       "educational_level": "Nivel educacional", "scientific_category": "Categoría científica",
       "last_salary": "Último salario", "computed_amount": "Cuantía calculada",
@@ -35,9 +35,13 @@
     "section": { "case_data": "Datos del expediente", "rebel_army": "Ejército Rebelde", "decision": "Decisión" }
   },
   "form": {
-    "applicant_person_id": "Proponente",
+    "applicant_person_id": "Promovente",
     "office_id": "Oficina tramitadora",
     "employer_entity_id": "Centro de trabajo",
+    "requested_by": "Solicitado por",
+    "requested_by_help": "Persona que solicita el trámite (cargada desde las firmas autorizadas del centro de trabajo seleccionado).",
+    "requested_by_disabled": "Seleccione primero el centro de trabajo",
+    "requested_by_empty": "El centro de trabajo seleccionado no tiene firmas autorizadas vigentes. Regístrelas desde el detalle de la entidad.",
     "position_id": "Cargo",
     "occupational_category_id": "Categoría ocupacional",
     "educational_level_id": "Nivel educacional",
