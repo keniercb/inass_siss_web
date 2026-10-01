@@ -70,7 +70,7 @@
     "add": "Add service",
     "add_success": "Service record added", "add_error": "Error adding record",
     "remove_success": "Record removed", "remove_error": "Error removing record",
-    "columns": { "entity": "Entity", "start_date": "Start", "end_date": "End", "is_appendix": "Appendix" },
+    "columns": { "entity": "Entity", "start_date": "Start", "end_date": "End", "is_appendix": "Appendix", "forma_declaracion": "Declaration" },
     "form": { "entity_id": "Entity", "start_date": "Start date", "end_date": "End date", "is_appendix": "Appendix", "forma_declaracion": "Declaration form", "forma_declaracion_documental": "Documentary", "forma_declaracion_testifical": "Testimonial" }
   },
   "cycle": {

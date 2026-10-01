@@ -99,7 +99,7 @@ export const pensionCasesHandlers = [
       last_salary: String(body.last_salary ?? '0'),
       rebel_army_member: body.rebel_army_member === true,
       rebel_army_join_date: body.rebel_army_member === true ? (body.rebel_army_join_date as string | null) : null,
-      persona_por: (body.persona_por as string | null | undefined) ?? null,
+      persona_por: ((body.persona_por as number | null | undefined) ?? null) as never,
       approval_legal_basis_id: null, decision_notes: null, decided_at: null, decided_by: null,
       computed_amount: null, calculation_setting_id: null,
       salary_records: [], service_records: [], work_cycles: [], income_concept_records: [],
