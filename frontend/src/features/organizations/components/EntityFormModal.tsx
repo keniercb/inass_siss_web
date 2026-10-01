@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useCreateEntity, useUpdateEntity } from '../api/mutations';
 import { entitySchema, type EntityInput } from '../schemas/organization.schema';
 import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
+import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import { handleFormError } from '@/lib/backend-errors';
 import type { Entity } from '@/types/domain';
 import { cn } from '@/lib/utils';
@@ -31,16 +32,6 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
   const createMutation = useCreateEntity();
   const updateMutation = useUpdateEntity();
 
-  const { data: orgsData } = useQuery({
-    queryKey: ['catalogs', 'organizations', 'all'],
-    queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/organizations', { params: { per_page: 100 } }); return r.data; },
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: entityTypesData } = useQuery({
-    queryKey: ['catalogs', 'entity-types', 'all'],
-    queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/entity-types', { params: { per_page: 100 } }); return r.data; },
-    staleTime: 5 * 60 * 1000,
-  });
   const { data: provincesData } = useQuery({
     queryKey: ['catalogs', 'provinces', 'all'],
     queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/provinces', { params: { per_page: 100 } }); return r.data; },
@@ -108,21 +99,26 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
             <Input type="text" disabled={isEdit} error={!!form.formState.errors.tax_id_number} {...form.register('tax_id_number')} />
           </div>
         </div>
+        {/* Organismo + Tipo de entidad (búsqueda con crear nuevo) + Provincia */}
         <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('entities.form.organization')} *</label>
-            <select className={selectClass} {...form.register('organization_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}>
-              <option value="">{tc('actions.select')}</option>
-              {(orgsData?.data ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('entities.form.entity_type')} *</label>
-            <select className={selectClass} {...form.register('entity_type_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}>
-              <option value="">{tc('actions.select')}</option>
-              {(entityTypesData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
-          </div>
+          <CatalogSearchSelect
+            type="organizations"
+            label={t('entities.form.organization')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            initialDisplayValue={entity?.organization?.name}
+            initialSelectedId={entity?.organization_id}
+            onSelect={(item) => form.setValue('organization_id', item.id)}
+          />
+          <CatalogSearchSelect
+            type="entity-types"
+            label={t('entities.form.entity_type')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            initialDisplayValue={entity?.entity_type?.name}
+            initialSelectedId={entity?.entity_type_id}
+            onSelect={(item) => form.setValue('entity_type_id', item.id)}
+          />
           <div>
             <label className="block text-sm font-medium mb-1">{t('entities.form.province')} *</label>
             <select className={selectClass} disabled={isEdit} value={selectedProvinceId ?? ''} onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setSelectedProvinceId(v); form.setValue('province_id', v ?? 0); }}>
