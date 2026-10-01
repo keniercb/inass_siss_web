@@ -117,5 +117,10 @@
       "deceased_no": "No",
       "death_date": "Fecha de fallecimiento"
     }
+  },
+  "search": {
+    "not_found": "No se encontró persona con CI {{ci}}. Puede registrarla ahora mismo.",
+    "register_new": "Registrar nueva persona con CI {{ci}}",
+    "selected": "Persona seleccionada"
   }
 }

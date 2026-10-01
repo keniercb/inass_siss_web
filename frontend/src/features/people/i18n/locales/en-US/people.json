@@ -117,5 +117,10 @@
       "deceased_no": "No",
       "death_date": "Death date"
     }
+  },
+  "search": {
+    "not_found": "No person found with ID {{ci}}. You can register it now.",
+    "register_new": "Register new person with ID {{ci}}",
+    "selected": "Person selected"
   }
 }

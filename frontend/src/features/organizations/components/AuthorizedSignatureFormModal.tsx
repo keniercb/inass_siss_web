@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useCreateSignature } from '@/features/organizations/api/mutations';
+import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
 import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
 interface CatalogItem { id: number; name: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
-interface PersonListItem { id: number; identity_number: string; first_name: string; first_surname: string; }
 
 interface AuthorizedSignatureFormModalProps {
   entityId: number;
@@ -28,22 +28,10 @@ export function AuthorizedSignatureFormModal({ entityId, onClose }: AuthorizedSi
     staleTime: 5 * 60 * 1000,
   });
 
-  const [personSearch, setPersonSearch] = useState('');
-  const [personResults, setPersonResults] = useState<PersonListItem[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<number | null>(null);
   const [positionId, setPositionId] = useState<number>(0);
   const [validFrom, setValidFrom] = useState('');
   const [validTo, setValidTo] = useState('');
-  const [showResults, setShowResults] = useState(false);
-
-  useEffect(() => {
-    if (personSearch.length < 3) { setPersonResults([]); return; }
-    const timer = setTimeout(async () => {
-      const r = await http.get<{ data: PersonListItem[] }>('/people', { params: { search: personSearch, per_page: 10 } });
-      setPersonResults(r.data.data);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [personSearch]);
 
   const onSubmit = async () => {
     if (!selectedPerson || !positionId) return;
@@ -64,21 +52,14 @@ export function AuthorizedSignatureFormModal({ entityId, onClose }: AuthorizedSi
   return (
     <Dialog open onClose={onClose} title={t('signatures.create.title')} description={t('signatures.create.description')} size="lg">
       <div className="space-y-4">
-        {/* Person search + Position (2 columnas) */}
+        {/* Person (búsqueda con opción de registrar nueva) + Position (2 columnas) */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="relative">
-            <label className="block text-sm font-medium mb-1">{t('signatures.form.person')} *</label>
-            <Input type="text" placeholder={selectedPerson ? `${personSearch}` : 'Buscar persona por CI o nombre…'} value={personSearch} onChange={(e) => { setPersonSearch(e.target.value); setShowResults(true); setSelectedPerson(null); }} onFocus={() => setShowResults(true)} onBlur={() => setTimeout(() => setShowResults(false), 200)} />
-            {showResults && personResults.length > 0 && (
-              <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-48 overflow-y-auto">
-                {personResults.map((p) => (
-                  <button key={p.id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b border-border last:border-0" onClick={() => { setSelectedPerson(p.id); setPersonSearch(`${p.first_name} ${p.first_surname} (${p.identity_number})`); setShowResults(false); }}>
-                    <span className="font-mono text-xs">{p.identity_number}</span> — {p.first_name} {p.first_surname}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <PersonSearchWithCreate
+            label={t('signatures.form.person')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            onSelect={(p) => setSelectedPerson(p.id)}
+          />
           <div>
             <label className="block text-sm font-medium mb-1">{t('signatures.form.position')} *</label>
             <select className={selectClass} value={positionId} onChange={(e) => setPositionId(Number(e.target.value))}>

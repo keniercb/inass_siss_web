@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useCreateEntity, useUpdateEntity } from '../api/mutations';
 import { entitySchema, type EntityInput } from '../schemas/organization.schema';
+import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
 import type { Entity } from '@/types/domain';
 import type { AxiosError } from 'axios';
 import { cn } from '@/lib/utils';
@@ -15,7 +16,6 @@ import { http } from '@/lib/http';
 
 interface CatalogItem { id: number; name: string; code?: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
-interface PersonListItem { id: number; identity_number: string; first_name: string; first_surname: string; }
 
 interface EntityFormModalProps {
   entity?: Entity;
@@ -46,10 +46,6 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
   });
 
   const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(entity?.province_id ?? null);
-  const [directorSearch, setDirectorSearch] = useState('');
-  const [directorResults, setDirectorResults] = useState<PersonListItem[]>([]);
-  const [economicDirectorSearch, setEconomicDirectorSearch] = useState('');
-  const [economicDirectorResults, setEconomicDirectorResults] = useState<PersonListItem[]>([]);
 
   const { data: municipalitiesData } = useQuery({
     queryKey: ['municipalities', 'list', { province_id: selectedProvinceId }],
@@ -61,25 +57,6 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
     enabled: !!selectedProvinceId,
     staleTime: 60_000,
   });
-
-  // Search people for director
-  useEffect(() => {
-    if (directorSearch.length < 3) { setDirectorResults([]); return; }
-    const timer = setTimeout(async () => {
-      const r = await http.get<{ data: PersonListItem[] }>('/people', { params: { search: directorSearch, per_page: 10 } });
-      setDirectorResults(r.data.data);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [directorSearch]);
-
-  useEffect(() => {
-    if (economicDirectorSearch.length < 3) { setEconomicDirectorResults([]); return; }
-    const timer = setTimeout(async () => {
-      const r = await http.get<{ data: PersonListItem[] }>('/people', { params: { search: economicDirectorSearch, per_page: 10 } });
-      setEconomicDirectorResults(r.data.data);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [economicDirectorSearch]);
 
   const form = useForm<EntityInput>({
     resolver: zodResolver(entitySchema),
@@ -168,10 +145,22 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
           <div><label className="block text-sm font-medium mb-1">{t('entities.form.fax')}</label><Input type="text" {...form.register('fax')} /></div>
           <div><label className="block text-sm font-medium mb-1">{t('entities.form.email')}</label><Input type="email" error={!!form.formState.errors.email} {...form.register('email')} /></div>
         </div>
-        {/* Director search */}
+        {/* Director + Director económico (búsqueda de persona con opción de registrar nueva) */}
         <div className="grid grid-cols-2 gap-3">
-          <PersonSearchField label={t('entities.form.director')} search={directorSearch} setSearch={setDirectorSearch} results={directorResults} onSelect={(p) => { form.setValue('director_person_id', p.id); setDirectorSearch(`${p.first_name} ${p.first_surname}`); setDirectorResults([]); }} currentValue={entity?.director ? `${entity.director.first_name} ${entity.director.first_surname}` : ''} />
-          <PersonSearchField label={t('entities.form.economic_director')} search={economicDirectorSearch} setSearch={setEconomicDirectorSearch} results={economicDirectorResults} onSelect={(p) => { form.setValue('economic_director_person_id', p.id); setEconomicDirectorSearch(`${p.first_name} ${p.first_surname}`); setEconomicDirectorResults([]); }} currentValue={entity?.economic_director ? `${entity.economic_director.first_name} ${entity.economic_director.first_surname}` : ''} />
+          <PersonSearchWithCreate
+            label={t('entities.form.director')}
+            placeholder={tc('actions.search') + '…'}
+            initialDisplayValue={entity?.director ? `${entity.director.first_name ?? ''} ${entity.director.first_surname ?? ''} (${entity.director.identity_number ?? ''})`.trim() : undefined}
+            initialSelectedId={entity?.director_person_id ?? undefined}
+            onSelect={(p) => form.setValue('director_person_id', p.id)}
+          />
+          <PersonSearchWithCreate
+            label={t('entities.form.economic_director')}
+            placeholder={tc('actions.search') + '…'}
+            initialDisplayValue={entity?.economic_director ? `${entity.economic_director.first_name ?? ''} ${entity.economic_director.first_surname ?? ''} (${entity.economic_director.identity_number ?? ''})`.trim() : undefined}
+            initialSelectedId={entity?.economic_director_person_id ?? undefined}
+            onSelect={(p) => form.setValue('economic_director_person_id', p.id)}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">{t('entities.form.social_purpose')}</label>
@@ -183,27 +172,5 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
         </div>
       </form>
     </Dialog>
-  );
-}
-
-function PersonSearchField({ label, search, setSearch, results, onSelect, currentValue }: {
-  label: string; search: string; setSearch: (v: string) => void;
-  results: PersonListItem[]; onSelect: (p: PersonListItem) => void; currentValue: string;
-}) {
-  const [showResults, setShowResults] = useState(false);
-  return (
-    <div className="relative">
-      <label className="block text-sm font-medium mb-1">{label}</label>
-      <Input type="text" placeholder={currentValue || 'Buscar persona por CI o nombre…'} value={search} onChange={(e) => { setSearch(e.target.value); setShowResults(true); }} onFocus={() => setShowResults(true)} onBlur={() => setTimeout(() => setShowResults(false), 200)} />
-      {showResults && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-48 overflow-y-auto">
-          {results.map((p) => (
-            <button key={p.id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b border-border last:border-0" onClick={() => { onSelect(p); setShowResults(false); }}>
-              <span className="font-mono text-xs">{p.identity_number}</span> — {p.first_name} {p.first_surname}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
