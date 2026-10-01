@@ -36,9 +36,9 @@ export const organizationsHandlers = [
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') ?? '1', 10);
     const perPage = parseInt(url.searchParams.get('per_page') ?? '15', 10);
-    const search = url.searchParams.get('search') ?? '';
+    const q = url.searchParams.get('q') ?? url.searchParams.get('search') ?? '';
     let items = Array.from(entities.values()).filter((e) => !e.deactivated_at);
-    if (search) { const q = search.toLowerCase(); items = items.filter((e) => e.code?.toLowerCase().includes(q) || e.tax_id_number?.toLowerCase().includes(q)); }
+    if (q) { const needle = q.toLowerCase(); items = items.filter((e) => e.code?.toLowerCase().includes(needle) || e.tax_id_number?.toLowerCase().includes(needle) || (e.name ?? '').toLowerCase().includes(needle)); }
     const total = items.length; const start = (page - 1) * perPage; const paged = items.slice(start, start + perPage);
     return HttpResponse.json({ data: paged, meta: { current_page: page, per_page: perPage, total, last_page: Math.max(1, Math.ceil(total / perPage)) } });
   }),

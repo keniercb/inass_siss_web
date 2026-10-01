@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { useCreateCase } from '../api/mutations';
 import { type CreateCaseInput } from '../schemas/pension-case.schema';
 import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
+import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
@@ -33,7 +34,6 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const createMutation = useCreateCase();
 
   // Cargar catálogos para selects
-  const { data: positionsData } = useQuery({ queryKey: ['catalogs', 'positions', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/positions', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: occCatData } = useQuery({ queryKey: ['catalogs', 'occupational-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/occupational-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: eduData } = useQuery({ queryKey: ['catalogs', 'educational-levels', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/educational-levels', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: sciCatData } = useQuery({ queryKey: ['catalogs', 'scientific-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/scientific-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
@@ -148,12 +148,15 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
           </select>
           <p className="text-xs text-muted-foreground mt-1">{t('form.requested_by_help')}</p>
         </div>
-        {/* Cargo + Categorías */}
+        {/* Cargo (búsqueda con crear nuevo) + Categoría ocupacional */}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('form.position_id')} *</label>
-            <select className={selectClass} value={positionId} onChange={(e) => setPositionId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(positionsData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select></div>
+          <CatalogSearchSelect
+            type="positions"
+            label={t('form.position_id')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            onSelect={(item) => setPositionId(item.id)}
+          />
           <div><label className="block text-sm font-medium mb-1">{t('form.occupational_category_id')} *</label>
             <select className={selectClass} value={occCatId} onChange={(e) => setOccCatId(Number(e.target.value))}>
               <option value="">{tc('actions.select')}</option>{(occCatData?.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

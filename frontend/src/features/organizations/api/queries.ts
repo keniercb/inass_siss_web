@@ -11,6 +11,7 @@ interface PaginatedResponse<T> {
 export interface EntitiesListParams {
   page?: number;
   per_page?: number;
+  /** Texto de búsqueda — se traduce a `q` para el backend (docs.json GET /entities?q=X) */
   search?: string;
   organization_id?: number;
   entity_type_id?: number;
@@ -23,7 +24,13 @@ export function useEntities(params: EntitiesListParams = {}) {
   return useQuery({
     queryKey: ['entities', 'list', params],
     queryFn: async () => {
-      const response = await http.get<PaginatedResponse<Entity>>('/entities', { params });
+      // Traducir search → q (backend espera q, no search)
+      const { search, ...rest } = params;
+      const queryParams: Record<string, unknown> = { ...rest };
+      if (search && search.trim().length > 0) {
+        queryParams.q = search.trim();
+      }
+      const response = await http.get<PaginatedResponse<Entity>>('/entities', { params: queryParams });
       return response.data;
     },
     placeholderData: (prev) => prev,
