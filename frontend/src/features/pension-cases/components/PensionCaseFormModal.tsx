@@ -11,8 +11,6 @@ import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearc
 import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
-interface CatalogItem { id: number; name: string; }
-interface CatalogListResponse { data: CatalogItem[]; }
 interface EntityListItem { id: number; code: string; name?: string; tax_id_number: string; }
 
 // Firma autorizada resumida (GET /authorized-signatures?entity_id=X&status=active)
@@ -32,13 +30,6 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const { t } = useTranslation('pension-cases');
   const { t: tc } = useTranslation('common');
   const createMutation = useCreateCase();
-
-  // Cargar catálogos para selects
-  const { data: occCatData } = useQuery({ queryKey: ['catalogs', 'occupational-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/occupational-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
-  const { data: eduData } = useQuery({ queryKey: ['catalogs', 'educational-levels', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/educational-levels', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
-  const { data: sciCatData } = useQuery({ queryKey: ['catalogs', 'scientific-categories', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/scientific-categories', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
-  const { data: pensionTypesData } = useQuery({ queryKey: ['catalogs', 'pension-types', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/pension-types', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
-  const { data: pensionRegimesData } = useQuery({ queryKey: ['catalogs', 'pension-regimes', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/pension-regimes', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
 
   // Cargar entidades
   const { data: entitiesData } = useQuery({ queryKey: ['entities', 'all'], queryFn: async () => { const r = await http.get<{ data: EntityListItem[] }>('/entities', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
@@ -148,7 +139,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
           </select>
           <p className="text-xs text-muted-foreground mt-1">{t('form.requested_by_help')}</p>
         </div>
-        {/* Cargo (búsqueda con crear nuevo) + Categoría ocupacional */}
+        {/* Cargo + Categoría ocupacional (búsqueda con crear nuevo) */}
         <div className="grid grid-cols-2 gap-3">
           <CatalogSearchSelect
             type="positions"
@@ -157,31 +148,47 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
             required
             onSelect={(item) => setPositionId(item.id)}
           />
-          <div><label className="block text-sm font-medium mb-1">{t('form.occupational_category_id')} *</label>
-            <select className={selectClass} value={occCatId} onChange={(e) => setOccCatId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(occCatData?.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select></div>
+          <CatalogSearchSelect
+            type="occupational-categories"
+            label={t('form.occupational_category_id')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            onSelect={(item) => setOccCatId(item.id)}
+          />
         </div>
+        {/* Nivel educacional + Categoría científica (búsqueda con crear nuevo) */}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('form.educational_level_id')} *</label>
-            <select className={selectClass} value={eduId} onChange={(e) => setEduId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(eduData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select></div>
-          <div><label className="block text-sm font-medium mb-1">{t('form.scientific_category_id')} *</label>
-            <select className={selectClass} value={sciCatId} onChange={(e) => setSciCatId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(sciCatData?.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select></div>
+          <CatalogSearchSelect
+            type="educational-levels"
+            label={t('form.educational_level_id')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            onSelect={(item) => setEduId(item.id)}
+          />
+          <CatalogSearchSelect
+            type="scientific-categories"
+            label={t('form.scientific_category_id')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            onSelect={(item) => setSciCatId(item.id)}
+          />
         </div>
-        {/* Tipo de pensión + Régimen de pensión */}
+        {/* Tipo de pensión + Régimen de pensión (búsqueda con crear nuevo) */}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('form.pension_type_id')} *</label>
-            <select className={selectClass} value={pensionTypeId} onChange={(e) => setPensionTypeId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(pensionTypesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select></div>
-          <div><label className="block text-sm font-medium mb-1">{t('form.pension_regime_id')} *</label>
-            <select className={selectClass} value={pensionRegimeId} onChange={(e) => setPensionRegimeId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(pensionRegimesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select></div>
+          <CatalogSearchSelect
+            type="pension-types"
+            label={t('form.pension_type_id')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            onSelect={(item) => setPensionTypeId(item.id)}
+          />
+          <CatalogSearchSelect
+            type="pension-regimes"
+            label={t('form.pension_regime_id')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            onSelect={(item) => setPensionRegimeId(item.id)}
+          />
         </div>
         {/* Ejército Rebelde */}
         <div className="p-3 rounded-md border border-border space-y-3">
