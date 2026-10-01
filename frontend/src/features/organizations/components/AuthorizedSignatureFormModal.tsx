@@ -1,16 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useCreateSignature } from '@/features/organizations/api/mutations';
 import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
-import { cn } from '@/lib/utils';
-import { http } from '@/lib/http';
-
-interface CatalogItem { id: number; name: string; }
-interface CatalogListResponse { data: CatalogItem[]; }
+import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 
 interface AuthorizedSignatureFormModalProps {
   entityId: number;
@@ -21,12 +16,6 @@ export function AuthorizedSignatureFormModal({ entityId, onClose }: AuthorizedSi
   const { t } = useTranslation('organizations');
   const { t: tc } = useTranslation('common');
   const createMutation = useCreateSignature(entityId);
-
-  const { data: positionsData } = useQuery({
-    queryKey: ['catalogs', 'positions', 'all'],
-    queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/positions', { params: { per_page: 100 } }); return r.data; },
-    staleTime: 5 * 60 * 1000,
-  });
 
   const [selectedPerson, setSelectedPerson] = useState<number | null>(null);
   const [positionId, setPositionId] = useState<number>(0);
@@ -47,12 +36,10 @@ export function AuthorizedSignatureFormModal({ entityId, onClose }: AuthorizedSi
     } catch { /* handled by mutation */ }
   };
 
-  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
-
   return (
     <Dialog open onClose={onClose} title={t('signatures.create.title')} description={t('signatures.create.description')} size="lg">
       <div className="space-y-4">
-        {/* Person (búsqueda con opción de registrar nueva) + Position (2 columnas) */}
+        {/* Person (búsqueda con opción de registrar nueva) + Position (búsqueda con crear nuevo) */}
         <div className="grid grid-cols-2 gap-3">
           <PersonSearchWithCreate
             label={t('signatures.form.person')}
@@ -60,13 +47,13 @@ export function AuthorizedSignatureFormModal({ entityId, onClose }: AuthorizedSi
             required
             onSelect={(p) => setSelectedPerson(p.id)}
           />
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('signatures.form.position')} *</label>
-            <select className={selectClass} value={positionId} onChange={(e) => setPositionId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>
-              {(positionsData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </div>
+          <CatalogSearchSelect
+            type="positions"
+            label={t('signatures.form.position')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            onSelect={(item) => setPositionId(item.id)}
+          />
         </div>
         {/* Validity */}
         <div className="grid grid-cols-2 gap-3">
