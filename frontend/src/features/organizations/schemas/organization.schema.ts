@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const entitySchema = z.object({
   code: z.string().min(1, 'El código es obligatorio').max(15),
+  name: z.string().min(1, 'El nombre denominativo es obligatorio').max(150),
   tax_id_number: z.string().min(1, 'El NIT es obligatorio').max(20),
   organization_id: z.number().int().positive('El organismo es obligatorio'),
   province_id: z.number().int().positive('La provincia es obligatoria'),

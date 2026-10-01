@@ -43,12 +43,17 @@ export function useEntity(id?: number | string) {
   });
 }
 
+/** Firmas autorizadas activas de una entidad.
+ *  Usa el endpoint top-level /authorized-signatures?entity_id=X&status=active
+ *  (alineado con docs.json). Devuelve AuthorizedSignature[] (con status derivado). */
 export function useEntitySignatures(entityId?: number | string) {
   return useQuery({
     queryKey: ['entities', 'signatures', entityId],
     queryFn: async () => {
-      const response = await http.get<AuthorizedSignature[]>(`/entities/${entityId}/signatures`);
-      return response.data;
+      const response = await http.get<PaginatedResponse<AuthorizedSignature>>('/authorized-signatures', {
+        params: { entity_id: entityId, status: 'active', per_page: 100 },
+      });
+      return response.data.data;
     },
     enabled: !!entityId,
     staleTime: 60_000,

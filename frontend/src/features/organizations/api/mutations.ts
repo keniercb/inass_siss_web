@@ -154,11 +154,13 @@ export function useCreateSignature(entityId: number | string) {
   const toast = useToast();
   return useMutation({
     mutationFn: async (input: AuthorizedSignatureInput) => {
-      const response = await http.post<AuthorizedSignature>(`/entities/${entityId}/signatures`, input);
-      return response.data;
+      // POST /authorized-signatures (top-level, docs.json): entity_id va en el body
+      const response = await http.post<ApiResponse<AuthorizedSignature>>('/authorized-signatures', { ...input, entity_id: entityId });
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entities', 'signatures', entityId] });
+      queryClient.invalidateQueries({ queryKey: ['authorized-signatures', 'by-entity', entityId] });
       toast.success(t('signatures.create.success'));
     },
     onError: (err: unknown) => {
@@ -175,10 +177,12 @@ export function useDeleteSignature(entityId: number | string) {
   const toast = useToast();
   return useMutation({
     mutationFn: async (signatureId: number | string) => {
-      await http.delete(`/entities/${entityId}/signatures/${signatureId}`);
+      // DELETE /authorized-signatures/{id} (top-level, docs.json)
+      await http.delete(`/authorized-signatures/${signatureId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entities', 'signatures', entityId] });
+      queryClient.invalidateQueries({ queryKey: ['authorized-signatures', 'by-entity', entityId] });
       toast.success(t('signatures.delete.success'));
     },
     onError: () => {

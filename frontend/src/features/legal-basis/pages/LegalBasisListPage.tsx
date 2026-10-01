@@ -141,7 +141,19 @@ function LegalBasisFormModal({ item, onClose }: { item: LegalBasis | null; onClo
   const mutation = useMutation({
     mutationFn: async (input: LegalBasisInput) => { if (isEdit && item) { const r = await http.patch<ApiResponse<LegalBasis>>(`/legal-bases/${item.id}`, input); return r.data.data; } else { const r = await http.post<ApiResponse<LegalBasis>>('/legal-bases', input); return r.data.data; } },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['legal-bases', 'list'] }); toast.success(t(isEdit ? 'update.success' : 'create.success')); onClose(); },
-    onError: (err: unknown) => { const axiosErr = err as AxiosError<{ errors?: Record<string, string[]> }>; if (axiosErr.response?.status === 422 && axiosErr.response.data?.errors) { Object.entries(axiosErr.response.data.errors).forEach(([f, m]) => { if (m[0]) form.setError(f as keyof LegalBasisInput, { message: m[0] }); }); } else { toast.error(t(isEdit ? 'update.error' : 'create.error')); } },
+    onError: (err: unknown) => {
+      // 422: mapear a campos del form + toast resumen
+      if (err instanceof Error && 'response' in err) {
+        const axiosErr = err as AxiosError<{ errors?: Record<string, string[]> }>;
+        if (axiosErr.response?.status === 422 && axiosErr.response.data?.errors) {
+          Object.entries(axiosErr.response.data.errors).forEach(([f, m]) => { if (m[0]) form.setError(f as keyof LegalBasisInput, { message: m[0] }); });
+          const allMessages = Object.values(axiosErr.response.data.errors).flat();
+          if (allMessages.length > 0) toast.errorDetail(t(isEdit ? 'update.error' : 'create.error'), allMessages.join(' · '));
+          return;
+        }
+      }
+      toast.error(t(isEdit ? 'update.error' : 'create.error'));
+    },
   });
 
   const onSubmit = form.handleSubmit((input) => mutation.mutate(input));

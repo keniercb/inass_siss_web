@@ -17,13 +17,13 @@ const offices = new Map<number, Office>([
 ]);
 
 const signatures = new Map<number, AuthorizedSignature & { entity_id: number }>([
-  [1, { id: 1, entity_id: 1, person_id: 2, person: { id: 2, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2024-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
-  [2, { id: 2, entity_id: 1, person_id: 1, person: { id: 1, identity_number: '85061547812', first_name: 'Ana', first_surname: 'Pérez' }, position_id: 2, position: { id: 2, name: 'Director Económico' }, valid_from: '2024-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  [1, { id: 1, entity_id: 1, person_id: 2, person: { id: 2, identity_number: '78092145678', full_name: 'Carlos Rodríguez' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2024-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  [2, { id: 2, entity_id: 1, person_id: 1, person: { id: 1, identity_number: '85061547812', full_name: 'Ana Pérez' }, position_id: 2, position: { id: 2, name: 'Director Económico' }, valid_from: '2024-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
   // Firmas para entidad 2 (Unidad Empresarial de Base Marianao)
-  [3, { id: 3, entity_id: 2, person_id: 5, person: { id: 5, identity_number: '72051548124', first_name: 'Roberto', first_surname: 'Hernández' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2025-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  [3, { id: 3, entity_id: 2, person_id: 5, person: { id: 5, identity_number: '72051548124', full_name: 'Roberto Hernández' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2025-01-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
   // Firmas para entidad 3 (Gestión Territorial Holguín)
-  [4, { id: 4, entity_id: 3, person_id: 4, person: { id: 4, identity_number: '89021256123', first_name: 'Pedro', first_surname: 'Sánchez' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2025-06-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
-  [5, { id: 5, entity_id: 3, person_id: 2, person: { id: 2, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' }, position_id: 2, position: { id: 2, name: 'Director Económico' }, valid_from: '2025-06-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  [4, { id: 4, entity_id: 3, person_id: 4, person: { id: 4, identity_number: '89021256123', full_name: 'Pedro Sánchez' }, position_id: 1, position: { id: 1, name: 'Director General' }, valid_from: '2025-06-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+  [5, { id: 5, entity_id: 3, person_id: 2, person: { id: 2, identity_number: '78092145678', full_name: 'Carlos Rodríguez' }, position_id: 2, position: { id: 2, name: 'Director Económico' }, valid_from: '2025-06-01', valid_to: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
 ]);
 
 let nextEntityId = 100;
@@ -45,7 +45,7 @@ export const organizationsHandlers = [
   http.post(`${API_BASE}/entities`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     const id = nextEntityId++;
-    const entity: Entity = { id, code: body.code as string, tax_id_number: body.tax_id_number as string, organization_id: body.organization_id as number, province_id: body.province_id as number, municipality_id: body.municipality_id as number, entity_type_id: body.entity_type_id as number, address: body.address as string, phone: (body.phone as string) || null, fax: (body.fax as string) || null, email: (body.email as string) || null, director_person_id: (body.director_person_id as number) || null, economic_director_person_id: (body.economic_director_person_id as number) || null, parent_entity_id: (body.parent_entity_id as number) || null, social_purpose: (body.social_purpose as string) || null, deactivated_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    const entity: Entity = { id, code: body.code as string, name: (body.name as string | undefined) || undefined, tax_id_number: body.tax_id_number as string, organization_id: body.organization_id as number, province_id: body.province_id as number, municipality_id: body.municipality_id as number, entity_type_id: body.entity_type_id as number, address: body.address as string, phone: (body.phone as string) || null, fax: (body.fax as string) || null, email: (body.email as string) || null, director_person_id: (body.director_person_id as number) || null, economic_director_person_id: (body.economic_director_person_id as number) || null, parent_entity_id: (body.parent_entity_id as number) || null, social_purpose: (body.social_purpose as string) || null, deactivated_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
     entities.set(id, entity);
     return HttpResponse.json({ data: entity }, { status: 201 });
   }),
@@ -136,6 +136,64 @@ export const organizationsHandlers = [
       data: paged,
       meta: { current_page: page, per_page: perPage, total, last_page: Math.max(1, Math.ceil(total / perPage)) },
     });
+  }),
+
+  // POST /authorized-signatures — registro de una firma autorizada (top-level)
+  http.post(`${API_BASE}/authorized-signatures`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    const errors: Record<string, string[]> = {};
+    if (!body.entity_id) errors.entity_id = ['The entity is required.'];
+    if (!body.person_id) errors.person_id = ['The person is required.'];
+    if (!body.position_id) errors.position_id = ['The position is required.'];
+    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+
+    // Validar unicidad de la terna entity+person+position
+    const exists = Array.from(signatures.values()).some((s) =>
+      s.entity_id === (body.entity_id as number) &&
+      s.person_id === (body.person_id as number) &&
+      s.position_id === (body.position_id as number),
+    );
+    if (exists) return HttpResponse.json({ message: 'The signature already exists.' }, { status: 409 });
+
+    const id = nextSigId++;
+    const sig: AuthorizedSignature & { entity_id: number } = {
+      id,
+      entity_id: body.entity_id as number,
+      person_id: body.person_id as number,
+      person: { id: body.person_id as number, identity_number: '—', full_name: '—' },
+      position_id: body.position_id as number,
+      position: { id: body.position_id as number, name: '—' },
+      valid_from: (body.valid_from as string) || null,
+      valid_to: (body.valid_to as string) || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as unknown as AuthorizedSignature & { entity_id: number };
+    signatures.set(id, sig);
+    return HttpResponse.json({ data: sig }, { status: 201 });
+  }),
+
+  // DELETE /authorized-signatures/{id} — revocación de una firma (top-level)
+  http.delete(`${API_BASE}/authorized-signatures/:id`, ({ params }) => {
+    const id = parseInt(params.id as string, 10);
+    if (!signatures.has(id)) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    signatures.delete(id);
+    return HttpResponse.json({ message: 'Revoked.' });
+  }),
+
+  // PATCH /authorized-signatures/{id} — editar ventana de vigencia (top-level)
+  http.patch(`${API_BASE}/authorized-signatures/:id`, async ({ request, params }) => {
+    const id = parseInt(params.id as string, 10);
+    const sig = signatures.get(id);
+    if (!sig) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    const body = (await request.json()) as Record<string, unknown>;
+    const updated = {
+      ...sig,
+      valid_from: (body.valid_from as string | null | undefined) ?? sig.valid_from,
+      valid_to: (body.valid_to as string | null | undefined) ?? sig.valid_to,
+      updated_at: new Date().toISOString(),
+    } as unknown as AuthorizedSignature & { entity_id: number };
+    signatures.set(id, updated);
+    return HttpResponse.json({ data: updated });
   }),
 ];
 

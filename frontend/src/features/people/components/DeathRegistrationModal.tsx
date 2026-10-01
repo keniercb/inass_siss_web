@@ -5,10 +5,11 @@ import { AlertTriangle } from 'lucide-react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
 import { useRegisterDeath } from '../api/mutations';
 import { deathRegistrationSchema, type DeathRegistrationInput } from '../schemas/person.schema';
+import { handleFormError } from '@/lib/backend-errors';
 import type { components } from '@/types/api';
-import type { AxiosError } from 'axios';
 
 type Person = components['schemas']['Person'];
 
@@ -29,6 +30,7 @@ interface DeathRegistrationModalProps {
 export function DeathRegistrationModal({ person, onClose }: DeathRegistrationModalProps) {
   const { t } = useTranslation('people');
   const { t: tc } = useTranslation('common');
+  const toast = useToast();
   const registerDeathMutation = useRegisterDeath();
 
   const form = useForm<DeathRegistrationInput>({
@@ -41,14 +43,7 @@ export function DeathRegistrationModal({ person, onClose }: DeathRegistrationMod
       await registerDeathMutation.mutateAsync({ id: person.id!, input });
       onClose();
     } catch (err) {
-      const axiosErr = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data?.errors) {
-        Object.entries(axiosErr.response.data.errors).forEach(([field, messages]) => {
-          if (messages.length > 0) {
-            form.setError(field as keyof DeathRegistrationInput, { message: messages[0] });
-          }
-        });
-      }
+      handleFormError(err, form, toast, t('death.error'));
     }
   });
 

@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { FieldRenderer } from '@/components/crud/FieldRenderer';
+import { useToast } from '@/components/ui/Toast';
 import { useCreateSetting } from '../api/mutations';
 import { createSettingSchemaWithValidation, type CreateSettingInput } from '../schemas/general-settings.schema';
-import type { AxiosError } from 'axios';
+import { handleFormError } from '@/lib/backend-errors';
 import type { FieldDef } from '@/types/crud';
 import type { components } from '@/types/api';
 
@@ -77,6 +78,7 @@ interface GeneralSettingFormModalProps {
 export function GeneralSettingFormModal({ onClose }: GeneralSettingFormModalProps) {
   const { t } = useTranslation('settings');
   const { t: tc } = useTranslation('common');
+  const toast = useToast();
   const createMutation = useCreateSetting();
 
   const form = useForm<CreateSettingInput>({
@@ -97,14 +99,7 @@ export function GeneralSettingFormModal({ onClose }: GeneralSettingFormModalProp
       await createMutation.mutateAsync(input);
       onClose();
     } catch (err) {
-      const axiosErr = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data?.errors) {
-        Object.entries(axiosErr.response.data.errors).forEach(([field, messages]) => {
-          if (messages.length > 0) {
-            form.setError(field as keyof CreateSettingInput, { message: messages[0] });
-          }
-        });
-      }
+      handleFormError(err, form, toast, t('create.error'));
     }
   });
 

@@ -94,11 +94,14 @@ export interface AuthorizedSignature {
   id: number;
   entity_id: number;
   person_id: number;
-  person?: { id: number; identity_number: string; first_name: string; first_surname: string };
+  /** Persona autorizada — alineado con OpenAPI: usa full_name (no first/last separados) */
+  person?: { id: number; identity_number: string; full_name: string };
   position_id: number;
   position?: { id: number; name: string };
   valid_from?: string | null;
   valid_to?: string | null;
+  /** Status derivado de la ventana de vigencia (al leer, contra el reloj compartido) */
+  status?: 'active' | 'future' | 'expired';
   created_at?: string;
   updated_at?: string;
 }

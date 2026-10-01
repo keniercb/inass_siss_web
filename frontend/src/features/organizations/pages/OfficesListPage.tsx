@@ -10,8 +10,9 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { useOffices } from '../api/queries';
 import { useCreateOffice, useUpdateOffice, useDeleteOffice } from '../api/mutations';
 import { officeSchema, type OfficeInput } from '../schemas/organization.schema';
+import { useToast } from '@/components/ui/Toast';
+import { handleFormError } from '@/lib/backend-errors';
 import type { Office } from '@/types/domain';
-import type { AxiosError } from 'axios';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Pagination } from '@/components/crud/Pagination';
@@ -107,6 +108,7 @@ export function OfficesListPage() {
 function OfficeFormModal({ office, onClose }: { office: Office | null; onClose: () => void }) {
   const { t } = useTranslation('organizations');
   const { t: tc } = useTranslation('common');
+  const toast = useToast();
   const isEdit = !!office;
   const createMutation = useCreateOffice();
   const updateMutation = useUpdateOffice();
@@ -119,7 +121,7 @@ function OfficeFormModal({ office, onClose }: { office: Office | null; onClose: 
   useEffect(() => { if (!isEdit) form.setValue('municipality_id', 0); }, [selectedProvinceId, form, isEdit]);
 
   const onSubmit = form.handleSubmit(async (input) => {
-    try { if (isEdit && office) { await updateMutation.mutateAsync({ id: office.id!, input }); } else { await createMutation.mutateAsync(input); } onClose(); } catch (err) { const axiosErr = err as AxiosError<{ errors?: Record<string, string[]> }>; if (axiosErr.response?.status === 422 && axiosErr.response.data?.errors) { Object.entries(axiosErr.response.data.errors).forEach(([f, m]) => { if (m[0]) form.setError(f as keyof OfficeInput, { message: m[0] }); }); } }
+    try { if (isEdit && office) { await updateMutation.mutateAsync({ id: office.id!, input }); } else { await createMutation.mutateAsync(input); } onClose(); } catch (err) { handleFormError(err, form, toast, t(isEdit ? 'offices.update.error' : 'offices.create.error')); }
   });
 
   const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');

@@ -89,7 +89,7 @@ export function EntityDetailPage() {
               <tbody className="divide-y divide-border">
                 {signatures.map((s) => (
                   <tr key={s.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3 font-mono text-xs">{s.person?.identity_number} — {s.person?.first_name} {s.person?.first_surname}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{s.person?.identity_number} — {s.person?.full_name}</td>
                     <td className="px-4 py-3">{s.position?.name ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{s.valid_from ?? '—'} → {s.valid_to ?? '∞'}</td>
                     {canManage && <td className="px-4 py-3 text-right"><button onClick={() => deleteSigMutation.mutate(s.id!)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-4 h-4" /></button></td>}

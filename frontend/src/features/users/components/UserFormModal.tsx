@@ -7,12 +7,12 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useCreateUser, useUpdateUser } from '../api/mutations';
 import { useToast } from '@/components/ui/Toast';
+import { useCreateUser, useUpdateUser } from '../api/mutations';
 import { createUserSchema, updateUserSchema, ROLE_LABELS, type CreateUserInput, type UpdateUserInput } from '../schemas/user.schema';
 import { useRoles } from '@/features/roles/api/queries';
+import { handleFormError } from '@/lib/backend-errors';
 import type { components } from '@/types/api';
-import type { AxiosError } from 'axios';
 import { http } from '@/lib/http';
 import { cn } from '@/lib/utils';
 
@@ -102,12 +102,7 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
       }
       onClose();
     } catch (err) {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        Object.entries(ae.response.data.errors).forEach(([f, m]) => {
-          if (m[0]) form.setError(f as never, { message: m[0] });
-        });
-      }
+      handleFormError(err, form, toast, t(isEdit ? 'update.error' : 'create.error'));
     }
   });
 

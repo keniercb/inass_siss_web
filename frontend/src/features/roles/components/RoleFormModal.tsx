@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
 import { useCreateRole, useUpdateRole } from '../api/mutations';
 import { usePermissions } from '../api/queries';
 import { roleSchema, PERMISSION_MODULES, ACTION_LABELS, type RoleInput } from '../schemas/role.schema';
+import { handleFormError } from '@/lib/backend-errors';
 import type { components } from '@/types/api';
-import type { AxiosError } from 'axios';
-import { useToast } from '@/components/ui/Toast';
 
 type Role = components['schemas']['Role'];
 type Permission = components['schemas']['Permission'];
@@ -23,11 +23,11 @@ interface RoleFormModalProps {
 export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
   const { t } = useTranslation('roles');
   const { t: tc } = useTranslation('common');
+  const toast = useToast();
   const isEdit = !!role;
   const isSystem = role?.is_system === true;
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
-  const toast = useToast();
   const { data: permissions } = usePermissions();
 
   // Permisos seleccionados (estado local)
@@ -90,12 +90,7 @@ export function RoleFormModal({ role, onClose }: RoleFormModalProps) {
       }
       onClose();
     } catch (err) {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        Object.entries(ae.response.data.errors).forEach(([f, m]) => {
-          if (m[0]) form.setError(f as keyof RoleInput, { message: m[0] });
-        });
-      }
+      handleFormError(err, form, toast, t(isEdit ? 'update.error' : 'create.error'));
     }
   });
 

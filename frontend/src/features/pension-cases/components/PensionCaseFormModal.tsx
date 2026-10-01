@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
 import { useCreateCase } from '../api/mutations';
 import { type CreateCaseInput } from '../schemas/pension-case.schema';
 import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
@@ -30,6 +31,7 @@ interface PensionCaseFormModalProps { onClose: () => void; }
 export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const { t } = useTranslation('pension-cases');
   const { t: tc } = useTranslation('common');
+  const toast = useToast();
   const createMutation = useCreateCase();
 
   // Cargar catálogos para selects
@@ -97,10 +99,24 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
       rebel_army_member: belongsRebelArmy,
       rebel_army_join_date: belongsRebelArmy ? rebelArmyDate : null,
     };
+    // TODO(docs.json por actualizar): cuando el backend publique el campo
+    // `requested_by_person_id` (o equivalente) en el POST /pension-cases,
+    // añadirlo al input y al CreateCaseInput:
+    //   ... (requested_by_person_id: requestedByPersonId) ...
     try {
       await createMutation.mutateAsync(input);
       onClose();
-    } catch { /* handled by mutation */ }
+    } catch (err) {
+      // Errores del backend (422 de validación, 409 de duplicado, etc.) → toast
+      const ae = err as import('axios').AxiosError<{ errors?: Record<string, string[]>; message?: string }>;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        const allMessages = Object.values(ae.response.data.errors).flat();
+        if (allMessages.length > 0) {
+          toast.errorDetail(t('create.error'), allMessages.join(' · '));
+        }
+      }
+      // Otros errores: el mutation.onError del hook ya muestra toast genérico
+    }
   };
 
   const canSubmit = selectedPerson && entityId && positionId && occCatId && eduId && sciCatId && pensionTypeId && pensionRegimeId && lastSalary !== '' && (!belongsRebelArmy || rebelArmyDate !== '');

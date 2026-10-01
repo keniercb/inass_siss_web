@@ -6,11 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
 import { useCreateEntity, useUpdateEntity } from '../api/mutations';
 import { entitySchema, type EntityInput } from '../schemas/organization.schema';
 import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
+import { handleFormError } from '@/lib/backend-errors';
 import type { Entity } from '@/types/domain';
-import type { AxiosError } from 'axios';
 import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
@@ -25,6 +26,7 @@ interface EntityFormModalProps {
 export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
   const { t } = useTranslation('organizations');
   const { t: tc } = useTranslation('common');
+  const toast = useToast();
   const isEdit = !!entity;
   const createMutation = useCreateEntity();
   const updateMutation = useUpdateEntity();
@@ -61,13 +63,13 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
   const form = useForm<EntityInput>({
     resolver: zodResolver(entitySchema),
     defaultValues: entity ? {
-      code: entity.code, tax_id_number: entity.tax_id_number, organization_id: entity.organization_id,
+      code: entity.code, name: entity.name ?? '', tax_id_number: entity.tax_id_number, organization_id: entity.organization_id,
       province_id: entity.province_id, municipality_id: entity.municipality_id, entity_type_id: entity.entity_type_id,
       address: entity.address, phone: entity.phone ?? '', fax: entity.fax ?? '', email: entity.email ?? '',
       director_person_id: entity.director_person_id ?? null, economic_director_person_id: entity.economic_director_person_id ?? null,
       parent_entity_id: entity.parent_entity_id ?? null, social_purpose: entity.social_purpose ?? '',
     } : {
-      code: '', tax_id_number: '', organization_id: 0, province_id: 0, municipality_id: 0, entity_type_id: 0,
+      code: '', name: '', tax_id_number: '', organization_id: 0, province_id: 0, municipality_id: 0, entity_type_id: 0,
       address: '', phone: '', fax: '', email: '', director_person_id: null, economic_director_person_id: null,
       parent_entity_id: null, social_purpose: '',
     },
@@ -81,10 +83,7 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
       else { await createMutation.mutateAsync(input); }
       onClose();
     } catch (err) {
-      const axiosErr = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data?.errors) {
-        Object.entries(axiosErr.response.data.errors).forEach(([f, m]) => { if (m[0]) form.setError(f as keyof EntityInput, { message: m[0] }); });
-      }
+      handleFormError(err, form, toast, t(isEdit ? 'entities.update.error' : 'entities.create.error'));
     }
   });
 
@@ -93,6 +92,12 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
   return (
     <Dialog open onClose={onClose} title={t(isEdit ? 'entities.edit.title' : 'entities.create.title')} description={t(isEdit ? 'entities.edit.description' : 'entities.create.description')} size="xl">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
+        {/* Nombre denominativo (full width) */}
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('entities.form.name')} *</label>
+          <Input type="text" placeholder="Empresa Nacional de Servicios Técnicos" error={!!form.formState.errors.name} {...form.register('name')} />
+          {form.formState.errors.name && <p className="text-xs text-destructive mt-1">{String(form.formState.errors.name.message)}</p>}
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">{t('entities.form.code')} *</label>

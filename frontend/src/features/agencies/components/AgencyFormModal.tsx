@@ -6,11 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
 import { useCrudResource } from '@/hooks/crud/useCrudResource';
 import { agencyConfig, type AgencyInput } from '../config/agency-config';
+import { handleFormError } from '@/lib/backend-errors';
 import type { CrudConfig } from '@/types/crud';
 import type { components } from '@/types/api';
-import type { AxiosError } from 'axios';
 import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
@@ -46,6 +47,7 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
 }: AgencyFormModalProps<TResource, TCreateInput, TUpdateInput>) {
   const { t } = useTranslation('agencies');
   const { t: tc } = useTranslation('common');
+  const toast = useToast();
   const isEdit = !!resource;
   const { useCreate, useUpdate } = useCrudResource(agencyConfig);
   const createMutation = useCreate();
@@ -123,14 +125,7 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
       }
       onClose();
     } catch (err) {
-      const axiosErr = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data?.errors) {
-        Object.entries(axiosErr.response.data.errors).forEach(([field, messages]) => {
-          if (messages.length > 0) {
-            form.setError(field as keyof AgencyInput, { message: messages[0] });
-          }
-        });
-      }
+      handleFormError(err, form, toast, t(isEdit ? 'update.error' : 'create.error'));
     }
   });
 
