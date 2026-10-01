@@ -268,7 +268,7 @@ function SalaryRecordModal({ caseId, onClose }: { caseId: string; onClose: () =>
 function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddServiceRecord(caseId);
-  const [entityId, setEntityId] = useState(0); const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState(''); const [isAppendix, setIsAppendix] = useState(false);
+  const [entityId, setEntityId] = useState(0); const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState(''); const [isAppendix, setIsAppendix] = useState(false); const [formaDeclaracion, setFormaDeclaracion] = useState<'Documental' | 'Testifical'>('Documental');
   // Cargar entidades del backend
   const { data: entitiesData } = useQuery({
     queryKey: ['entities', 'all'],
@@ -286,7 +286,12 @@ function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () =
     <div><label className="block text-sm font-medium mb-1">{t('service.form.start_date')} *</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
     <div><label className="block text-sm font-medium mb-1">{t('service.form.end_date')}</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
     <label className="col-span-2 flex items-center gap-2 pt-1"><input type="checkbox" checked={isAppendix} onChange={(e) => setIsAppendix(e.target.checked)} className="w-4 h-4" /><span className="text-sm">{t('service.form.is_appendix')}</span></label>
-    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!entityId || !startDate || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ entity_id: entityId, start_date: startDate, end_date: endDate || null, is_appendix: isAppendix } as ServiceRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
+    <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('service.form.forma_declaracion')}</label>
+      <select className={selectClass} value={formaDeclaracion} onChange={(e) => setFormaDeclaracion(e.target.value as 'Documental' | 'Testifical')}>
+        <option value="Documental">{t('service.form.forma_declaracion_documental')}</option>
+        <option value="Testifical">{t('service.form.forma_declaracion_testifical')}</option>
+      </select></div>
+    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!entityId || !startDate || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ entity_id: entityId, start_date: startDate, end_date: endDate || null, is_appendix: isAppendix, forma_declaracion: formaDeclaracion } as ServiceRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
   </div></Dialog>;
 }
 

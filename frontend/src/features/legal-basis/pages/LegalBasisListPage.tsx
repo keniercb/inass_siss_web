@@ -13,14 +13,12 @@ import { Pagination } from '@/components/crud/Pagination';
 import { Dialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
 import { http } from '@/lib/http';
-import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils';
+import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import { legalBasisSchema, type LegalBasisInput } from '../schemas/legal-basis.schema';
 import type { LegalBasis } from '@/types/domain';
 import type { AxiosError } from 'axios';
 
-interface CatalogItem { id: number; name: string; code?: string; }
-interface CatalogListResponse { data: CatalogItem[]; }
 interface ApiResponse<T> { data: T; }
 interface PaginatedResponse<T> { data: T[]; meta: { current_page: number; per_page: number; total: number; last_page: number }; }
 
@@ -133,8 +131,6 @@ function LegalBasisFormModal({ item, onClose }: { item: LegalBasis | null; onClo
   const isEdit = !!item;
   const queryClient = useQueryClient();
   const toast = useToast();
-  const { data: typesData } = useQuery({ queryKey: ['catalogs', 'legal-basis-types', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/legal-basis-types', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
-  const { data: orgsData } = useQuery({ queryKey: ['catalogs', 'organizations', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/organizations', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
 
   const form = useForm<LegalBasisInput>({ resolver: zodResolver(legalBasisSchema), defaultValues: item ? { legal_basis_type_id: item.legal_basis_type_id, number: item.number, issue_date: item.issue_date, effective_date: item.effective_date, derogation_date: item.derogation_date ?? '', issuing_organization_id: item.issuing_organization_id, reference: item.reference ?? '' } : { legal_basis_type_id: 0, number: '', issue_date: '', effective_date: '', derogation_date: '', issuing_organization_id: 0, reference: '' } });
 
@@ -157,20 +153,35 @@ function LegalBasisFormModal({ item, onClose }: { item: LegalBasis | null; onClo
   });
 
   const onSubmit = form.handleSubmit((input) => mutation.mutate(input));
-  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
 
   return (
     <Dialog open onClose={onClose} title={t(isEdit ? 'edit.title' : 'create.title')} description={t(isEdit ? 'edit.description' : 'create.description')} size="md">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('form.legal_basis_type')} *</label><select className={selectClass} {...form.register('legal_basis_type_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}><option value="">{tc('actions.select')}</option>{(typesData?.data ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}</select></div>
+          <CatalogSearchSelect
+            type="legal-basis-types"
+            label={t('form.legal_basis_type')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            initialDisplayValue={item?.legal_basis_type?.name}
+            initialSelectedId={item?.legal_basis_type_id}
+            onSelect={(it) => form.setValue('legal_basis_type_id', it.id)}
+          />
           <div><label className="block text-sm font-medium mb-1">{t('form.number')} *</label><Input type="text" error={!!form.formState.errors.number} {...form.register('number')} /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="block text-sm font-medium mb-1">{t('form.issue_date')} *</label><Input type="date" error={!!form.formState.errors.issue_date} {...form.register('issue_date')} /></div>
           <div><label className="block text-sm font-medium mb-1">{t('form.effective_date')} *</label><Input type="date" error={!!form.formState.errors.effective_date} {...form.register('effective_date')} /></div>
         </div>
-        <div><label className="block text-sm font-medium mb-1">{t('form.issuing_organization')} *</label><select className={selectClass} {...form.register('issuing_organization_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}><option value="">{tc('actions.select')}</option>{(orgsData?.data ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}</select></div>
+        <CatalogSearchSelect
+          type="organizations"
+          label={t('form.issuing_organization')}
+          placeholder={tc('actions.search') + '…'}
+          required
+          initialDisplayValue={item?.issuing_organization?.name}
+          initialSelectedId={item?.issuing_organization_id}
+          onSelect={(it) => form.setValue('issuing_organization_id', it.id)}
+        />
         <div><label className="block text-sm font-medium mb-1">{t('form.derogation_date')}</label><Input type="date" {...form.register('derogation_date')} /><p className="text-xs text-muted-foreground mt-1">{t('form.derogation_date_help')}</p></div>
         <div><label className="block text-sm font-medium mb-1">{t('form.reference')}</label><Input type="text" {...form.register('reference')} /></div>
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border"><Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>

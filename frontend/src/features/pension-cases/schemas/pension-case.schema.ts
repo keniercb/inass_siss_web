@@ -44,6 +44,7 @@ export const serviceRecordSchema = z.object({
   start_date: z.string().min(1, 'La fecha de inicio es obligatoria'),
   end_date: z.string().optional().nullable(),
   is_appendix: z.boolean().optional().default(false),
+  forma_declaracion: z.enum(['Documental', 'Testifical']).default('Documental'),
 });
 export type ServiceRecordInput = z.infer<typeof serviceRecordSchema>;
 

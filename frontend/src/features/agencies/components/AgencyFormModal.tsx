@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useCrudResource } from '@/hooks/crud/useCrudResource';
 import { agencyConfig, type AgencyInput } from '../config/agency-config';
+import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import { handleFormError } from '@/lib/backend-errors';
 import type { CrudConfig } from '@/types/crud';
 import type { components } from '@/types/api';
@@ -58,18 +59,6 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
     queryKey: ['catalogs', 'provinces', 'all'],
     queryFn: async () => {
       const response = await http.get<CatalogListResponse>('/catalogs/provinces', {
-        params: { per_page: 100 },
-      });
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Cargar tipos de agencia
-  const { data: agencyTypesData } = useQuery({
-    queryKey: ['catalogs', 'agency-types', 'all'],
-    queryFn: async () => {
-      const response = await http.get<CatalogListResponse>('/catalogs/agency-types', {
         params: { per_page: 100 },
       });
       return response.data;
@@ -130,7 +119,6 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
   });
 
   const provinces = provincesData?.data ?? [];
-  const agencyTypes = agencyTypesData?.data ?? [];
   const municipalities = municipalitiesData?.data ?? [];
 
   const selectClass = cn(
@@ -206,31 +194,17 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
           </div>
         </div>
 
-        {/* Tipo de agencia + Código (2 columnas) */}
+        {/* Tipo de agencia (búsqueda con crear nuevo) + Código (2 columnas) */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="agency_type_id" className="block text-sm font-medium text-foreground mb-1">
-              {t('form.agency_type')} <span className="text-destructive">*</span>
-            </label>
-            <select
-              id="agency_type_id"
-              className={cn(selectClass, form.formState.errors.agency_type_id && 'border-destructive')}
-              {...form.register('agency_type_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}
-            >
-              <option value="">{tc('actions.select')}</option>
-              {agencyTypes.map((at) => (
-                <option key={at.id} value={at.id}>
-                  {at.name}
-                </option>
-              ))}
-            </select>
-            {form.formState.errors.agency_type_id && (
-              <p className="text-xs text-destructive mt-1" role="alert">
-                {String(form.formState.errors.agency_type_id.message)}
-              </p>
-            )}
-          </div>
-
+          <CatalogSearchSelect
+            type="agency-types"
+            label={t('form.agency_type')}
+            placeholder={tc('actions.search') + '…'}
+            required
+            initialDisplayValue={resource?.type?.name}
+            initialSelectedId={resource?.type?.id}
+            onSelect={(item) => form.setValue('agency_type_id', item.id)}
+          />
           <div>
             <label htmlFor="code" className="block text-sm font-medium text-foreground mb-1">
               {t('form.code')} <span className="text-destructive">*</span>
