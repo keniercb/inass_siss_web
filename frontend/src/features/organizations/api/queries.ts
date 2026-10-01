@@ -55,7 +55,7 @@ export function useEntity(id?: number | string) {
  *  (alineado con docs.json). Devuelve AuthorizedSignature[] (con status derivado). */
 export function useEntitySignatures(entityId?: number | string) {
   return useQuery({
-    queryKey: ['entities', 'signatures', entityId],
+    queryKey: ['entities', 'signatures', String(entityId)],
     queryFn: async () => {
       const response = await http.get<PaginatedResponse<AuthorizedSignature>>('/authorized-signatures', {
         params: { entity_id: entityId, status: 'active', per_page: 100 },

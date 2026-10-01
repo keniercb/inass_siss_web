@@ -1,28 +1,17 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useCreatePerson, useUpdatePerson } from '../api/mutations';
 import { personSchema, type PersonInput } from '../schemas/person.schema';
+import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import { handleFormError } from '@/lib/backend-errors';
 import type { components } from '@/types/api';
-import { cn } from '@/lib/utils';
-import { http } from '@/lib/http';
 
 type Person = components['schemas']['Person'];
-
-interface CatalogItem {
-  id: number;
-  name: string;
-}
-
-interface CatalogListResponse {
-  data: CatalogItem[];
-}
 
 interface PersonFormModalProps {
   person?: Person;
@@ -53,17 +42,9 @@ export function PersonFormModal({ person, initialIdentityNumber, onCreated, onCl
   const createMutation = useCreatePerson();
   const updateMutation = useUpdatePerson();
 
-  // Cargar razas para el select
-  const { data: racesData } = useQuery({
-    queryKey: ['catalogs', 'races', 'all'],
-    queryFn: async () => {
-      const response = await http.get<CatalogListResponse>('/catalogs/races', {
-        params: { per_page: 100 },
-      });
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  // Cargar razas para el select — reemplazado por CatalogSearchSelect que
+  // maneja su propia carga de datos.
+  // const { data: racesData } = useQuery(...)
 
   const form = useForm<PersonInput>({
     resolver: zodResolver(personSchema) as never,
@@ -115,12 +96,8 @@ export function PersonFormModal({ person, initialIdentityNumber, onCreated, onCl
     }
   });
 
-  const races = racesData?.data ?? [];
-  const selectClass = cn(
-    'flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-    'disabled:cursor-not-allowed disabled:opacity-50',
-  );
+  // CatalogSearchSelect maneja la carga de razas internamente
+
 
   return (
     <Dialog
@@ -269,26 +246,16 @@ export function PersonFormModal({ person, initialIdentityNumber, onCreated, onCl
           </div>
         </div>
 
-        {/* Raza + Dirección (2 columnas) */}
+        {/* Raza (búsqueda con crear nuevo) + Dirección (2 columnas) */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="race_id" className="block text-sm font-medium text-foreground mb-1">
-              {t('form.race')}
-            </label>
-            <select
-              id="race_id"
-              className={selectClass}
-              value={String(form.watch('race_id') ?? '')}
-              onChange={(e) => form.setValue('race_id', e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="">{tc('actions.select')}</option>
-              {races.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <CatalogSearchSelect
+            type="races"
+            label={t('form.race')}
+            placeholder={tc('actions.search') + '…'}
+            initialDisplayValue={person?.race_id ? undefined : undefined}
+            initialSelectedId={person?.race_id ?? undefined}
+            onSelect={(item) => form.setValue('race_id', item.id)}
+          />
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-foreground mb-1">
               {t('form.address')} <span className="text-destructive">*</span>

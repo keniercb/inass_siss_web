@@ -44,7 +44,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const [personaPor, setPersonaPor] = useState<string | null>(null);
   // Cargar firmas autorizadas activas del centro de trabajo seleccionado
   const { data: signaturesData, isLoading: isLoadingSignatures } = useQuery<AuthorizedSignatureListResponse>({
-    queryKey: ['authorized-signatures', 'by-entity', entityId],
+    queryKey: ['authorized-signatures', 'by-entity', String(entityId)],
     queryFn: async () => {
       const r = await http.get<AuthorizedSignatureListResponse>('/authorized-signatures', {
         params: { entity_id: entityId, status: 'active', per_page: 50 },

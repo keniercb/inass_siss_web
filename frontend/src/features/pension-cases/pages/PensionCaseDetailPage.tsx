@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
 import { formatDate, formatCUP, cn } from '@/lib/utils';
 import { http } from '@/lib/http';
+import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import type { components } from '@/types/api';
 
 type Person = components['schemas']['Person'];
@@ -312,20 +313,14 @@ function IncomeConceptRecordModal({ caseId, onClose }: { caseId: string; onClose
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddIncomeConceptRecord(caseId);
   const [conceptId, setConceptId] = useState(0); const [amount, setAmount] = useState('');
-  // Cargar catálogo de conceptos de ingreso
-  const { data: conceptsData } = useQuery({
-    queryKey: ['catalogs', 'income-concepts', 'all'],
-    queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/income-concepts', { params: { per_page: 100 } }); return r.data; },
-    staleTime: 5 * 60 * 1000,
-  });
-  const concepts = conceptsData?.data ?? [];
-  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
   return <Dialog open onClose={onClose} title={t('income_concept.add')} size="md"><div className="grid grid-cols-2 gap-3">
-    <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('income_concept.form.income_concept_id')} *</label>
-      <select className={selectClass} value={conceptId} onChange={(e) => setConceptId(Number(e.target.value))}>
-        <option value="0">{tc('actions.select')}</option>
-        {concepts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-      </select></div>
+    <div className="col-span-2"><CatalogSearchSelect
+      type="income-concepts"
+      label={t('income_concept.form.income_concept_id')}
+      placeholder={tc('actions.search') + '…'}
+      required
+      onSelect={(item) => setConceptId(item.id)}
+    /></div>
     <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('income_concept.form.amount')} *</label><Input type="number" step="0.01" min="0" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
     <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!conceptId || !amount || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ income_concept_id: conceptId, amount: Number(amount) } as IncomeConceptRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
   </div></Dialog>;

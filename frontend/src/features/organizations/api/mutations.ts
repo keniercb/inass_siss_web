@@ -159,8 +159,8 @@ export function useCreateSignature(entityId: number | string) {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entities', 'signatures', entityId] });
-      queryClient.invalidateQueries({ queryKey: ['authorized-signatures', 'by-entity', entityId] });
+      queryClient.invalidateQueries({ queryKey: ['entities', 'signatures', String(entityId)] });
+      queryClient.invalidateQueries({ queryKey: ['authorized-signatures', 'by-entity', String(entityId)] });
       toast.success(t('signatures.create.success'));
     },
     onError: (err: unknown) => {
@@ -181,8 +181,8 @@ export function useDeleteSignature(entityId: number | string) {
       await http.delete(`/authorized-signatures/${signatureId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entities', 'signatures', entityId] });
-      queryClient.invalidateQueries({ queryKey: ['authorized-signatures', 'by-entity', entityId] });
+      queryClient.invalidateQueries({ queryKey: ['entities', 'signatures', String(entityId)] });
+      queryClient.invalidateQueries({ queryKey: ['authorized-signatures', 'by-entity', String(entityId)] });
       toast.success(t('signatures.delete.success'));
     },
     onError: () => {

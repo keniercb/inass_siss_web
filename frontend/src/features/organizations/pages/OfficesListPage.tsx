@@ -11,6 +11,7 @@ import { useOffices } from '../api/queries';
 import { useCreateOffice, useUpdateOffice, useDeleteOffice } from '../api/mutations';
 import { officeSchema, type OfficeInput } from '../schemas/organization.schema';
 import { useToast } from '@/components/ui/Toast';
+import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import { handleFormError } from '@/lib/backend-errors';
 import type { Office } from '@/types/domain';
 import { Button } from '@/components/ui/Button';
@@ -112,7 +113,6 @@ function OfficeFormModal({ office, onClose }: { office: Office | null; onClose: 
   const isEdit = !!office;
   const createMutation = useCreateOffice();
   const updateMutation = useUpdateOffice();
-  const { data: typesData } = useQuery({ queryKey: ['catalogs', 'office-types', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/office-types', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: provincesData } = useQuery({ queryKey: ['catalogs', 'provinces', 'all'], queryFn: async () => { const r = await http.get<CatalogListResponse>('/catalogs/provinces', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(office?.province?.id ?? null);
   const { data: municipalitiesData } = useQuery({ queryKey: ['municipalities', 'list', { province_id: selectedProvinceId }], queryFn: async () => { if (!selectedProvinceId) return { data: [] as CatalogItem[] }; const r = await http.get<CatalogListResponse>('/municipalities', { params: { per_page: 100, province_id: selectedProvinceId } }); return r.data; }, enabled: !!selectedProvinceId });
@@ -128,7 +128,15 @@ function OfficeFormModal({ office, onClose }: { office: Office | null; onClose: 
   return (
     <Dialog open onClose={onClose} title={t(isEdit ? 'offices.edit.title' : 'offices.create.title')} description={t(isEdit ? 'offices.edit.description' : 'offices.create.description')} size="md">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        <div><label className="block text-sm font-medium mb-1">{t('offices.form.office_type')} *</label><select className={selectClass} {...form.register('office_type_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}><option value="">{tc('actions.select')}</option>{(typesData?.data ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}</select></div>
+        <CatalogSearchSelect
+          type="office-types"
+          label={t('offices.form.office_type')}
+          placeholder={tc('actions.search') + '…'}
+          required
+          initialDisplayValue={office?.type?.name}
+          initialSelectedId={office?.type?.id}
+          onSelect={(item) => form.setValue('office_type_id', item.id)}
+        />
         <div className="grid grid-cols-2 gap-3">
           <div><label className="block text-sm font-medium mb-1">{t('offices.form.province')} *</label><select className={selectClass} disabled={isEdit} value={selectedProvinceId ?? ''} onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setSelectedProvinceId(v); form.setValue('province_id', v ?? 0); }}><option value="">{tc('actions.select')}</option>{(provincesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
           <div><label className="block text-sm font-medium mb-1">{t('offices.form.municipality')} *</label><select className={selectClass} disabled={!selectedProvinceId} {...form.register('municipality_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}><option value="">{!selectedProvinceId ? t('agencies.form.select_province_first') : tc('actions.select')}</option>{(municipalitiesData?.data ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></div>
