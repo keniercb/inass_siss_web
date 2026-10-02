@@ -125,22 +125,26 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
           <div><label className="block text-sm font-medium mb-1">{t('form.last_salary')} *</label>
             <Input type="number" step="0.01" min="0" placeholder="0.00" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} /></div>
         </div>
-        {/* Solicitado por — persona autorizada del centro de trabajo (carga condicional) */}
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('form.requested_by')}</label>
-          <select
-            className={selectClass}
-            value={requestedByPersonId ?? 0}
-            disabled={!entityId || isLoadingSignatures || signatures.length === 0}
-            onChange={(e) => { const pid = e.target.value ? Number(e.target.value) : null; setRequestedByPersonId(pid); }}
-          >
-            <option value="">{!entityId ? t('form.requested_by_disabled') : isLoadingSignatures ? tc('status.loading') + '…' : signatures.length === 0 ? t('form.requested_by_empty') : tc('actions.select')}</option>
-            {signatures.map((s) => {
-              const label = s.person.full_name ?? `${s.person.first_name ?? ''} ${s.person.first_surname ?? ''}`.trim() ?? s.person.identity_number;
-              return <option key={s.id} value={s.person.id}>{label} — {s.position.name}</option>;
-            })}
-          </select>
-          <p className="text-xs text-muted-foreground mt-1">{t('form.requested_by_help')}</p>
+        {/* Solicitado por + Fecha de desvinculación */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('form.requested_by')}</label>
+            <select
+              className={selectClass}
+              value={requestedByPersonId ?? 0}
+              disabled={!entityId || isLoadingSignatures || signatures.length === 0}
+              onChange={(e) => { const pid = e.target.value ? Number(e.target.value) : null; setRequestedByPersonId(pid); }}
+            >
+              <option value="">{!entityId ? t('form.requested_by_disabled') : isLoadingSignatures ? tc('status.loading') + '…' : signatures.length === 0 ? t('form.requested_by_empty') : tc('actions.select')}</option>
+              {signatures.map((s) => {
+                const label = s.person.full_name ?? `${s.person.first_name ?? ''} ${s.person.first_surname ?? ''}`.trim() ?? s.person.identity_number;
+                return <option key={s.id} value={s.person.id}>{label} — {s.position.name}</option>;
+              })}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">{t('form.requested_by_help')}</p>
+          </div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.termination_date')}</label>
+            <Input type="date" value={terminationDate} onChange={(e) => setTerminationDate(e.target.value)} /></div>
         </div>
         {/* Cargo + Categoría ocupacional (búsqueda con crear nuevo) */}
         <div className="grid grid-cols-2 gap-3">
@@ -218,9 +222,6 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
           <div><label className="block text-sm font-medium mb-1">{t('form.popular_council')}</label>
             <Input type="text" placeholder="Consejo Popular Playa" maxLength={120} value={popularCouncil} onChange={(e) => setPopularCouncil(e.target.value)} /></div>
         </div>
-        {/* Fecha de desvinculación */}
-        <div><label className="block text-sm font-medium mb-1">{t('form.termination_date')}</label>
-          <Input type="date" value={terminationDate} onChange={(e) => setTerminationDate(e.target.value)} /></div>
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
           <Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button>
           <Button type="button" disabled={!canSubmit || createMutation.isPending} onClick={onSubmit}>{createMutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button>
