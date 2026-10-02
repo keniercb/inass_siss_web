@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.0.0"
+        "version": "1.2.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -644,7 +644,8 @@
                                     "deceased_person": {
                                         "description": "Solo pension-types (Task 38): persona fallecida; la omisión persiste el default false",
                                         "type": "boolean",
-                                        "example": false
+                                        "example": false,
+                                        "default": false
                                     }
                                 },
                                 "type": "object"
@@ -3835,6 +3836,243 @@
                     },
                     "404": {
                         "description": "Expediente inexistente o desactivado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Edición del expediente (promovente inmutable)",
+                "description": "PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario y la fecha de solicitud — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Las advertencias de la serie salarial viajan junto a data.",
+                "operationId": "pensionCasesUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "employer_entity_id": {
+                                        "description": "Entidad empleadora del expediente (editable, activa)",
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "position_id": {
+                                        "description": "Cargo (editable)",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "occupational_category_id": {
+                                        "description": "Categoría ocupacional (editable)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "educational_level_id": {
+                                        "description": "Nivel de escolaridad (editable)",
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "scientific_category_id": {
+                                        "description": "Categoría científica (editable)",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "pension_type_id": {
+                                        "description": "Tipo de pensión del catálogo (editable)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pension_regime_id": {
+                                        "description": "Régimen de pensión del catálogo (editable)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "last_salary": {
+                                        "description": "Último salario, decimal exacto no negativo (RN-005, editable)",
+                                        "type": "string",
+                                        "example": "6200.00"
+                                    },
+                                    "requested_at": {
+                                        "description": "Fecha de solicitud (editable, nunca futura)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-09-30"
+                                    },
+                                    "applicant_person_id": {
+                                        "description": "PROHIBIDO (SGP-34): el promovente de la pensión es no modificable — 422 si se envía",
+                                        "type": "integer",
+                                        "example": 7
+                                    },
+                                    "filed_by_person_id": {
+                                        "description": "PROHIBIDO (SGP-34): esfera de persona, no modificable por este endpoint — 422 si se envía",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 12,
+                                        "nullable": true
+                                    },
+                                    "rebel_army_member": {
+                                        "description": "PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "rebel_army_join_date": {
+                                        "description": "PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "internationalist": {
+                                        "description": "PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "phone": {
+                                        "description": "PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía",
+                                        "type": "string",
+                                        "example": "+53 5 555 1234",
+                                        "nullable": true,
+                                        "maxLength": 30
+                                    },
+                                    "popular_council": {
+                                        "description": "PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía",
+                                        "type": "string",
+                                        "example": "Consejo Popular Playa",
+                                        "nullable": true,
+                                        "maxLength": 120
+                                    },
+                                    "termination_date": {
+                                        "description": "PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-07-31",
+                                        "nullable": true
+                                    },
+                                    "office_id": {
+                                        "description": "PROHIBIDO (regla 0): el expediente asume la oficina del usuario autenticado — 422 si se envía",
+                                        "type": "integer",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "number": {
+                                        "description": "PROHIBIDO: el número se asigna en el alta y no se modifica — 422 si se envía",
+                                        "type": "string",
+                                        "example": "11032600099"
+                                    },
+                                    "status": {
+                                        "description": "PROHIBIDO: el estado solo se mueve por su propio canal de transiciones — 422 si se envía",
+                                        "type": "string",
+                                        "example": "submitted"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Expediente editado con las advertencias de la serie salarial",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PensionCase"
+                                        },
+                                        "warnings": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente (o ya eliminado)"
+                    },
+                    "409": {
+                        "description": "Expediente ya no editable (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Eliminación lógica del expediente",
+                "description": "DELETE del expediente (SGP-34, corrección de usuario, RF-EXP-001): eliminación LÓGICA (soft delete) disponible SOLO mientras el expediente está en submitted (estado de solicitud) — fuera de submitted responde 409 con el estado actual. La fila sobrevive con su deleted_at: la evidencia y la pista de auditoría siguen respondiendo (RN-001) con los valores previos (ADR-19), mientras el detalle y el listado públicos dejan de verlo (404). Los subregistros no se tocan: la historia queda física. La reservación de expediente-abierto-por-persona se LIBERA (la columna generada open_case_key pasa a NULL en las filas eliminadas) para que el operador pueda re-capturar al mismo solicitante tras eliminar un registro equivocado.",
+                "operationId": "pensionCasesDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Expediente eliminado lógicamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Case deleted."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente (o ya eliminado)"
+                    },
+                    "409": {
+                        "description": "Expediente fuera de submitted (devuelve estado actual)"
                     }
                 },
                 "security": [
