@@ -85,7 +85,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
       pension_regime_id: pensionRegimeId,
       rebel_army_member: belongsRebelArmy,
       rebel_army_join_date: belongsRebelArmy ? rebelArmyDate : null,
-      persona_por: requestedByPersonId,
+      filed_by_person_id: requestedByPersonId,
     };
     try {
       await createMutation.mutateAsync(input);

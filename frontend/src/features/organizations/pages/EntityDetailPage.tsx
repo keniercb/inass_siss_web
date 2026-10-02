@@ -39,7 +39,7 @@ export function EntityDetailPage() {
           <p className="text-sm text-muted-foreground mt-1">
             <span className="font-mono">{entity.code}</span> · NIT: <span className="font-mono">{entity.tax_id_number}</span>
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5">{entity.organization?.name} · {entity.entity_type?.name}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{entity.organization?.name} · {entity.type?.name}</p>
         </div>
         {canManage && <Button variant="outline" onClick={() => setEditOpen(true)}><Edit className="w-4 h-4" />{tc('actions.edit')}</Button>}
       </div>
@@ -57,7 +57,7 @@ export function EntityDetailPage() {
           <Field label={t('entities.detail.fields.code')} value={entity.code} mono />
           <Field label={t('entities.detail.fields.tax_id_number')} value={entity.tax_id_number} mono />
           <Field label={t('entities.detail.fields.organization')} value={entity.organization?.name ?? '—'} />
-          <Field label={t('entities.detail.fields.entity_type')} value={entity.entity_type?.name ?? '—'} />
+          <Field label={t('entities.detail.fields.type')} value={entity.type?.name ?? '—'} />
           <Field label={t('entities.detail.fields.province')} value={entity.province?.name ?? '—'} />
           <Field label={t('entities.detail.fields.municipality')} value={entity.municipality?.name ?? '—'} />
           <Field label={t('entities.detail.fields.address')} value={entity.address} fullWidth />

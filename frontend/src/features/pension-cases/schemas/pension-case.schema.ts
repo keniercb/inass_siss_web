@@ -21,7 +21,7 @@ export const createCaseSchema = z.object({
   pension_regime_id: z.number().int().positive('El régimen de pensión es obligatorio'),
   rebel_army_member: z.boolean().optional().default(false),
   rebel_army_join_date: z.string().optional().nullable(),
-  persona_por: z.number().int().positive().optional().nullable(),
+  filed_by_person_id: z.number().int().positive().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
@@ -45,7 +45,7 @@ export const serviceRecordSchema = z.object({
   start_date: z.string().min(1, 'La fecha de inicio es obligatoria'),
   end_date: z.string().optional().nullable(),
   is_appendix: z.boolean().optional().default(false),
-  forma_declaracion: z.enum(['Documental', 'Testifical']).default('Documental'),
+  declaration_form: z.enum(['Documental', 'Testifical']).default('Documental'),
 });
 export type ServiceRecordInput = z.infer<typeof serviceRecordSchema>;
 

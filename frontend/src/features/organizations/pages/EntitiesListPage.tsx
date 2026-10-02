@@ -92,7 +92,7 @@ export function EntitiesListPage() {
                 <td className="px-4 py-3 font-medium">{e.name ?? '—'}</td>
                 <td className="px-4 py-3 font-mono text-xs">{e.tax_id_number}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.organization?.name ?? '—'}</td>
-                <td className="px-4 py-3 text-muted-foreground">{e.entity_type?.name ?? '—'}</td>
+                <td className="px-4 py-3 text-muted-foreground">{e.type?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.province?.name}{e.municipality ? `, ${e.municipality.name}` : ''}</td>
                 <td className="px-4 py-3 text-muted-foreground text-xs">{directorName ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground text-xs">{contact ?? '—'}</td>

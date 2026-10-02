@@ -56,7 +56,7 @@ export interface Entity {
   municipality_id: number;
   municipality?: { id: number; code: string; name: string };
   entity_type_id: number;
-  entity_type?: { id: number; code: string; name: string };
+  type?: { id: number; code: string; name: string };
   address: string;
   phone?: string | null;
   fax?: string | null;

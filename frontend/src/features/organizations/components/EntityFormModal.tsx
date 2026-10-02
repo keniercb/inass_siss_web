@@ -112,10 +112,10 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
           />
           <CatalogSearchSelect
             type="entity-types"
-            label={t('entities.form.entity_type')}
+            label={t('entities.form.type')}
             placeholder={tc('actions.search') + '…'}
             required
-            initialDisplayValue={entity?.entity_type?.name}
+            initialDisplayValue={entity?.type?.name}
             initialSelectedId={entity?.entity_type_id}
             onSelect={(item) => form.setValue('entity_type_id', item.id)}
           />

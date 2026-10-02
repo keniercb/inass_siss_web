@@ -1602,9 +1602,12 @@ export interface components {
              *     derived evidence for the specialist, not case state. The decision
              *     fields (approval_legal_basis_id, decision_notes, decided_at,
              *     decided_by, computed_amount) stay null until the S6 transitions
-             *     write them. The free-text persona_por (Task 34) — the person who
-             *     files or manages the case when it is not the applicant — rides
-             *     along as a nullable passthrough.
+             *     write them. The filer (Task 35, user correction over Task
+             *     34; English column names since Task 36) is a REFERENCE to a
+             *     registered person: filed_by_person_id plus
+             *     the FULL Person projection of the filer under filed_by — the
+             *     same shape as the applicant (user rule 3, reused from the People
+             *     module's resource so the projection never drifts).
              * @example 1
              */
             id?: number;
@@ -1689,10 +1692,13 @@ export interface components {
              */
             rebel_army_join_date?: string | null;
             /**
-             * @description Persona que presenta o gestiona el expediente cuando no es el propio proponente (Task 34): texto libre opcional
-             * @example María Fernández Ruiz
+             * Format: int64
+             * @description Persona por (Task 35, corrección de usuario; columna inglesa desde Task 36): id de la persona REGISTRADA que presenta o gestiona el expediente cuando no es el propio proponente; 422 si no existe o está desactivada, NULL si se omite
+             * @example 12
              */
-            persona_por?: string | null;
+            filed_by_person_id?: number | null;
+            /** @description Proyección COMPLETA de la persona por (Task 35): misma forma que applicant */
+            filed_by?: components["schemas"]["Person"] | null;
             /**
              * Format: int64
              * @description Resolución aprobatoria (H-05); la fija la aprobación de S6
@@ -1763,7 +1769,7 @@ export interface components {
         };
         /**
          * Registro de servicio
-         * @description Vinculo laboral declarado en el expediente (RF-EXP-003). end_date null = vinculo vigente; is_appendix marca la coletilla (servicio reconocido adicional) y forma_declaracion fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. El orden end >= start esta respaldado por CHECK y los solapamientos se detectan y advierten. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).
+         * @description Vinculo laboral declarado en el expediente (RF-EXP-003). end_date null = vinculo vigente; is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. El orden end >= start esta respaldado por CHECK y los solapamientos se detectan y advierten. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).
          */
         ServiceRecord: {
             /**
@@ -1804,11 +1810,11 @@ export interface components {
              */
             is_appendix?: boolean;
             /**
-             * @description Forma de declaración del vínculo (RF-EXP-003): Documental (respaldo documental, por defecto) o Testifical (declaración testimonial)
+             * @description Forma de declaración del vínculo (RF-EXP-003; columna declaration_form desde Task 36): Documental (respaldo documental, por defecto) o Testifical (declaración testimonial)
              * @example Documental
              * @enum {string}
              */
-            forma_declaracion?: "Documental" | "Testifical";
+            declaration_form?: "Documental" | "Testifical";
             /** @description Proyeccion completa de la entidad empleadora (regla de usuario del listado) */
             entity?: components["schemas"]["Entity"] | null;
         };
@@ -3971,10 +3977,11 @@ export interface operations {
                      */
                     rebel_army_join_date?: string | null;
                     /**
-                     * @description Persona que presenta o gestiona el expediente cuando no es el propio proponente (Task 34): texto libre opcional; la omisión persiste null
-                     * @example María Fernández Ruiz
+                     * Format: int64
+                     * @description Persona por (Task 35, corrección de usuario; columna inglesa desde Task 36): id de la persona REGISTRADA que presenta o gestiona el expediente cuando no es el propio proponente — 422 si no existe o está desactivada; la omisión persiste null; el response devuelve además la proyección completa bajo filed_by
+                     * @example 12
                      */
-                    persona_por?: string | null;
+                    filed_by_person_id?: number | null;
                     /**
                      * @description Último salario, decimal exacto no negativo (RN-005)
                      * @example 5000.00
@@ -4014,7 +4021,7 @@ export interface operations {
                          * @example Documental
                          * @enum {string}
                          */
-                        forma_declaracion?: "Documental" | "Testifical";
+                        declaration_form?: "Documental" | "Testifical";
                     }[];
                     /** @description Ciclos de trabajo iniciales (todo o nada) */
                     work_cycles?: {
@@ -4254,7 +4261,7 @@ export interface operations {
                      * @example Documental
                      * @enum {string}
                      */
-                    forma_declaracion?: "Documental" | "Testifical";
+                    declaration_form?: "Documental" | "Testifical";
                 };
             };
         };

@@ -70,8 +70,8 @@
     "add": "Añadir servicio",
     "add_success": "Registro de servicio añadido", "add_error": "Error al añadir registro",
     "remove_success": "Registro eliminado", "remove_error": "Error al eliminar registro",
-    "columns": { "entity": "Entidad", "start_date": "Inicio", "end_date": "Fin", "is_appendix": "Coletilla", "forma_declaracion": "Declaración" },
-    "form": { "entity_id": "Entidad", "start_date": "Fecha inicio", "end_date": "Fecha fin", "is_appendix": "Coletilla", "forma_declaracion": "Forma de declaración", "forma_declaracion_documental": "Documental", "forma_declaracion_testifical": "Testifical" }
+    "columns": { "entity": "Entidad", "start_date": "Inicio", "end_date": "Fin", "is_appendix": "Coletilla", "declaration_form": "Declaración" },
+    "form": { "entity_id": "Entidad", "start_date": "Fecha inicio", "end_date": "Fecha fin", "is_appendix": "Coletilla", "declaration_form": "Forma de declaración", "declaration_form_documental": "Documental", "declaration_form_testifical": "Testifical" }
   },
   "cycle": {
     "title": "Ciclos de trabajo",
