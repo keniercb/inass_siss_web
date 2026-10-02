@@ -5,15 +5,43 @@
     "new": "New case",
     "search_placeholder": "Search by number or claimant…",
     "empty": "No cases for the selected filters",
-    "filter": { "all": "All", "submitted": "Submitted", "under_review": "Under review", "approved": "Approved", "rejected": "Rejected" },
-    "columns": { "number": "Number", "applicant": "Claimant", "pension_type": "Pension type", "pension_regime": "Regime", "status": "Status", "requested_at": "Request date" },
-    "status": { "submitted": "Submitted", "under_review": "Under review", "approved": "Approved", "rejected": "Rejected" }
+    "filter": {
+      "all": "All",
+      "submitted": "Submitted",
+      "under_review": "Under review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "columns": {
+      "number": "Number",
+      "applicant": "Claimant",
+      "pension_type": "Pension type",
+      "pension_regime": "Regime",
+      "status": "Status",
+      "requested_at": "Request date"
+    },
+    "status": {
+      "submitted": "Submitted",
+      "under_review": "Under review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
   },
-  "create": { "title": "New case", "description": "Fill in the case data. The number is generated automatically.", "success": "Case created successfully", "error": "An error occurred while creating the case" },
+  "create": {
+    "title": "New case",
+    "description": "Fill in the case data. The number is generated automatically.",
+    "success": "Case created successfully",
+    "error": "An error occurred while creating the case"
+  },
   "detail": {
     "back_to_list": "Back to list",
     "not_found": "Case not found",
-    "tabs": { "summary": "Summary", "subrecords": "Subrecords", "history": "History", "calculation": "Calculation" },
+    "tabs": {
+      "summary": "Summary",
+      "subrecords": "Subrecords",
+      "history": "History",
+      "calculation": "Calculation"
+    },
     "tabs_empty": {
       "history": "No history",
       "history_description": "State transitions will appear here (FE-S6).",
@@ -21,18 +49,33 @@
       "calculation_description": "The calculation simulator will be available (FE-S7)."
     },
     "fields": {
-      "number": "Number", "status": "Status", "requested_at": "Request date",
-      "applicant": "Claimant", "office": "Office", "employer_entity": "Employer entity",
-      "position": "Position", "occupational_category": "Occupational category",
-      "educational_level": "Educational level", "scientific_category": "Scientific category",
-      "last_salary": "Last salary", "computed_amount": "Computed amount",
-      "decision_notes": "Decision notes", "decided_at": "Decision date",
-      "decided_by": "Decided by", "approval_legal_basis": "Approval legal basis",
+      "number": "Number",
+      "status": "Status",
+      "requested_at": "Request date",
+      "applicant": "Claimant",
+      "office": "Office",
+      "employer_entity": "Employer entity",
+      "position": "Position",
+      "occupational_category": "Occupational category",
+      "educational_level": "Educational level",
+      "scientific_category": "Scientific category",
+      "last_salary": "Last salary",
+      "computed_amount": "Computed amount",
+      "decision_notes": "Decision notes",
+      "decided_at": "Decision date",
+      "decided_by": "Decided by",
+      "approval_legal_basis": "Approval legal basis",
       "calculation_setting": "Parameters version",
-      "pension_type": "Pension type", "pension_regime": "Pension regime",
-      "rebel_army_member": "Belongs to Rebel Army", "rebel_army_join_date": "Join date"
+      "pension_type": "Pension type",
+      "pension_regime": "Pension regime",
+      "rebel_army_member": "Belongs to Rebel Army",
+      "rebel_army_join_date": "Join date"
     },
-    "section": { "case_data": "Case data", "rebel_army": "Rebel Army", "decision": "Decision" }
+    "section": {
+      "case_data": "Case data",
+      "rebel_army": "Rebel Army",
+      "decision": "Decision"
+    }
   },
   "form": {
     "applicant_person_id": "Claimant",
@@ -55,38 +98,84 @@
     "rebel_army_date_required": "The join date is required if belongs to Rebel Army",
     "person_not_found": "No person found with ID {{ci}}. You can register it now.",
     "register_new_person": "Register new person with ID {{ci}}",
-    "person_selected": "Applicant selected"
+    "person_selected": "Applicant selected",
+    "internationalist": "Internationalist",
+    "phone": "Phone",
+    "popular_council": "Popular council",
+    "termination_date": "Termination date"
   },
   "salary": {
     "title": "Salary records",
     "add": "Add salary",
-    "add_success": "Salary record added", "add_error": "Error adding record",
-    "remove_success": "Record removed", "remove_error": "Error removing record",
-    "columns": { "year": "Year", "earned_salary": "Earned salary" },
-    "form": { "year": "Year", "earned_salary": "Earned salary (CUP)" }
+    "add_success": "Salary record added",
+    "add_error": "Error adding record",
+    "remove_success": "Record removed",
+    "remove_error": "Error removing record",
+    "columns": {
+      "year": "Year",
+      "earned_salary": "Earned salary"
+    },
+    "form": {
+      "year": "Year",
+      "earned_salary": "Earned salary (CUP)"
+    }
   },
   "service": {
     "title": "Service records",
     "add": "Add service",
-    "add_success": "Service record added", "add_error": "Error adding record",
-    "remove_success": "Record removed", "remove_error": "Error removing record",
-    "columns": { "entity": "Entity", "start_date": "Start", "end_date": "End", "is_appendix": "Appendix", "declaration_form": "Declaration" },
-    "form": { "entity_id": "Entity", "start_date": "Start date", "end_date": "End date", "is_appendix": "Appendix", "declaration_form": "Declaration form", "declaration_form_documental": "Documentary", "declaration_form_testifical": "Testimonial" }
+    "add_success": "Service record added",
+    "add_error": "Error adding record",
+    "remove_success": "Record removed",
+    "remove_error": "Error removing record",
+    "columns": {
+      "entity": "Entity",
+      "start_date": "Start",
+      "end_date": "End",
+      "is_appendix": "Appendix",
+      "declaration_form": "Declaration"
+    },
+    "form": {
+      "entity_id": "Entity",
+      "start_date": "Start date",
+      "end_date": "End date",
+      "is_appendix": "Appendix",
+      "declaration_form": "Declaration form",
+      "declaration_form_documental": "Documentary",
+      "declaration_form_testifical": "Testimonial"
+    }
   },
   "cycle": {
     "title": "Work cycles",
     "add": "Add cycle",
-    "add_success": "Work cycle added", "add_error": "Error adding cycle",
-    "remove_success": "Cycle removed", "remove_error": "Error removing cycle",
-    "columns": { "planned_days": "Planned days", "actual_days": "Actual days", "cycles_count": "Cycles" },
-    "form": { "planned_days": "Planned days", "actual_days": "Actual days", "cycles_count": "Cycle count" }
+    "add_success": "Work cycle added",
+    "add_error": "Error adding cycle",
+    "remove_success": "Cycle removed",
+    "remove_error": "Error removing cycle",
+    "columns": {
+      "planned_days": "Planned days",
+      "actual_days": "Actual days",
+      "cycles_count": "Cycles"
+    },
+    "form": {
+      "planned_days": "Planned days",
+      "actual_days": "Actual days",
+      "cycles_count": "Cycle count"
+    }
   },
   "income_concept": {
     "title": "Income concepts",
     "add": "Add concept",
-    "add_success": "Income concept added", "add_error": "Error adding concept",
-    "remove_success": "Concept removed", "remove_error": "Error removing concept",
-    "columns": { "income_concept": "Concept", "amount": "Amount" },
-    "form": { "income_concept_id": "Income concept", "amount": "Amount (CUP)" }
+    "add_success": "Income concept added",
+    "add_error": "Error adding concept",
+    "remove_success": "Concept removed",
+    "remove_error": "Error removing concept",
+    "columns": {
+      "income_concept": "Concept",
+      "amount": "Amount"
+    },
+    "form": {
+      "income_concept_id": "Income concept",
+      "amount": "Amount (CUP)"
+    }
   }
 }

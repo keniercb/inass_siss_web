@@ -67,6 +67,10 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
   const [pensionRegimeId, setPensionRegimeId] = useState(0);
   const [belongsRebelArmy, setBelongsRebelArmy] = useState(false);
   const [rebelArmyDate, setRebelArmyDate] = useState('');
+  const [internationalist, setInternationalist] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [popularCouncil, setPopularCouncil] = useState('');
+  const [terminationDate, setTerminationDate] = useState('');
 
   const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
 
@@ -85,7 +89,11 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
       pension_regime_id: pensionRegimeId,
       rebel_army_member: belongsRebelArmy,
       rebel_army_join_date: belongsRebelArmy ? rebelArmyDate : null,
+      internationalist,
       filed_by_person_id: requestedByPersonId,
+      phone: phone || null,
+      popular_council: popularCouncil || null,
+      termination_date: terminationDate || null,
     };
     try {
       await createMutation.mutateAsync(input);
@@ -185,7 +193,7 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
             onSelect={(item) => setPensionRegimeId(item.id)}
           />
         </div>
-        {/* Ejército Rebelde */}
+        {/* Ejército Rebelde + Internacionalista */}
         <div className="p-3 rounded-md border border-border space-y-3">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={belongsRebelArmy} onChange={(e) => { setBelongsRebelArmy(e.target.checked); if (!e.target.checked) setRebelArmyDate(''); }} className="w-4 h-4 rounded border-input" />
@@ -198,7 +206,21 @@ export function PensionCaseFormModal({ onClose }: PensionCaseFormModalProps) {
               {!rebelArmyDate && <p className="text-xs text-destructive mt-1">{t('form.rebel_army_date_required')}</p>}
             </div>
           )}
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={internationalist} onChange={(e) => setInternationalist(e.target.checked)} className="w-4 h-4 rounded border-input" />
+            <span className="text-sm font-medium">{t('form.internationalist')}</span>
+          </label>
         </div>
+        {/* Contacto del promovente */}
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="block text-sm font-medium mb-1">{t('form.phone')}</label>
+            <Input type="text" placeholder="+53 5 555 1234" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.popular_council')}</label>
+            <Input type="text" placeholder="Consejo Popular Playa" maxLength={120} value={popularCouncil} onChange={(e) => setPopularCouncil(e.target.value)} /></div>
+        </div>
+        {/* Fecha de desvinculación */}
+        <div><label className="block text-sm font-medium mb-1">{t('form.termination_date')}</label>
+          <Input type="date" value={terminationDate} onChange={(e) => setTerminationDate(e.target.value)} /></div>
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
           <Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button>
           <Button type="button" disabled={!canSubmit || createMutation.isPending} onClick={onSubmit}>{createMutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button>

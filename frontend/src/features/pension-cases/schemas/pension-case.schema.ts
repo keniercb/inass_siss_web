@@ -21,7 +21,11 @@ export const createCaseSchema = z.object({
   pension_regime_id: z.number().int().positive('El régimen de pensión es obligatorio'),
   rebel_army_member: z.boolean().optional().default(false),
   rebel_army_join_date: z.string().optional().nullable(),
+  internationalist: z.boolean(),
   filed_by_person_id: z.number().int().positive().optional().nullable(),
+  phone: z.string().max(30).optional().nullable(),
+  popular_council: z.string().max(120).optional().nullable(),
+  termination_date: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
@@ -43,10 +47,15 @@ export type SalaryRecordInput = z.infer<typeof salaryRecordSchema>;
 export const serviceRecordSchema = z.object({
   entity_id: z.number().int().positive('La entidad es obligatoria'),
   start_date: z.string().min(1, 'La fecha de inicio es obligatoria'),
-  end_date: z.string().optional().nullable(),
+  end_date: z.string().min(1, 'La fecha de fin es obligatoria'),
   is_appendix: z.boolean().optional().default(false),
   declaration_form: z.enum(['Documental', 'Testifical']).default('Documental'),
-});
+}).refine((data) => {
+  if (data.end_date && data.start_date) {
+    return new Date(data.end_date) > new Date(data.start_date);
+  }
+  return true;
+}, { message: 'La fecha de fin debe ser estrictamente posterior a la fecha de inicio', path: ['end_date'] });
 export type ServiceRecordInput = z.infer<typeof serviceRecordSchema>;
 
 export const workCycleSchema = z.object({

@@ -284,7 +284,7 @@ export interface paths {
         };
         /**
          * Listado paginado de entidades
-         * @description Entidades activas con referencias anidadas (RF-ENT-005): búsqueda por fragmentos de código, nombre, NIT u objeto social (Task 31; documentado en Task 34), y filtros por organismo, provincia, municipio y tipo. Código y NIT quedan reservados tras desactivar.
+         * @description Entidades activas con referencias anidadas (RF-ENT-005): búsqueda por fragmentos de código, nombre, NIT u objeto social (Task 31; documentado en Task 34), y filtros por organismo, provincia, municipio y tipo. Código y NIT quedan reservados tras desactivar. Task 38 (FIX): cada fila devuelve los datos del director general y el económico como proyecciones completas de Persona (director, economic_director), null cuando la entidad no los declara.
          */
         get: operations["entitiesIndex"];
         put?: never;
@@ -434,7 +434,7 @@ export interface paths {
         put?: never;
         /**
          * Apertura de un expediente
-         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
+         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Task 37: la marca internacionalista del promovente es booleana OBLIGATORIA (paralelo del par rebelde) y el par de contacto (phone, popular_council) viaja opcional; los subregistros de servicio exigen end_date OBLIGATORIA, estrictamente posterior a start_date y SIN solapamiento entre filas (422 con nada creado). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
          */
         post: operations["pensionCasesStore"];
         delete?: never;
@@ -452,7 +452,7 @@ export interface paths {
         };
         /**
          * Detalle de un expediente
-         * @description Devuelve el expediente con sus subregistros (salarios, servicios, ciclos) y el resumen del proponente, junto al objeto warnings: años salariales interiores ausentes (RF-EXP-002), pares de servicios solapados y vínculos sin cerrar (RF-EXP-003). Las advertencias son evidencia para el especialista, nunca bloqueos.
+         * @description Devuelve el expediente con sus subregistros (salarios, servicios, ciclos) y la proyección completa del promovente, junto al objeto warnings: años salariales interiores ausentes (RF-EXP-002). Las advertencias son evidencia para el especialista, nunca bloqueos; los períodos de servicio llegan cerrados y disjuntos por construcción (Task 37).
          */
         get: operations["pensionCasesShow"];
         put?: never;
@@ -514,7 +514,7 @@ export interface paths {
         put?: never;
         /**
          * Alta de un registro de servicio
-         * @description Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. end_date null = vínculo vigente y debe ser ≥ start_date (422). Los solapamientos y vínculos abiertos NO bloquean: viajan en warnings (id de pares solapados, ids de vínculos abiertos).
+         * @description Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. Task 37 (corrección de usuario): end_date es OBLIGATORIA, estrictamente posterior a start_date (422) y el período no puede solapar NINGÚN subregistro existente del expediente (422 sobre end_date nombrando los registros cruzados) — los vínculos abiertos y los solapamientos advertidos de Sprint 5 ya no existen.
          */
         post: operations["pensionCasesAddServiceRecord"];
         delete?: never;
@@ -1199,6 +1199,16 @@ export interface components {
              */
             applies_base_salary?: boolean | null;
             /**
+             * @description Solo pension-regimes (Task 38): sector opcional del régimen de jubilación, devuelto por todos los endpoints
+             * @example 2
+             */
+            sector?: number | null;
+            /**
+             * @description Solo pension-types (Task 38): persona fallecida, booleano con default false, devuelto por todos los endpoints
+             * @example false
+             */
+            deceased_person?: boolean;
+            /**
              * Format: date-time
              * @description Borrado lógico (RF-CAT-001)
              */
@@ -1391,7 +1401,7 @@ export interface components {
         };
         /**
          * Entidad
-         * @description Entidad empleadora / centro de trabajo (RF-ENT-001). Código y NIT únicos e inmutables; la jerarquía (parent) es acíclica (RN-003) y la pareja municipio-provincia coherente (RN-04).
+         * @description Entidad empleadora / centro de trabajo (RF-ENT-001). Código y NIT únicos e inmutables; la jerarquía (parent) es acíclica (RN-003) y la pareja municipio-provincia coherente (RN-04). Desde la Task 38 el listado y el detalle devuelven los datos del director general y el económico como proyecciones completas de Persona.
          */
         Entity: {
             /**
@@ -1399,7 +1409,12 @@ export interface components {
              * @description Entity projection (RF-ENT-001/005): the natural keys, contact
              *     data, directors and the direct parent summary. The directors
              *     reference the People registry by id — person details belong to the
-             *     People module surface.
+             *     People module surface. Since the Task 38 user correction FIX
+             *     (SGP-32) the LISTING also answers with the DATA of the director
+             *     general and the económico: the FULL Person projections under
+             *     director and economic_director (the filed_by shape of Task 35 —
+             *     reused from the People module's resource so the projections never
+             *     drift), null when the entity declares no director.
              * @example 1
              */
             id?: number;
@@ -1481,6 +1496,10 @@ export interface components {
              * @description Director económico (persona registrada)
              */
             economic_director_person_id?: number | null;
+            /** @description Proyección COMPLETA del director general (Task 38, FIX): null cuando la entidad no declara director */
+            director?: components["schemas"]["Person"] | null;
+            /** @description Proyección COMPLETA del director económico (Task 38, FIX): null cuando la entidad no lo declara */
+            economic_director?: components["schemas"]["Person"] | null;
             /**
              * Format: int64
              * @description Entidad superior (jerarquía acíclica RN-003)
@@ -1587,7 +1606,7 @@ export interface components {
         };
         /**
          * Expediente de pensión
-         * @description Expediente de pensión (RF-EXP-001): número compuesto PPMMAACCCCC — provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio, once dígitos contiguos (regla de usuario 2/ADR-34) —, estado de la sección 2.4, clasificación de pensión y par de Ejército Rebelde (regla 4) y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.
+         * @description Expediente de pensión (RF-EXP-001): número compuesto PPMMAACCCCC — provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio, once dígitos contiguos (regla de usuario 2/ADR-34) —, estado de la sección 2.4, clasificación de pensión, par de Ejército Rebelde y marca de internacionalista (Task 37), contacto del promovente (teléfono y consejo popular, Task 37), fecha de desvinculación del promovente (Task 38) y subregistros declarados — con los períodos de servicio cerrados y disjuntos. Los campos de decisión quedan null hasta las transiciones de S6.
          */
         PensionCase: {
             /**
@@ -1607,7 +1626,15 @@ export interface components {
              *     registered person: filed_by_person_id plus
              *     the FULL Person projection of the filer under filed_by — the
              *     same shape as the applicant (user rule 3, reused from the People
-             *     module's resource so the projection never drifts).
+             *     module's resource so the projection never drifts). Since the
+             *     Task 37 user correction (SGP-31) the case also answers the
+             *     internationalist flag of the promovente (beside the rebel army
+             *     pair) and the promovente contact pair (phone, popular_council) —
+             *     and the service periods travel closed and disjoint, so the
+             *     warnings envelope only carries the salary analysis. Since the
+             *     Task 38 user correction (SGP-32) the case also answers the
+             *     promovente's fecha de desvinculación — termination_date, an
+             *     optional date serialized as Y-m-d and null when absent.
              * @example 1
              */
             id?: number;
@@ -1692,11 +1719,32 @@ export interface components {
              */
             rebel_army_join_date?: string | null;
             /**
+             * @description Internacionalista (Task 37, corrección de usuario): el promovente cumplió misión internacionalista — obligatorio en el alta, paralelo de rebel_army_member
+             * @example true
+             */
+            internationalist?: boolean;
+            /**
              * Format: int64
              * @description Persona por (Task 35, corrección de usuario; columna inglesa desde Task 36): id de la persona REGISTRADA que presenta o gestiona el expediente cuando no es el propio proponente; 422 si no existe o está desactivada, NULL si se omite
              * @example 12
              */
             filed_by_person_id?: number | null;
+            /**
+             * @description Teléfono de contacto del promovente (Task 37): texto libre opcional
+             * @example +53 5 555 1234
+             */
+            phone?: string | null;
+            /**
+             * @description Consejo popular del promovente (Task 37): división territorial cubana, texto libre opcional
+             * @example Consejo Popular Playa
+             */
+            popular_council?: string | null;
+            /**
+             * Format: date
+             * @description Fecha de desvinculación del promovente (Task 38, corrección de usuario): opcional, Y-m-d; la omisión persiste null
+             * @example 2025-07-31
+             */
+            termination_date?: string | null;
             /** @description Proyección COMPLETA de la persona por (Task 35): misma forma que applicant */
             filed_by?: components["schemas"]["Person"] | null;
             /**
@@ -1769,15 +1817,17 @@ export interface components {
         };
         /**
          * Registro de servicio
-         * @description Vinculo laboral declarado en el expediente (RF-EXP-003). end_date null = vinculo vigente; is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. El orden end >= start esta respaldado por CHECK y los solapamientos se detectan y advierten. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).
+         * @description Vinculo laboral declarado en el expediente (RF-EXP-003). Desde la Task 37 todo período está CERRADO y DISJUNTO: end_date obligatoria y estrictamente posterior a start_date (422 en caso contrario, CHECK chk_service_records_dates como última línea) y sin solapamiento con ningún otro subregistro del expediente (422). is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).
          */
         ServiceRecord: {
             /**
              * Format: int64
-             * @description Work service projection (RF-EXP-003). end_date null means the
-             *     employment link is still open; overlaps and open links are
-             *     advertised in the case-level warnings, never blocked here. The
-             *     full employer entity projection travels with every row (user
+             * @description Work service projection (RF-EXP-003). Since the Task 37 user
+             *     correction every period is CLOSED: end_date is mandatory,
+             *     strictly posterior to start_date (422 otherwise) and DISJOINT
+             *     from every sibling row of the case (422 otherwise) — the open
+             *     link and the advertised overlaps of Sprint 5 no longer exist.
+             *     The full employer entity projection travels with every row (user
              *     rule: the service-records listing answers the entity data, not
              *     a bare id).
              * @example 1
@@ -1800,10 +1850,10 @@ export interface components {
             start_date?: string;
             /**
              * Format: date
-             * @description null = vinculo vigente
-             * @example null
+             * @description Fecha de fin del vínculo (Task 37): obligatoria y estrictamente posterior a start_date
+             * @example 2005-12-31
              */
-            end_date?: string | null;
+            end_date?: string;
             /**
              * @description Coletilla: servicio reconocido adicional
              * @example false
@@ -2505,6 +2555,16 @@ export interface operations {
                     months_per_year?: number;
                     /** @example true */
                     applies_base_salary?: boolean;
+                    /**
+                     * @description Solo pension-regimes (Task 38): sector opcional; la omisión persiste null
+                     * @example 2
+                     */
+                    sector?: number | null;
+                    /**
+                     * @description Solo pension-types (Task 38): persona fallecida; la omisión persiste el default false
+                     * @example false
+                     */
+                    deceased_person?: boolean;
                 };
             };
         };
@@ -2644,6 +2704,10 @@ export interface operations {
                     description?: string | null;
                     months_per_year?: number;
                     applies_base_salary?: boolean;
+                    /** @description Solo pension-regimes (Task 38): null desarraiga el sector */
+                    sector?: number | null;
+                    /** @description Solo pension-types (Task 38): persona fallecida */
+                    deceased_person?: boolean;
                 };
             };
         };
@@ -3977,11 +4041,32 @@ export interface operations {
                      */
                     rebel_army_join_date?: string | null;
                     /**
+                     * @description Internacionalista (Task 37, corrección de usuario): el promovente cumplió misión internacionalista — booleano OBLIGATORIO, paralelo de rebel_army_member; 422 si se omite
+                     * @example true
+                     */
+                    internationalist: boolean;
+                    /**
                      * Format: int64
                      * @description Persona por (Task 35, corrección de usuario; columna inglesa desde Task 36): id de la persona REGISTRADA que presenta o gestiona el expediente cuando no es el propio proponente — 422 si no existe o está desactivada; la omisión persiste null; el response devuelve además la proyección completa bajo filed_by
                      * @example 12
                      */
                     filed_by_person_id?: number | null;
+                    /**
+                     * @description Teléfono de contacto del promovente (Task 37): texto libre opcional, 30 caracteres como techo; la omisión persiste null
+                     * @example +53 5 555 1234
+                     */
+                    phone?: string | null;
+                    /**
+                     * @description Consejo popular del promovente (Task 37): división territorial cubana, texto libre opcional de 120 caracteres como techo; la omisión persiste null
+                     * @example Consejo Popular Playa
+                     */
+                    popular_council?: string | null;
+                    /**
+                     * Format: date
+                     * @description Fecha de desvinculación del promovente (Task 38, corrección de usuario): opcional, Y-m-d; 422 con formato inválido, la omisión persiste null
+                     * @example 2025-07-31
+                     */
+                    termination_date?: string | null;
                     /**
                      * @description Último salario, decimal exacto no negativo (RN-005)
                      * @example 5000.00
@@ -4000,7 +4085,7 @@ export interface operations {
                         /** @example 4800.00 */
                         earned_salary?: string;
                     }[];
-                    /** @description Historial laboral inicial (todo o nada) */
+                    /** @description Historial laboral inicial (todo o nada; Task 37: end_date obligatoria, estrictamente posterior a start_date y sin solapamiento entre filas — 422) */
                     service_records?: {
                         /** @example 3 */
                         entity_id?: number;
@@ -4011,9 +4096,10 @@ export interface operations {
                         start_date?: string;
                         /**
                          * Format: date
-                         * @example null
+                         * @description Fecha de fin del vínculo: OBLIGATORIA y estrictamente posterior a start_date
+                         * @example 2005-12-31
                          */
-                        end_date?: string | null;
+                        end_date?: string;
                         /** @example false */
                         is_appendix?: boolean;
                         /**
@@ -4051,7 +4137,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["PensionCase"];
-                        /** @description Análisis de evidencia (huecos, solapamientos, vínculos abiertos) */
+                        /** @description Análisis de evidencia (Task 37): años interiores ausentes de la serie salarial */
                         warnings?: Record<string, never>;
                     };
                 };
@@ -4094,6 +4180,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["PensionCase"];
+                        /** @description Análisis de evidencia (Task 37): solo los años interiores ausentes de la serie salarial — los períodos de servicio son cerrados y disjuntos por construcción */
                         warnings?: {
                             /**
                              * @example [
@@ -4102,21 +4189,6 @@ export interface operations {
                              *     ]
                              */
                             missing_salary_years?: number[];
-                            /**
-                             * @example [
-                             *       [
-                             *         1,
-                             *         2
-                             *       ]
-                             *     ]
-                             */
-                            overlapping_services?: number[][];
-                            /**
-                             * @example [
-                             *       3
-                             *     ]
-                             */
-                            open_services?: number[];
                         };
                     };
                 };
@@ -4247,10 +4319,10 @@ export interface operations {
                     start_date: string;
                     /**
                      * Format: date
-                     * @description null = vínculo vigente
-                     * @example null
+                     * @description OBLIGATORIA (Task 37) y estrictamente posterior a start_date; sin solapamiento con los subregistros existentes
+                     * @example 2005-12-31
                      */
-                    end_date?: string | null;
+                    end_date: string;
                     /**
                      * @description Coletilla
                      * @example false
@@ -4266,7 +4338,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Registro añadido con advertencias de solapamiento */
+            /** @description Registro añadido con advertencias de la serie salarial */
             201: {
                 headers: {
                     [name: string]: unknown;
