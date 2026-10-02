@@ -3537,12 +3537,12 @@
                                         "example": null,
                                         "nullable": true
                                     },
-                                    "persona_por": {
-                                        "description": "Persona que presenta o gestiona el expediente cuando no es el propio proponente (Task 34): texto libre opcional; la omisión persiste null",
-                                        "type": "string",
-                                        "example": "María Fernández Ruiz",
-                                        "nullable": true,
-                                        "maxLength": 120
+                                    "filed_by_person_id": {
+                                        "description": "Persona por (Task 35, corrección de usuario; columna inglesa desde Task 36): id de la persona REGISTRADA que presenta o gestiona el expediente cuando no es el propio proponente — 422 si no existe o está desactivada; la omisión persiste null; el response devuelve además la proyección completa bajo filed_by",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 12,
+                                        "nullable": true
                                     },
                                     "last_salary": {
                                         "description": "Último salario, decimal exacto no negativo (RN-005)",
@@ -3598,7 +3598,7 @@
                                                     "type": "boolean",
                                                     "example": false
                                                 },
-                                                "forma_declaracion": {
+                                                "declaration_form": {
                                                     "description": "Forma de declaración del vínculo; Documental por omisión",
                                                     "type": "string",
                                                     "example": "Documental",
@@ -4023,7 +4023,7 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "forma_declaracion": {
+                                    "declaration_form": {
                                         "description": "Forma de declaración del vínculo; por defecto Documental",
                                         "type": "string",
                                         "example": "Documental",
@@ -7892,7 +7892,7 @@
                 "description": "Expediente de pensión (RF-EXP-001): número compuesto PPMMAACCCCC — provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio, once dígitos contiguos (regla de usuario 2/ADR-34) —, estado de la sección 2.4, clasificación de pensión y par de Ejército Rebelde (regla 4) y subregistros declarados. Los campos de decisión quedan null hasta las transiciones de S6.",
                 "properties": {
                     "id": {
-                        "description": "Pension case projection (RF-EXP-001..004 + user rules 0-5): the\naggregate with its subrecords. The applicant travels as the FULL\nPerson projection (user rule 3 — reused from the People module's\nresource so the promovente is never a summary that drifts from\nthe people surface). The advisory analysis (missing salary years,\noverlapping and open services) travels as a sibling `warnings`\nobject of the envelope — never inside data — because it is\nderived evidence for the specialist, not case state. The decision\nfields (approval_legal_basis_id, decision_notes, decided_at,\ndecided_by, computed_amount) stay null until the S6 transitions\nwrite them. The free-text persona_por (Task 34) — the person who\nfiles or manages the case when it is not the applicant — rides\nalong as a nullable passthrough.",
+                        "description": "Pension case projection (RF-EXP-001..004 + user rules 0-5): the\naggregate with its subrecords. The applicant travels as the FULL\nPerson projection (user rule 3 — reused from the People module's\nresource so the promovente is never a summary that drifts from\nthe people surface). The advisory analysis (missing salary years,\noverlapping and open services) travels as a sibling `warnings`\nobject of the envelope — never inside data — because it is\nderived evidence for the specialist, not case state. The decision\nfields (approval_legal_basis_id, decision_notes, decided_at,\ndecided_by, computed_amount) stay null until the S6 transitions\nwrite them. The filer (Task 35, user correction over Task\n34; English column names since Task 36) is a REFERENCE to a\nregistered person: filed_by_person_id plus\nthe FULL Person projection of the filer under filed_by — the\nsame shape as the applicant (user rule 3, reused from the People\nmodule's resource so the projection never drifts).",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -7983,11 +7983,21 @@
                         "example": null,
                         "nullable": true
                     },
-                    "persona_por": {
-                        "description": "Persona que presenta o gestiona el expediente cuando no es el propio proponente (Task 34): texto libre opcional",
-                        "type": "string",
-                        "example": "María Fernández Ruiz",
+                    "filed_by_person_id": {
+                        "description": "Persona por (Task 35, corrección de usuario; columna inglesa desde Task 36): id de la persona REGISTRADA que presenta o gestiona el expediente cuando no es el propio proponente; 422 si no existe o está desactivada, NULL si se omite",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 12,
                         "nullable": true
+                    },
+                    "filed_by": {
+                        "description": "Proyección COMPLETA de la persona por (Task 35): misma forma que applicant",
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Person"
+                            }
+                        ]
                     },
                     "approval_legal_basis_id": {
                         "description": "Resolución aprobatoria (H-05); la fija la aprobación de S6",
@@ -8095,7 +8105,7 @@
             },
             "ServiceRecord": {
                 "title": "Registro de servicio",
-                "description": "Vinculo laboral declarado en el expediente (RF-EXP-003). end_date null = vinculo vigente; is_appendix marca la coletilla (servicio reconocido adicional) y forma_declaracion fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. El orden end >= start esta respaldado por CHECK y los solapamientos se detectan y advierten. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).",
+                "description": "Vinculo laboral declarado en el expediente (RF-EXP-003). end_date null = vinculo vigente; is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. El orden end >= start esta respaldado por CHECK y los solapamientos se detectan y advierten. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).",
                 "properties": {
                     "id": {
                         "description": "Work service projection (RF-EXP-003). end_date null means the\nemployment link is still open; overlaps and open links are\nadvertised in the case-level warnings, never blocked here. The\nfull employer entity projection travels with every row (user\nrule: the service-records listing answers the entity data, not\na bare id).",
@@ -8130,8 +8140,8 @@
                         "type": "boolean",
                         "example": false
                     },
-                    "forma_declaracion": {
-                        "description": "Forma de declaración del vínculo (RF-EXP-003): Documental (respaldo documental, por defecto) o Testifical (declaración testimonial)",
+                    "declaration_form": {
+                        "description": "Forma de declaración del vínculo (RF-EXP-003; columna declaration_form desde Task 36): Documental (respaldo documental, por defecto) o Testifical (declaración testimonial)",
                         "type": "string",
                         "example": "Documental",
                         "enum": [
