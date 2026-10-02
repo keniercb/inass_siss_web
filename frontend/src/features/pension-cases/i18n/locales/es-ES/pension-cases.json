@@ -69,7 +69,11 @@
       "pension_type": "Tipo de pensión",
       "pension_regime": "Régimen de pensión",
       "rebel_army_member": "Pertenece al Ejército Rebelde",
-      "rebel_army_join_date": "Fecha de alta"
+      "rebel_army_join_date": "Fecha de alta",
+      "internationalist": "Internacionalista",
+      "phone": "Teléfono",
+      "popular_council": "Consejo popular",
+      "termination_date": "Fecha de desvinculación"
     },
     "section": {
       "case_data": "Datos del expediente",

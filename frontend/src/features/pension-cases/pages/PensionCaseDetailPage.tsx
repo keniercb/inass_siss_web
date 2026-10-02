@@ -202,7 +202,7 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
         </div>
       </div>
 
-      {/* Ejército Rebelde */}
+      {/* Ejército Rebelde + Internacionalista + Contacto */}
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.rebel_army')}</h3>
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
@@ -210,6 +210,10 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
           {pensionCase.rebel_army_member && (
             <Field label={t('detail.fields.rebel_army_join_date')} value={pensionCase.rebel_army_join_date ? formatDate(pensionCase.rebel_army_join_date) : '—'} />
           )}
+          <Field label={t('detail.fields.internationalist')} value={pensionCase.internationalist ? tc('booleans.yes') : tc('booleans.no')} />
+          <Field label={t('detail.fields.phone')} value={pensionCase.phone ?? '—'} />
+          <Field label={t('detail.fields.popular_council')} value={pensionCase.popular_council ?? '—'} />
+          <Field label={t('detail.fields.termination_date')} value={pensionCase.termination_date ? formatDate(pensionCase.termination_date) : '—'} />
         </div>
       </div>
 

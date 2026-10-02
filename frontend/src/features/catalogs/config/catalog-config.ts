@@ -18,6 +18,10 @@ const baseSchema = z.object({
 const schemasByType: Record<string, z.ZodSchema> = {
   'pension-regimes': baseSchema.extend({
     months_per_year: z.number().int().positive(),
+    sector: z.number().int().nullable().optional(),
+  }),
+  'pension-types': baseSchema.extend({
+    deceased_person: z.boolean().default(false),
   }),
   'income-concepts': baseSchema.extend({
     applies_base_salary: z.boolean().default(false),
@@ -27,9 +31,12 @@ const schemasByType: Record<string, z.ZodSchema> = {
   races: baseSchema, // sin code
 };
 
-// Columnas estándar: code, name, description
-function getColumns(): Array<{ id: string }> {
-  return [{ id: 'code' }, { id: 'name' }, { id: 'description' }];
+// Columnas por tipo: code, name, description + extras
+function getColumns(type: CatalogType): Array<{ id: string }> {
+  const cols = [{ id: 'code' }, { id: 'name' }, { id: 'description' }];
+  if (type === 'pension-regimes') cols.push({ id: 'sector' });
+  if (type === 'pension-types') cols.push({ id: 'deceased_person' });
+  return cols;
 }
 
 // Campos del formulario por tipo
@@ -66,6 +73,21 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       required: true,
       min: 1,
       help: 'Meses por año del régimen de pensión',
+    });
+    baseFields.push({
+      name: 'sector',
+      type: 'number',
+      label: 'catalogs:form.sector',
+      help: 'Sector del régimen de jubilación (opcional)',
+    });
+  }
+
+  if (type === 'pension-types') {
+    baseFields.push({
+      name: 'deceased_person',
+      type: 'boolean',
+      label: 'catalogs:form.deceased_person',
+      help: 'Indica si el tipo de pensión aplica a persona fallecida',
     });
   }
 
@@ -110,7 +132,7 @@ export function getCatalogConfig(type: CatalogType): CrudConfig<CatalogItem, unk
       create: schema as z.ZodSchema<unknown>,
       update: schema as z.ZodSchema<unknown>,
     },
-    columns: getColumns(),
+    columns: getColumns(type),
     fields: getFields(type) as never,
     search: {
       fields: ['code', 'name'],

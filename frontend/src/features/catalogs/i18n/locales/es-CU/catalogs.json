@@ -8,7 +8,9 @@
       "code": "Código",
       "name": "Nombre",
       "description": "Descripción",
-      "actions": "Acciones"
+      "actions": "Acciones",
+      "sector": "Sector",
+      "deceased_person": "Fallecido"
     }
   },
   "create": {
@@ -40,7 +42,9 @@
     "name": "Nombre",
     "description": "Descripción",
     "months_per_year": "Meses por año",
-    "applies_base_salary": "Aplica a salario base"
+    "applies_base_salary": "Aplica a salario base",
+    "sector": "Sector",
+    "deceased_person": "Persona fallecida"
   },
   "errors": {
     "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…"

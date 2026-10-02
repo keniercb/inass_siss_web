@@ -68,9 +68,9 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
     { code: 'DIR', name: 'Dirigente' },
   ]),
   'pension-types': seedCatalog('pension-types', [
-    { code: 'AGE', name: 'Por edad' },
-    { code: 'DIS', name: 'Por discapacidad' },
-    { code: 'SUP', name: 'Por sobrevivencia' },
+    { code: 'AGE', name: 'Por edad', extra: { deceased_person: false } },
+    { code: 'DIS', name: 'Por discapacidad', extra: { deceased_person: true } },
+    { code: 'SUP', name: 'Por sobrevivencia', extra: { deceased_person: true } },
   ]),
   'beneficiary-types': seedCatalog('beneficiary-types', [
     { name: 'Titular' },
@@ -90,7 +90,7 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
     { name: 'Operario' },
   ]),
   'pension-regimes': seedCatalog('pension-regimes', [
-    { code: 'GEN', name: 'General', extra: { months_per_year: 12 } },
+    { code: 'GEN', name: 'General', extra: { months_per_year: 12, sector: null } },
   ]),
   'payment-types': seedCatalog('payment-types', [
     { name: 'Pago mensual' },

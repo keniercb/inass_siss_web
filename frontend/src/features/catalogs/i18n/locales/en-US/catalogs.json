@@ -8,7 +8,9 @@
       "code": "Code",
       "name": "Name",
       "description": "Description",
-      "actions": "Actions"
+      "actions": "Actions",
+      "sector": "Sector",
+      "deceased_person": "Deceased person"
     }
   },
   "create": {
@@ -40,7 +42,9 @@
     "name": "Name",
     "description": "Description",
     "months_per_year": "Months per year",
-    "applies_base_salary": "Applies to base salary"
+    "applies_base_salary": "Applies to base salary",
+    "sector": "Sector",
+    "deceased_person": "Deceased person"
   },
   "errors": {
     "rate_limited": "The server is processing too many requests. Retrying…"

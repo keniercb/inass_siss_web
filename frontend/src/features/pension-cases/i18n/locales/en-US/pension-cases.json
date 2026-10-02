@@ -69,7 +69,11 @@
       "pension_type": "Pension type",
       "pension_regime": "Pension regime",
       "rebel_army_member": "Belongs to Rebel Army",
-      "rebel_army_join_date": "Join date"
+      "rebel_army_join_date": "Join date",
+      "internationalist": "Internationalist",
+      "phone": "Phone",
+      "popular_council": "Popular council",
+      "termination_date": "Termination date"
     },
     "section": {
       "case_data": "Case data",
