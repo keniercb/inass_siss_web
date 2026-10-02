@@ -117,6 +117,46 @@ export const pensionCasesHandlers = [
     return HttpResponse.json({ data: c });
   }),
 
+  // PUT /pension-cases/{id} — editar (campos editables; promovente y persona por inmutables)
+  http.put(`${API_BASE}/pension-cases/:id`, async ({ request, params }) => {
+    const id = parseInt(params.id as string, 10);
+    const c = cases.get(id);
+    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (c.status !== 'submitted') return HttpResponse.json({ message: 'Case not in submitted state.', status: c.status }, { status: 409 });
+    const body = (await request.json()) as Record<string, unknown>;
+    // Rechazar campos PROHIBIDOS
+    const prohibited = ['applicant_person_id', 'filed_by_person_id', 'rebel_army_member', 'rebel_army_join_date', 'internationalist', 'phone', 'popular_council', 'termination_date', 'office_id', 'number', 'status'];
+    const errors: Record<string, string[]> = {};
+    prohibited.forEach((field) => {
+      if (body[field] !== undefined) errors[field] = [`The ${field} field is prohibited.`];
+    });
+    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+    const updated: PensionCase = {
+      ...c,
+      employer_entity_id: (body.employer_entity_id as number) ?? c.employer_entity_id,
+      position_id: (body.position_id as number) ?? c.position_id,
+      occupational_category_id: (body.occupational_category_id as number) ?? c.occupational_category_id,
+      educational_level_id: (body.educational_level_id as number) ?? c.educational_level_id,
+      scientific_category_id: (body.scientific_category_id as number) ?? c.scientific_category_id,
+      pension_type_id: (body.pension_type_id as number) ?? c.pension_type_id,
+      pension_regime_id: (body.pension_regime_id as number) ?? c.pension_regime_id,
+      last_salary: body.last_salary != null ? String(body.last_salary) : c.last_salary,
+      requested_at: (body.requested_at as string) ?? c.requested_at,
+    };
+    cases.set(id, updated);
+    return HttpResponse.json({ data: updated });
+  }),
+
+  // DELETE /pension-cases/{id} — eliminación lógica (solo si status=submitted)
+  http.delete(`${API_BASE}/pension-cases/:id`, ({ params }) => {
+    const id = parseInt(params.id as string, 10);
+    const c = cases.get(id);
+    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (c.status !== 'submitted') return HttpResponse.json({ message: 'Case not in submitted state.', status: c.status }, { status: 409 });
+    cases.delete(id);
+    return HttpResponse.json({ message: 'Case deleted.' });
+  }),
+
   // POST /pension-cases/{id}/salary-records
   http.post(`${API_BASE}/pension-cases/:id/salary-records`, async ({ request, params }) => {
     const caseId = parseInt(params.id as string, 10);

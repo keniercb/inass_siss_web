@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
 import type { components } from '@/types/api';
-import type { CreateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput, IncomeConceptRecordInput } from '../schemas/pension-case.schema';
+import type { CreateCaseInput, UpdateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput, IncomeConceptRecordInput } from '../schemas/pension-case.schema';
 import type { AxiosError } from 'axios';
 
 type PensionCase = components['schemas']['PensionCase'];
@@ -27,6 +27,55 @@ export function useCreateCase() {
         return;
       }
       toast.error(t('create.error'));
+    },
+  });
+}
+
+export function useUpdateCase() {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pension-cases');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: number | string; input: UpdateCaseInput }) => {
+      const r = await http.put<ApiResponse<PensionCase>>(`/pension-cases/${id}`, input);
+      return r.data.data;
+    },
+    onSuccess: (data, { id }) => {
+      qc.invalidateQueries({ queryKey: ['pension-cases', 'list'] });
+      qc.setQueryData(['pension-cases', 'detail', id], data);
+      toast.success(t('update.success'));
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        const allMessages = Object.values(ae.response.data.errors).flat();
+        if (allMessages.length > 0) toast.errorDetail(t('update.error'), allMessages.join(' · '));
+        return;
+      }
+      toast.error(t('update.error'));
+    },
+  });
+}
+
+export function useDeleteCase() {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pension-cases');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (id: number | string) => {
+      await http.delete(`/pension-cases/${id}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pension-cases', 'list'] });
+      toast.success(t('delete.success'));
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError;
+      if (ae.response?.status === 409) {
+        toast.error(t('delete.not_submitted'));
+        return;
+      }
+      toast.error(t('delete.error'));
     },
   });
 }

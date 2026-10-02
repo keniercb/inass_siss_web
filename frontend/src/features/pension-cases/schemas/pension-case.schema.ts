@@ -37,6 +37,22 @@ export const createCaseSchema = z.object({
 });
 export type CreateCaseInput = z.infer<typeof createCaseSchema>;
 
+// Schema para editar expediente (PUT /pension-cases/{id})
+// Solo campos editables; applicant_person_id, rebel_army_*, internationalist,
+// phone, popular_council, termination_date, filed_by_person_id son PROHIBIDOS (422)
+export const updateCaseSchema = z.object({
+  employer_entity_id: z.number().int().positive('El centro de trabajo es obligatorio'),
+  position_id: z.number().int().positive('El cargo es obligatorio'),
+  occupational_category_id: z.number().int().positive('La categoría ocupacional es obligatoria'),
+  educational_level_id: z.number().int().positive('El nivel educacional es obligatorio'),
+  scientific_category_id: z.number().int().positive('La categoría científica es obligatoria'),
+  pension_type_id: z.number().int().positive('El tipo de pensión es obligatorio'),
+  pension_regime_id: z.number().int().positive('El régimen de pensión es obligatorio'),
+  last_salary: z.number().min(0, 'El último salario debe ser ≥ 0'),
+  requested_at: z.string().optional().nullable(),
+});
+export type UpdateCaseInput = z.infer<typeof updateCaseSchema>;
+
 // Subregistros
 export const salaryRecordSchema = z.object({
   year: z.number().int().min(1950, 'El año debe ser ≥ 1950').max(new Date().getFullYear() + 1),

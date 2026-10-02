@@ -2,13 +2,18 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, Eye } from 'lucide-react';
+import { Search, Plus, Eye, Pencil, Trash2 } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { useDebounce } from '@/hooks/use-debounce';
 import { usePensionCases } from '../api/queries';
+import { useDeleteCase } from '../api/mutations';
+import type { components } from '@/types/api';
+
+type PensionCase = components['schemas']['PensionCase'];
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Pagination } from '@/components/crud/Pagination';
+import { Dialog } from '@/components/ui/Dialog';
 import { PensionCaseFormModal } from '../components/PensionCaseFormModal';
 import { CASE_STATUS_META } from '../schemas/pension-case.schema';
 import { formatDate } from '@/lib/utils';
@@ -36,6 +41,8 @@ export function PensionCasesListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [formOpen, setFormOpen] = useState(false);
+  const [editCase, setEditCase] = useState<PensionCase | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Cargar catálogos para resolver nombres de tipo y régimen de pensión
   const { data: pensionTypesData } = useCatalogLookup('pension-types');
@@ -58,8 +65,11 @@ export function PensionCasesListPage() {
 
   const { data, isLoading } = usePensionCases({ page, per_page, search: debouncedSearch || undefined, status: status || undefined });
   const canCreate = can('cases.create');
+  const canEdit = can('cases.edit');
   const items = data?.data ?? [];
   const meta = data?.meta;
+
+  const deleteMutation = useDeleteCase();
 
   const updateParams = (patch: Record<string, string | number>) => {
     const np = new URLSearchParams(searchParams);
@@ -67,13 +77,13 @@ export function PensionCasesListPage() {
     setSearchParams(np);
   };
 
-  const COLSPAN = 7;
+  const COLSPAN = 8;
 
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div><h1 className="text-2xl font-semibold text-foreground">{t('list.title')}</h1><p className="text-sm text-muted-foreground mt-1">{t('list.description')}</p></div>
-        {canCreate && <Button onClick={() => setFormOpen(true)}><Plus className="w-4 h-4" />{t('list.new')}</Button>}
+        {canCreate && <Button onClick={() => { setEditCase(null); setFormOpen(true); }}><Plus className="w-4 h-4" />{t('list.new')}</Button>}
       </div>
       <div className="bg-card rounded-lg border border-border p-4 mb-4 flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[240px]"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input type="text" placeholder={t('list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" /></div>
@@ -112,7 +122,9 @@ export function PensionCasesListPage() {
                   <td className="px-4 py-3 text-muted-foreground">{pensionRegimeLabel}</td>
                   <td className="px-4 py-3"><span className={`badge ${statusMeta.badgeClass}`}>{t(`list.status.${c.status}`)}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{c.requested_at ? formatDate(c.requested_at) : '—'}</td>
-                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}><button onClick={() => navigate(`/expedientes/${c.id}`)} className="p-1.5 rounded hover:bg-muted" title={tc('actions.view')}><Eye className="w-4 h-4" /></button></td>
+                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}><button onClick={() => navigate(`/expedientes/${c.id}`)} className="p-1.5 rounded hover:bg-muted" title={tc('actions.view')}><Eye className="w-4 h-4" /></button>
+                      {canEdit && c.status === 'submitted' && <button onClick={() => { setEditCase(c); setFormOpen(true); }} className="p-1.5 rounded hover:bg-muted" title={tc('actions.edit')}><Pencil className="w-4 h-4" /></button>}
+                      {canEdit && c.status === 'submitted' && <button onClick={() => setDeleteId(c.id!)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive" title={tc('actions.delete')}><Trash2 className="w-4 h-4" /></button>}</td>
                 </tr>
               );
             })}
@@ -120,7 +132,18 @@ export function PensionCasesListPage() {
         </table>
         {meta && meta.total > 0 && <Pagination currentPage={meta.current_page} lastPage={meta.last_page} perPage={meta.per_page} total={meta.total} onChange={(p, pp) => updateParams({ page: p, ...(pp ? { per_page: pp } : {}) })} />}
       </div>
-      {formOpen && <PensionCaseFormModal onClose={() => setFormOpen(false)} />}
+      {formOpen && <PensionCaseFormModal pensionCase={editCase ?? undefined} onClose={() => { setFormOpen(false); setEditCase(null); }} />}
+      {deleteId !== null && (
+        <Dialog open onClose={() => setDeleteId(null)} title={t('delete.title')} size="sm">
+          <div className="space-y-4">
+            <p className="text-sm">{t('delete.confirm')}</p>
+            <div className="flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>{tc('actions.cancel')}</Button>
+              <Button type="button" variant="destructive" disabled={deleteMutation.isPending} onClick={async () => { try { await deleteMutation.mutateAsync(deleteId); } catch { /* toast handled by mutation */ } setDeleteId(null); }}>{deleteMutation.isPending ? tc('status.loading') + '…' : t('delete.confirm_button')}</Button>
+            </div>
+          </div>
+        </Dialog>
+      )}
     </div>
   );
 }

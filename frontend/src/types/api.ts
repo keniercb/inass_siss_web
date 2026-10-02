@@ -455,9 +455,17 @@ export interface paths {
          * @description Devuelve el expediente con sus subregistros (salarios, servicios, ciclos) y la proyección completa del promovente, junto al objeto warnings: años salariales interiores ausentes (RF-EXP-002). Las advertencias son evidencia para el especialista, nunca bloqueos; los períodos de servicio llegan cerrados y disjuntos por construcción (Task 37).
          */
         get: operations["pensionCasesShow"];
-        put?: never;
+        /**
+         * Edición del expediente (promovente inmutable)
+         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario y la fecha de solicitud — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Las advertencias de la serie salarial viajan junto a data.
+         */
+        put: operations["pensionCasesUpdate"];
         post?: never;
-        delete?: never;
+        /**
+         * Eliminación lógica del expediente
+         * @description DELETE del expediente (SGP-34, corrección de usuario, RF-EXP-001): eliminación LÓGICA (soft delete) disponible SOLO mientras el expediente está en submitted (estado de solicitud) — fuera de submitted responde 409 con el estado actual. La fila sobrevive con su deleted_at: la evidencia y la pista de auditoría siguen respondiendo (RN-001) con los valores previos (ADR-19), mientras el detalle y el listado públicos dejan de verlo (404). Los subregistros no se tocan: la historia queda física. La reservación de expediente-abierto-por-persona se LIBERA (la columna generada open_case_key pasa a NULL en las filas eliminadas) para que el operador pueda re-capturar al mismo solicitante tras eliminar un registro equivocado.
+         */
+        delete: operations["pensionCasesDestroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2562,6 +2570,7 @@ export interface operations {
                     sector?: number | null;
                     /**
                      * @description Solo pension-types (Task 38): persona fallecida; la omisión persiste el default false
+                     * @default false
                      * @example false
                      */
                     deceased_person?: boolean;
@@ -4197,6 +4206,198 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             /** @description Expediente inexistente o desactivado */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pensionCasesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Entidad empleadora del expediente (editable, activa)
+                     * @example 3
+                     */
+                    employer_entity_id?: number;
+                    /**
+                     * @description Cargo (editable)
+                     * @example 2
+                     */
+                    position_id?: number;
+                    /**
+                     * @description Categoría ocupacional (editable)
+                     * @example 1
+                     */
+                    occupational_category_id?: number;
+                    /**
+                     * @description Nivel de escolaridad (editable)
+                     * @example 4
+                     */
+                    educational_level_id?: number;
+                    /**
+                     * @description Categoría científica (editable)
+                     * @example 2
+                     */
+                    scientific_category_id?: number;
+                    /**
+                     * @description Tipo de pensión del catálogo (editable)
+                     * @example 1
+                     */
+                    pension_type_id?: number;
+                    /**
+                     * @description Régimen de pensión del catálogo (editable)
+                     * @example 1
+                     */
+                    pension_regime_id?: number;
+                    /**
+                     * @description Último salario, decimal exacto no negativo (RN-005, editable)
+                     * @example 6200.00
+                     */
+                    last_salary?: string;
+                    /**
+                     * Format: date
+                     * @description Fecha de solicitud (editable, nunca futura)
+                     * @example 2026-09-30
+                     */
+                    requested_at?: string;
+                    /**
+                     * @description PROHIBIDO (SGP-34): el promovente de la pensión es no modificable — 422 si se envía
+                     * @example 7
+                     */
+                    applicant_person_id?: number;
+                    /**
+                     * Format: int64
+                     * @description PROHIBIDO (SGP-34): esfera de persona, no modificable por este endpoint — 422 si se envía
+                     * @example 12
+                     */
+                    filed_by_person_id?: number | null;
+                    /**
+                     * @description PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía
+                     * @example false
+                     */
+                    rebel_army_member?: boolean;
+                    /**
+                     * Format: date
+                     * @description PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía
+                     * @example null
+                     */
+                    rebel_army_join_date?: string | null;
+                    /**
+                     * @description PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía
+                     * @example true
+                     */
+                    internationalist?: boolean;
+                    /**
+                     * @description PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía
+                     * @example +53 5 555 1234
+                     */
+                    phone?: string | null;
+                    /**
+                     * @description PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía
+                     * @example Consejo Popular Playa
+                     */
+                    popular_council?: string | null;
+                    /**
+                     * Format: date
+                     * @description PROHIBIDO (SGP-34): esfera de persona, no modificable — 422 si se envía
+                     * @example 2025-07-31
+                     */
+                    termination_date?: string | null;
+                    /**
+                     * @description PROHIBIDO (regla 0): el expediente asume la oficina del usuario autenticado — 422 si se envía
+                     * @example null
+                     */
+                    office_id?: number | null;
+                    /**
+                     * @description PROHIBIDO: el número se asigna en el alta y no se modifica — 422 si se envía
+                     * @example 11032600099
+                     */
+                    number?: string;
+                    /**
+                     * @description PROHIBIDO: el estado solo se mueve por su propio canal de transiciones — 422 si se envía
+                     * @example submitted
+                     */
+                    status?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Expediente editado con las advertencias de la serie salarial */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["PensionCase"];
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente inexistente (o ya eliminado) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionCasesDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Expediente eliminado lógicamente */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Case deleted. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente inexistente (o ya eliminado) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente fuera de submitted (devuelve estado actual) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

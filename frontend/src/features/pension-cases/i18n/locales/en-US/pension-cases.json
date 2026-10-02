@@ -181,5 +181,22 @@
       "income_concept_id": "Income concept",
       "amount": "Amount (CUP)"
     }
+  },
+  "edit": {
+    "title": "Edit case",
+    "description": "Modify the editable data of the case. The claimant cannot be modified.",
+    "immutable": "immutable"
+  },
+  "update": {
+    "success": "Case updated successfully",
+    "error": "An error occurred while updating the case"
+  },
+  "delete": {
+    "title": "Delete case",
+    "confirm": "Are you sure you want to delete this case?",
+    "confirm_button": "Delete",
+    "success": "Case deleted successfully",
+    "error": "An error occurred while deleting the case",
+    "not_submitted": "Only cases in Submitted state can be deleted"
   }
 }

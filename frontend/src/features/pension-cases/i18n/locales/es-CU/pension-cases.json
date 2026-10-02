@@ -181,5 +181,22 @@
       "income_concept_id": "Concepto de ingreso",
       "amount": "Importe (CUP)"
     }
+  },
+  "edit": {
+    "title": "Editar expediente",
+    "description": "Modifique los datos editables del expediente. El promovente no se puede modificar.",
+    "immutable": "inmutable"
+  },
+  "update": {
+    "success": "Expediente actualizado correctamente",
+    "error": "Ocurrió un error al actualizar el expediente"
+  },
+  "delete": {
+    "title": "Eliminar expediente",
+    "confirm": "¿Confirma la eliminación del expediente?",
+    "confirm_button": "Eliminar",
+    "success": "Expediente eliminado correctamente",
+    "error": "Ocurrió un error al eliminar el expediente",
+    "not_submitted": "Solo se pueden eliminar expedientes en estado Solicitud"
   }
 }
