@@ -237,10 +237,10 @@ export const pensionCasesHandlers = [
     const body = (await request.json()) as Record<string, unknown>;
     const errors: Record<string, string[]> = {};
     if (!body.income_concept_id) errors.income_concept_id = ['The income concept is required.'];
-    if (body.amount === undefined || body.amount === null || body.amount === '') errors.amount = ['The amount is required.'];
+    if (body.applied_percent === undefined || body.applied_percent === null || body.applied_percent === '') errors.applied_percent = ['The applied percent is required.'];
     if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
     const id = nextIncomeId++;
-    const record = { id, pension_case_id: caseId, income_concept_id: body.income_concept_id, amount: String(body.amount) } as unknown as IncomeConceptRecord;
+    const record = { id, pension_case_id: caseId, income_concept_id: body.income_concept_id, applied_percent: String(body.applied_percent) } as unknown as IncomeConceptRecord;
     c.income_concept_records = [...(c.income_concept_records ?? []), record];
     cases.set(caseId, c);
     return HttpResponse.json({ data: record }, { status: 201 });

@@ -112,8 +112,8 @@ export function PensionCaseDetailPage() {
           {/* Conceptos de ingreso */}
           <SubrecordSection title={t('income_concept.title')} onAdd={canEdit ? () => setSubModal('income') : undefined} addLabel={t('income_concept.add')}>
             {(pensionCase.income_concept_records ?? []).length > 0 ? (
-              <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('income_concept.columns.income_concept')}</th><th className="text-left px-3 py-2">{t('income_concept.columns.amount')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
-                <tbody className="divide-y divide-border">{(pensionCase.income_concept_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{incomeConceptLabel(r.income_concept_id)}</td><td className="px-3 py-2">{formatCUP(Number(r.amount ?? 0))}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeIncomeConceptMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
+              <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('income_concept.columns.income_concept')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
+                <tbody className="divide-y divide-border">{(pensionCase.income_concept_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{incomeConceptLabel(r.income_concept_id)}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeIncomeConceptMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
           </SubrecordSection>
@@ -330,7 +330,7 @@ function WorkCycleModal({ caseId, onClose }: { caseId: string; onClose: () => vo
 function IncomeConceptRecordModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddIncomeConceptRecord(caseId);
-  const [conceptId, setConceptId] = useState(0); const [amount, setAmount] = useState(''); const [appliedPercent, setAppliedPercent] = useState('');
+  const [conceptId, setConceptId] = useState(0); const [appliedPercent, setAppliedPercent] = useState('');
   return <Dialog open onClose={onClose} title={t('income_concept.add')} size="md"><div className="grid grid-cols-2 gap-3">
     <div className="col-span-2"><CatalogSearchSelect
       type="income-concepts"
@@ -339,8 +339,7 @@ function IncomeConceptRecordModal({ caseId, onClose }: { caseId: string; onClose
       required
       onSelect={(item) => setConceptId(item.id)}
     /></div>
-    <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('income_concept.form.amount')} *</label><Input type="number" step="0.01" min="0" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
     <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('income_concept.form.applied_percent')} *</label><Input type="number" step="0.01" min="0" max="100" placeholder="100.00" value={appliedPercent} onChange={(e) => setAppliedPercent(e.target.value)} /></div>
-    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!conceptId || !amount || !appliedPercent || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ income_concept_id: conceptId, amount: Number(amount), applied_percent: Number(appliedPercent) } as IncomeConceptRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
+    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!conceptId || !appliedPercent || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ income_concept_id: conceptId, applied_percent: Number(appliedPercent) } as IncomeConceptRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
   </div></Dialog>;
 }

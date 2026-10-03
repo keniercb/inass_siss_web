@@ -21,6 +21,10 @@ interface DatePickerFieldProps {
 /**
  * Campo de fecha reutilizable basado en react-datepicker.
  * Convierte entre string YYYY-MM-DD (formato del backend) y Date.
+ *
+ * El calendario soporta navegación por meses (botones < >) y por años
+ * (click en el header del mes abre el selector de año, con navegación
+ * por décadas mediante los botones < > del selector de año).
  */
 export function DatePickerField({
   id,
@@ -57,6 +61,12 @@ export function DatePickerField({
       disabled={disabled}
       maxDate={maxDate}
       minDate={minDate}
+      showMonthDropdown
+      showYearDropdown
+      dropdownMode="select"
+      scrollableYearDropdown
+      yearDropdownItemNumber={50}
+      isClearable={!disabled}
       className={className ?? `flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${error ? 'border-destructive' : 'border-input'}`}
       wrapperClassName="w-full"
     />

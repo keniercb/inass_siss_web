@@ -96,7 +96,6 @@ export type WorkCycleInput = z.infer<typeof workCycleSchema>;
 // Subregistro IncomeConceptRecord (regla de usuario 5)
 export const incomeConceptRecordSchema = z.object({
   income_concept_id: z.number().int().positive('El concepto de ingreso es obligatorio'),
-  amount: z.number().min(0, 'El importe debe ser ≥ 0'),
   applied_percent: z.number().min(0, 'El porciento debe ser ≥ 0').max(100, 'El porciento debe ser ≤ 100'),
 });
 export type IncomeConceptRecordInput = z.infer<typeof incomeConceptRecordSchema>;
