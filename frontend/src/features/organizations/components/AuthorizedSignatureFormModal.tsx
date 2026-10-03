@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { useCreateSignature } from '@/features/organizations/api/mutations';
 import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
 import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
+import { DatePickerField } from '@/components/ui/DatePickerField';
 
 interface AuthorizedSignatureFormModalProps {
   entityId: number;
@@ -57,8 +57,8 @@ export function AuthorizedSignatureFormModal({ entityId, onClose }: AuthorizedSi
         </div>
         {/* Validity */}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('signatures.form.valid_from')}</label><Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} /></div>
-          <div><label className="block text-sm font-medium mb-1">{t('signatures.form.valid_to')}</label><Input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1">{t('signatures.form.valid_from')}</label><DatePickerField value={validFrom} onChange={setValidFrom} /></div>
+          <div><label className="block text-sm font-medium mb-1">{t('signatures.form.valid_to')}</label><DatePickerField value={validTo} onChange={setValidTo} /></div>
         </div>
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
           <Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button>

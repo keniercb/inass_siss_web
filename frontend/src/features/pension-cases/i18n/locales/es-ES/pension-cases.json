@@ -73,12 +73,19 @@
       "internationalist": "Internacionalista",
       "phone": "Teléfono",
       "popular_council": "Consejo popular",
-      "termination_date": "Fecha de desvinculación"
+      "termination_date": "Fecha de desvinculación",
+      "current_address": "Dirección actual",
+      "residence_province": "Provincia de residencia",
+      "residence_municipality": "Municipio de residencia",
+      "collection_agency_type": "Tipo de agencia de cobro",
+      "collection_agency": "Agencia de cobro",
+      "bank_account": "Cuenta bancaria"
     },
     "section": {
       "case_data": "Datos del expediente",
       "rebel_army": "Ejército Rebelde",
-      "decision": "Decisión"
+      "decision": "Decisión",
+      "residence": "Domicilio y cobro"
     }
   },
   "form": {

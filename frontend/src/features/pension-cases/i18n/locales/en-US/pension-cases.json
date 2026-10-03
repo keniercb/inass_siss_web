@@ -73,12 +73,19 @@
       "internationalist": "Internationalist",
       "phone": "Phone",
       "popular_council": "Popular council",
-      "termination_date": "Termination date"
+      "termination_date": "Termination date",
+      "current_address": "Current address",
+      "residence_province": "Residence province",
+      "residence_municipality": "Residence municipality",
+      "collection_agency_type": "Collection agency type",
+      "collection_agency": "Collection agency",
+      "bank_account": "Bank account"
     },
     "section": {
       "case_data": "Case data",
       "rebel_army": "Rebel Army",
-      "decision": "Decision"
+      "decision": "Decision",
+      "residence": "Residence and collection"
     }
   },
   "form": {

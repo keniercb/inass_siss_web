@@ -13,6 +13,7 @@ import type { components } from '@/types/api';
 
 type PensionCase = components['schemas']['PensionCase'];
 import { http } from '@/lib/http';
+import { DatePickerField } from '@/components/ui/DatePickerField';
 
 interface EntityListItem { id: number; code: string; name?: string; tax_id_number: string; }
 
@@ -190,7 +191,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
             <p className="text-xs text-muted-foreground mt-1">{t('form.requested_by_help')}</p>
           </div>
           <div><label className="block text-sm font-medium mb-1">{t('form.termination_date')}</label>
-            <Input type="date" disabled={isEdit} value={terminationDate} onChange={(e) => setTerminationDate(e.target.value)} /></div>
+            <DatePickerField disabled={isEdit} value={terminationDate} onChange={setTerminationDate} /></div>
         </div>
         {/* Cargo + Categoría ocupacional (búsqueda con crear nuevo) */}
         <div className="grid grid-cols-2 gap-3">
@@ -287,7 +288,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           {belongsRebelArmy && (
             <div>
               <label className="block text-sm font-medium mb-1">{t('form.rebel_army_join_date')} *</label>
-              <Input type="date" value={rebelArmyDate} onChange={(e) => setRebelArmyDate(e.target.value)} />
+              <DatePickerField value={rebelArmyDate} onChange={setRebelArmyDate} />
               {!rebelArmyDate && <p className="text-xs text-destructive mt-1">{t('form.rebel_army_date_required')}</p>}
             </div>
           )}
@@ -299,7 +300,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         {/* Fecha de solicitud (editable solo en edición) */}
         {isEdit && (
           <div><label className="block text-sm font-medium mb-1">{t('detail.fields.requested_at')}</label>
-            <Input type="date" value={requestedAt} onChange={(e) => setRequestedAt(e.target.value)} /></div>
+            <DatePickerField value={requestedAt} onChange={setRequestedAt} /></div>
         )}
         <div className="grid grid-cols-2 gap-3">
           <div><label className="block text-sm font-medium mb-1">{t('form.phone')}</label>

@@ -14,6 +14,7 @@ import { formatDate, formatCUP, cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import type { components } from '@/types/api';
+import { DatePickerField } from '@/components/ui/DatePickerField';
 
 type Person = components['schemas']['Person'];
 interface EntityItem { id: number; code: string; name?: string; tax_id_number: string; }
@@ -202,6 +203,19 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
         </div>
       </div>
 
+      {/* Domicilio y cobro del promovente */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.residence')}</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <Field label={t('detail.fields.current_address')} value={pensionCase.current_address ?? '—'} fullWidth />
+          <Field label={t('detail.fields.residence_province')} value={pensionCase.residence_province?.name ?? '—'} />
+          <Field label={t('detail.fields.residence_municipality')} value={pensionCase.residence_municipality?.name ?? '—'} />
+          <Field label={t('detail.fields.collection_agency_type')} value={pensionCase.collection_agency_type?.name ?? '—'} />
+          <Field label={t('detail.fields.collection_agency')} value={pensionCase.collection_agency ? `${pensionCase.collection_agency.code ?? ''} — ${pensionCase.collection_agency.name ?? ''}`.trim() : '—'} />
+          <Field label={t('detail.fields.bank_account')} value={pensionCase.bank_account ?? '—'} mono />
+        </div>
+      </div>
+
       {/* Ejército Rebelde + Internacionalista + Contacto */}
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.rebel_army')}</h3>
@@ -294,8 +308,8 @@ function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () =
         <option value="0">{tc('actions.select')}</option>
         {entities.map((e) => <option key={e.id} value={e.id}>{e.code} — {e.name ?? e.tax_id_number}</option>)}
       </select></div>
-    <div><label className="block text-sm font-medium mb-1">{t('service.form.start_date')} *</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-    <div><label className="block text-sm font-medium mb-1">{t('service.form.end_date')} *</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+    <div><label className="block text-sm font-medium mb-1">{t('service.form.start_date')} *</label><DatePickerField value={startDate} onChange={setStartDate} /></div>
+    <div><label className="block text-sm font-medium mb-1">{t('service.form.end_date')} *</label><DatePickerField value={endDate} onChange={setEndDate} /></div>
     <label className="col-span-2 flex items-center gap-2 pt-1"><input type="checkbox" checked={isAppendix} onChange={(e) => setIsAppendix(e.target.checked)} className="w-4 h-4" /><span className="text-sm">{t('service.form.is_appendix')}</span></label>
     <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('service.form.declaration_form')}</label>
       <select className={selectClass} value={formaDeclaracion} onChange={(e) => setFormaDeclaracion(e.target.value as 'Documental' | 'Testifical')}>

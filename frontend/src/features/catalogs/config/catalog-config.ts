@@ -72,9 +72,14 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
   if (type === 'agency-types') {
     baseFields.push({
       name: 'payment_form',
-      type: 'text',
+      type: 'select',
       label: 'catalogs:form.payment_form',
-      help: 'Forma de pago del cobro (tarjeta magnetica o nomina electronica)',
+      help: 'Forma de pago del cobro',
+      options: [
+        { value: 'tarjeta magnetica', label: 'Tarjeta magnética' },
+        { value: 'nomina electronica', label: 'Nómina electrónica' },
+      ],
+      default: 'tarjeta magnetica',
     });
   }
 
