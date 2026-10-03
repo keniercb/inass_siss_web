@@ -106,7 +106,14 @@
     "internationalist": "Internacionalista",
     "phone": "Teléfono de contacto",
     "popular_council": "Consejo popular",
-    "termination_date": "Fecha de desvinculación"
+    "termination_date": "Fecha de desvinculación",
+    "residence_section": "Domicilio y cobro",
+    "current_address": "Dirección actual",
+    "residence_province_id": "Provincia de residencia",
+    "residence_municipality_id": "Municipio de residencia",
+    "collection_agency_type_id": "Tipo de agencia de cobro",
+    "collection_agency_id": "Agencia de cobro",
+    "bank_account": "Cuenta bancaria"
   },
   "salary": {
     "title": "Registros de salario",
@@ -179,7 +186,8 @@
     },
     "form": {
       "income_concept_id": "Concepto de ingreso",
-      "amount": "Importe (CUP)"
+      "amount": "Importe (CUP)",
+      "applied_percent": "Porciento a aplicar"
     }
   },
   "edit": {

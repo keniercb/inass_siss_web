@@ -27,9 +27,9 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
     { code: '15', name: 'Guantánamo' },
   ]),
   'agency-types': seedCatalog('agency-types', [
-    { code: 'BPA', name: 'Banco Popular de Ahorro' },
-    { code: 'BANMET', name: 'Banco Metropolitano' },
-    { code: 'BAND', name: 'Banco Nacional' },
+    { code: 'BPA', name: 'Banco Popular de Ahorro', extra: { payment_form: 'tarjeta magnetica' } },
+    { code: 'BANMET', name: 'Banco Metropolitano', extra: { payment_form: 'tarjeta magnetica' } },
+    { code: 'BAND', name: 'Banco Nacional', extra: { payment_form: 'nomina electronica' } },
   ]),
   organizations: seedCatalog('organizations', [
     { code: 'OACE-001', name: 'Organismo 1' },
@@ -92,10 +92,7 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
   'pension-regimes': seedCatalog('pension-regimes', [
     { code: 'GEN', name: 'General', extra: { months_per_year: 12, sector: null } },
   ]),
-  'payment-types': seedCatalog('payment-types', [
-    { name: 'Pago mensual' },
-    { name: 'Pago retroactivo' },
-  ]),
+  // payment-types eliminado (Task 42: el cobro se gestiona por agency-types.payment_form)
   'income-concepts': seedCatalog('income-concepts', [
     { name: 'Salario base', extra: { applies_base_salary: true } },
     { name: 'Antigüedad', extra: { applies_base_salary: false } },

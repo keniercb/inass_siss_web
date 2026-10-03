@@ -106,7 +106,14 @@
     "internationalist": "Internationalist",
     "phone": "Phone",
     "popular_council": "Popular council",
-    "termination_date": "Termination date"
+    "termination_date": "Termination date",
+    "residence_section": "Residence and collection",
+    "current_address": "Current address",
+    "residence_province_id": "Residence province",
+    "residence_municipality_id": "Residence municipality",
+    "collection_agency_type_id": "Collection agency type",
+    "collection_agency_id": "Collection agency",
+    "bank_account": "Bank account"
   },
   "salary": {
     "title": "Salary records",
@@ -179,7 +186,8 @@
     },
     "form": {
       "income_concept_id": "Income concept",
-      "amount": "Amount (CUP)"
+      "amount": "Amount (CUP)",
+      "applied_percent": "Applied percent"
     }
   },
   "edit": {

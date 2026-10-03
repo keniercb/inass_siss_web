@@ -10,7 +10,8 @@
       "description": "Descripción",
       "actions": "Acciones",
       "sector": "Sector",
-      "deceased_person": "Fallecido"
+      "deceased_person": "Fallecido",
+      "payment_form": "Forma de pago"
     }
   },
   "create": {
@@ -44,7 +45,8 @@
     "months_per_year": "Meses por año",
     "applies_base_salary": "Aplica a salario base",
     "sector": "Sector",
-    "deceased_person": "Persona fallecida"
+    "deceased_person": "Persona fallecida",
+    "payment_form": "Forma de pago"
   },
   "errors": {
     "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…"

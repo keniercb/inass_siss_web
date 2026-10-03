@@ -10,7 +10,8 @@
       "description": "Description",
       "actions": "Actions",
       "sector": "Sector",
-      "deceased_person": "Deceased person"
+      "deceased_person": "Deceased person",
+      "payment_form": "Payment form"
     }
   },
   "create": {
@@ -44,7 +45,8 @@
     "months_per_year": "Months per year",
     "applies_base_salary": "Applies to base salary",
     "sector": "Sector",
-    "deceased_person": "Deceased person"
+    "deceased_person": "Deceased person",
+    "payment_form": "Payment form"
   },
   "errors": {
     "rate_limited": "The server is processing too many requests. Retrying…"

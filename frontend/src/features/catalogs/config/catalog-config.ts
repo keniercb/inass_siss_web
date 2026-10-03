@@ -16,6 +16,9 @@ const baseSchema = z.object({
 
 // Schemas por tipo (campos condicionales)
 const schemasByType: Record<string, z.ZodSchema> = {
+  'agency-types': baseSchema.extend({
+    payment_form: z.enum(['tarjeta magnetica', 'nomina electronica']).default('tarjeta magnetica'),
+  }),
   'pension-regimes': baseSchema.extend({
     months_per_year: z.number().int().positive(),
     sector: z.number().int().nullable().optional(),
@@ -34,6 +37,7 @@ const schemasByType: Record<string, z.ZodSchema> = {
 // Columnas por tipo: code, name, description + extras
 function getColumns(type: CatalogType): Array<{ id: string }> {
   const cols = [{ id: 'code' }, { id: 'name' }, { id: 'description' }];
+  if (type === 'agency-types') cols.push({ id: 'payment_form' });
   if (type === 'pension-regimes') cols.push({ id: 'sector' });
   if (type === 'pension-types') cols.push({ id: 'deceased_person' });
   return cols;
@@ -65,6 +69,15 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
   ];
 
   // Campos condicionales por tipo
+  if (type === 'agency-types') {
+    baseFields.push({
+      name: 'payment_form',
+      type: 'text',
+      label: 'catalogs:form.payment_form',
+      help: 'Forma de pago del cobro (tarjeta magnetica o nomina electronica)',
+    });
+  }
+
   if (type === 'pension-regimes') {
     baseFields.push({
       name: 'months_per_year',

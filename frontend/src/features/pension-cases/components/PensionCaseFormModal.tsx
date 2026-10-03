@@ -76,7 +76,19 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
   const [phone, setPhone] = useState(pensionCase?.phone ?? '');
   const [popularCouncil, setPopularCouncil] = useState(pensionCase?.popular_council ?? '');
   const [terminationDate, setTerminationDate] = useState(pensionCase?.termination_date ?? '');
+  const [currentAddress, setCurrentAddress] = useState(pensionCase?.current_address ?? '');
+  const [residenceProvinceId, setResidenceProvinceId] = useState(pensionCase?.residence_province_id ?? 0);
+  const [residenceMunicipalityId, setResidenceMunicipalityId] = useState(pensionCase?.residence_municipality_id ?? 0);
+  const [collectionAgencyTypeId, setCollectionAgencyTypeId] = useState(pensionCase?.collection_agency_type_id ?? 0);
+  const [collectionAgencyId, setCollectionAgencyId] = useState(pensionCase?.collection_agency_id ?? 0);
+  const [bankAccount, setBankAccount] = useState(pensionCase?.bank_account ?? '');
   const [requestedAt, setRequestedAt] = useState(pensionCase?.requested_at ?? '');
+
+  // Cargar provincias y municipios de residencia (cascading)
+  const { data: provincesData } = useQuery({ queryKey: ['catalogs', 'provinces', 'all'], queryFn: async () => { const r = await http.get<{ data: { id: number; name: string }[] }>('/catalogs/provinces', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+  const { data: residenceMunisData } = useQuery({ queryKey: ['municipalities', 'residence', { province_id: residenceProvinceId }], queryFn: async () => { if (!residenceProvinceId) return { data: [] }; const r = await http.get<{ data: { id: number; name: string }[] }>('/municipalities', { params: { per_page: 100, province_id: residenceProvinceId } }); return r.data; }, enabled: !!residenceProvinceId, staleTime: 60_000 });
+  // Cargar agencias de cobro filtradas por tipo seleccionado
+  const { data: collectionAgenciesData } = useQuery({ queryKey: ['agencies', 'collection', { agency_type_id: collectionAgencyTypeId }], queryFn: async () => { if (!collectionAgencyTypeId) return { data: [] }; const r = await http.get<{ data: { id: number; name: string }[] }>('/agencies', { params: { per_page: 100, agency_type_id: collectionAgencyTypeId } }); return r.data; }, enabled: !!collectionAgencyTypeId, staleTime: 60_000 });
 
   const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
 
@@ -100,6 +112,12 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
       phone: phone || null,
       popular_council: popularCouncil || null,
       termination_date: terminationDate || null,
+      current_address: currentAddress,
+      residence_province_id: residenceProvinceId,
+      residence_municipality_id: residenceMunicipalityId,
+      collection_agency_type_id: collectionAgencyTypeId,
+      collection_agency_id: collectionAgencyId,
+      bank_account: bankAccount || null,
     };
     try {
       if (isEdit && pensionCase) {
@@ -224,6 +242,41 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
             required
             onSelect={(item) => setPensionRegimeId(item.id)}
           />
+        </div>
+        {/* Domicilio y cobro del promovente */}
+        <div className="border-t border-border pt-4 space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">{t('form.residence_section')}</h3>
+          <div><label className="block text-sm font-medium mb-1">{t('form.current_address')} *</label>
+            <Input type="text" placeholder="Calle 8 #10 entre 5 y 7, Playa" value={currentAddress} onChange={(e) => setCurrentAddress(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="block text-sm font-medium mb-1">{t('form.residence_province_id')} *</label>
+              <select className={selectClass} disabled={isEdit} value={residenceProvinceId} onChange={(e) => { const v = Number(e.target.value); setResidenceProvinceId(v); setResidenceMunicipalityId(0); }}>
+                <option value="">{tc('actions.select')}</option>{(provincesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select></div>
+            <div><label className="block text-sm font-medium mb-1">{t('form.residence_municipality_id')} *</label>
+              <select className={selectClass} disabled={!residenceProvinceId} value={residenceMunicipalityId} onChange={(e) => setResidenceMunicipalityId(Number(e.target.value))}>
+                <option value="">{!residenceProvinceId ? tc('actions.select') : tc('actions.select')}</option>
+                {(residenceMunisData?.data ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <CatalogSearchSelect
+              type="agency-types"
+              label={t('form.collection_agency_type_id')}
+              placeholder={tc('actions.search') + '…'}
+              required
+              initialDisplayValue={pensionCase?.collection_agency_type?.name}
+              initialSelectedId={pensionCase?.collection_agency_type_id}
+              onSelect={(item) => { setCollectionAgencyTypeId(item.id); setCollectionAgencyId(0); }}
+            />
+            <div><label className="block text-sm font-medium mb-1">{t('form.collection_agency_id')} *</label>
+              <select className={selectClass} disabled={!collectionAgencyTypeId} value={collectionAgencyId} onChange={(e) => setCollectionAgencyId(Number(e.target.value))}>
+                <option value="">{!collectionAgencyTypeId ? tc('actions.select') : tc('actions.select')}</option>
+                {(collectionAgenciesData?.data ?? []).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select></div>
+          </div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.bank_account')}</label>
+            <Input type="text" placeholder="01234567890123456789012345678" maxLength={34} value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} /></div>
         </div>
         {/* Ejército Rebelde + Internacionalista */}
         <div className="p-3 rounded-md border border-border space-y-3">

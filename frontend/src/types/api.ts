@@ -62,7 +62,7 @@ export interface paths {
         };
         /**
          * Listado paginado de un catálogo
-         * @description Lista las entradas activas de un catálogo uniforme (RF-CAT-006: paginación, búsqueda por texto y orden por columnas clave). Tipos válidos: provinces, agency-types, organizations, entity-types, office-types, legal-basis-types, scientific-categories, educational-levels, occupational-categories, pension-types, beneficiary-types, races, positions, pension-regimes, payment-types, income-concepts.
+         * @description Lista las entradas activas de un catálogo uniforme (RF-CAT-006: paginación, búsqueda por texto y orden por columnas clave). Tipos válidos: provinces, agency-types, organizations, entity-types, office-types, legal-basis-types, scientific-categories, educational-levels, occupational-categories, pension-types, beneficiary-types, races, positions, pension-regimes, income-concepts.
          */
         get: operations["catalogsIndex"];
         put?: never;
@@ -428,13 +428,13 @@ export interface paths {
         };
         /**
          * Listado de expedientes
-         * @description Listado filtrable por estado, oficina, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6). Cada fila viaja con la proyección COMPLETA del promovente (regla de usuario 3).
+         * @description Listado filtrable por estado, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6), con ALCANCE TERRITORIAL (SGP-35, corrección de usuario): solo cargan los expedientes cuya oficina coincide con la OFICINA DEL USUARIO AUTENTICADO — la oficina no viaja en la query (422 prohibido si llega) porque el servidor la deriva de la asignación del actor (ADR-33/ADR-29, el mismo patrón del alta), y un actor sin oficina recibe una página VACÍA (fail-closed, nunca el directorio sin scope). Cada fila viaja con la proyección COMPLETA del promovente (regla de usuario 3).
          */
         get: operations["pensionCasesIndex"];
         put?: never;
         /**
          * Apertura de un expediente
-         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Task 37: la marca internacionalista del promovente es booleana OBLIGATORIA (paralelo del par rebelde) y el par de contacto (phone, popular_council) viaja opcional; los subregistros de servicio exigen end_date OBLIGATORIA, estrictamente posterior a start_date y SIN solapamiento entre filas (422 con nada creado). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
+         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Task 37: la marca internacionalista del promovente es booleana OBLIGATORIA (paralelo del par rebelde) y el par de contacto (phone, popular_council) viaja opcional; los subregistros de servicio exigen end_date OBLIGATORIA, estrictamente posterior a start_date y SIN solapamiento entre filas (422 con nada creado). Task 42: el domicilio y cobro del promovente viajan en el alta — dirección actual, provincia y municipio de residencia (coherentes, RN-04), tipo de agencia de cobro, agencia de cobro (del tipo declarado) y cuenta bancaria OBLIGATORIA CONDICIONAL a la forma de pago del tipo de agencia (exigida con tarjeta magnetica, opcional con nomina electronica: 422 sobre bank_account) — y cada concepto de ingreso declarado viaja con su porciento a aplicar (0-100, dos decimales). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
          */
         post: operations["pensionCasesStore"];
         delete?: never;
@@ -457,7 +457,7 @@ export interface paths {
         get: operations["pensionCasesShow"];
         /**
          * Edición del expediente (promovente inmutable)
-         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario y la fecha de solicitud — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Las advertencias de la serie salarial viajan junto a data.
+         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario y la fecha de solicitud — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Task 42: el grupo de DOMICILIO y COBRO del promovente — dirección actual, provincia y municipio de residencia, tipo de agencia de cobro, agencia de cobro y cuenta bancaria — SÍ es editable (decisión explícita del usuario: pueden modificarse) con probes espejo del alta y la exigencia condicional de la cuenta re-evaluada contra el estado RESULTANTE (cambiar el tipo de agencia de cobro a uno con forma de pago tarjeta magnetica exige la cuenta si acabó en null). Las advertencias de la serie salarial viajan junto a data.
          */
         put: operations["pensionCasesUpdate"];
         post?: never;
@@ -602,7 +602,7 @@ export interface paths {
         put?: never;
         /**
          * Alta de un concepto de ingreso
-         * @description Declara el valor de un concepto de ingreso del expediente (regla de usuario 5) mientras el expediente está en submitted. El par concepto-expediente es único (422 semántico) y el importe es decimal exacto no negativo (RN-005).
+         * @description Declara el valor de un concepto de ingreso del expediente (regla de usuario 5) mientras el expediente está en submitted. El par concepto-expediente es único (422 semántico), el importe es decimal exacto no negativo (RN-005) y — desde la Task 42 (corrección de usuario) — el porciento a aplicar es OBLIGATORIO: decimal exacto en el rango 0-100 con dos decimales (422 si se omite, fuera de rango o con tercera decimal).
          */
         post: operations["pensionCasesAddIncomeConceptRecord"];
         delete?: never;
@@ -1217,6 +1217,12 @@ export interface components {
              */
             deceased_person?: boolean;
             /**
+             * @description Solo agency-types (Task 42): forma de pago del cobro, devuelta por todos los endpoints
+             * @example tarjeta magnetica
+             * @enum {string}
+             */
+            payment_form?: "tarjeta magnetica" | "nomina electronica";
+            /**
              * Format: date-time
              * @description Borrado lógico (RF-CAT-001)
              */
@@ -1586,7 +1592,7 @@ export interface components {
         };
         /**
          * Concepto de ingreso del expediente
-         * @description Valor declarado de un concepto de ingreso del expediente (regla de usuario 5): el par expediente-concepto es único y el valor es DECIMAL(12,2) no negativo (RN-005).
+         * @description Valor declarado de un concepto de ingreso del expediente (regla de usuario 5): el par expediente-concepto es único, el valor es DECIMAL(12,2) no negativo (RN-005) y el porciento a aplicar (Task 42, corrección de usuario) es DECIMAL(5,2) en el rango 0-100 con dos decimales exactos.
          */
         IncomeConceptRecord: {
             /**
@@ -1611,6 +1617,11 @@ export interface components {
              * @example 150.00
              */
             amount?: string;
+            /**
+             * @description Porciento a aplicar (Task 42, corrección de usuario): Double como decimal exacto en el rango 0-100 con dos decimales — obligatorio en el alta
+             * @example 100.00
+             */
+            applied_percent?: string;
         };
         /**
          * Expediente de pensión
@@ -1642,7 +1653,13 @@ export interface components {
              *     warnings envelope only carries the salary analysis. Since the
              *     Task 38 user correction (SGP-32) the case also answers the
              *     promovente's fecha de desvinculación — termination_date, an
-             *     optional date serialized as Y-m-d and null when absent.
+             *     optional date serialized as Y-m-d and null when absent. Since the
+             *     Task 42 user correction (SGP-36) the case answers the promovente
+             *     residence + collection group — current_address, the residence
+             *     geography and the collection point with their projections
+             *     (province, municipality, agency type carrying its payment form,
+             *     full agency) and the bank account, null when the payment form of
+             *     the collection agency type leaves it optional.
              * @example 1
              */
             id?: number;
@@ -1753,6 +1770,58 @@ export interface components {
              * @example 2025-07-31
              */
             termination_date?: string | null;
+            /**
+             * @description Dirección actual del promovente (Task 42, corrección de usuario): obligatoria en el alta
+             * @example Calle 8 #10 entre 5 y 7, Playa
+             */
+            current_address?: string;
+            /**
+             * Format: int64
+             * @description Provincia de residencia del promovente (Task 42): obligatoria, coherente con el municipio (RN-04)
+             * @example 11
+             */
+            residence_province_id?: number;
+            /**
+             * Format: int64
+             * @description Municipio de residencia del promovente (Task 42): obligatorio, pertenece a la provincia declarada
+             * @example 3
+             */
+            residence_municipality_id?: number;
+            /**
+             * Format: int64
+             * @description Tipo de agencia de cobro (Task 42): obligatorio; su forma de pago decide la exigencia de la cuenta bancaria
+             * @example 1
+             */
+            collection_agency_type_id?: number;
+            /**
+             * Format: int64
+             * @description Agencia de cobro (Task 42): obligatoria, activa y del tipo declarado
+             * @example 7
+             */
+            collection_agency_id?: number;
+            /**
+             * @description Cuenta bancaria del cobro (Task 42): OBLIGATORIA cuando la forma de pago del tipo de agencia de cobro es tarjeta magnetica (422 si falta), opcional con nomina electronica
+             * @example 01234567890123456789012345678
+             */
+            bank_account?: string | null;
+            /** @description Provincia de residencia (Task 42) */
+            residence_province?: {
+                /** Format: int64 */
+                id?: number;
+                code?: string;
+                name?: string;
+            } | null;
+            /** @description Municipio de residencia (Task 42) */
+            residence_municipality?: {
+                /** Format: int64 */
+                id?: number;
+                code?: string;
+                name?: string;
+            } | null;
+            /** @description Tipo de agencia de cobro con su payment_form (Task 42): misma forma que el catálogo agency-types */
+            collection_agency_type?: components["schemas"]["CatalogItem"] | null;
+            /** @description Agencia de cobro completa (Task 42): misma forma que el catálogo de agencias */
+            collection_agency?: components["schemas"]["Agency"] | null;
             /** @description Proyección COMPLETA de la persona por (Task 35): misma forma que applicant */
             filed_by?: components["schemas"]["Person"] | null;
             /**
@@ -2574,6 +2643,13 @@ export interface operations {
                      * @example false
                      */
                     deceased_person?: boolean;
+                    /**
+                     * @description Solo agency-types (Task 42): forma de pago del cobro — la omisión persiste el default tarjeta magnetica; decide la exigencia de la cuenta bancaria del cobro del expediente
+                     * @default tarjeta magnetica
+                     * @example tarjeta magnetica
+                     * @enum {string}
+                     */
+                    payment_form?: "tarjeta magnetica" | "nomina electronica";
                 };
             };
         };
@@ -2717,6 +2793,11 @@ export interface operations {
                     sector?: number | null;
                     /** @description Solo pension-types (Task 38): persona fallecida */
                     deceased_person?: boolean;
+                    /**
+                     * @description Solo agency-types (Task 42): forma de pago del cobro
+                     * @enum {string}
+                     */
+                    payment_form?: "tarjeta magnetica" | "nomina electronica";
                 };
             };
         };
@@ -3961,7 +4042,6 @@ export interface operations {
         parameters: {
             query?: {
                 status?: "submitted" | "under_review" | "approved" | "rejected";
-                office_id?: number;
                 applicant_person_id?: number;
                 number?: string;
                 requested_from?: string;
@@ -4077,6 +4157,40 @@ export interface operations {
                      */
                     termination_date?: string | null;
                     /**
+                     * @description Dirección actual del promovente (Task 42, corrección de usuario): OBLIGATORIA; 422 si se omite
+                     * @example Calle 8 #10 entre 5 y 7, Playa
+                     */
+                    current_address: string;
+                    /**
+                     * Format: int64
+                     * @description Provincia de residencia del promovente (Task 42): OBLIGATORIA, activa; el municipio debe pertenecerle (RN-04, 422)
+                     * @example 11
+                     */
+                    residence_province_id: number;
+                    /**
+                     * Format: int64
+                     * @description Municipio de residencia del promovente (Task 42): OBLIGATORIO, activo y de la provincia declarada (422)
+                     * @example 3
+                     */
+                    residence_municipality_id: number;
+                    /**
+                     * Format: int64
+                     * @description Tipo de agencia de cobro (Task 42): OBLIGATORIO, activo; su payment_form (tarjeta magnetica|nomina electronica) decide la exigencia de la cuenta bancaria
+                     * @example 1
+                     */
+                    collection_agency_type_id: number;
+                    /**
+                     * Format: int64
+                     * @description Agencia de cobro (Task 42): OBLIGATORIA, activa y del tipo declarado (422)
+                     * @example 7
+                     */
+                    collection_agency_id: number;
+                    /**
+                     * @description Cuenta bancaria del cobro (Task 42): OBLIGATORIA CONDICIONAL — exigida (422 sobre bank_account) cuando la forma de pago del tipo de agencia de cobro es tarjeta magnetica, opcional con nomina electronica (la omisión persiste null)
+                     * @example 01234567890123456789012345678
+                     */
+                    bank_account?: string | null;
+                    /**
                      * @description Último salario, decimal exacto no negativo (RN-005)
                      * @example 5000.00
                      */
@@ -4133,6 +4247,11 @@ export interface operations {
                         income_concept_id?: number;
                         /** @example 150.00 */
                         amount?: string;
+                        /**
+                         * @description Porciento a aplicar (Task 42): OBLIGATORIO por fila — decimal exacto 0-100 con dos decimales (422 si se omite, fuera de rango o con tercera decimal)
+                         * @example 100.00
+                         */
+                        applied_percent?: string;
                     }[];
                 };
             };
@@ -4271,6 +4390,40 @@ export interface operations {
                      * @example 2026-09-30
                      */
                     requested_at?: string;
+                    /**
+                     * @description Dirección actual del promovente (Task 42, EDITABLE): semántica PATCH
+                     * @example Calle 23 #100, Vedado
+                     */
+                    current_address?: string;
+                    /**
+                     * Format: int64
+                     * @description Provincia de residencia (Task 42, EDITABLE): coherente con el municipio resultante (RN-04)
+                     * @example 11
+                     */
+                    residence_province_id?: number;
+                    /**
+                     * Format: int64
+                     * @description Municipio de residencia (Task 42, EDITABLE): de la provincia resultante
+                     * @example 3
+                     */
+                    residence_municipality_id?: number;
+                    /**
+                     * Format: int64
+                     * @description Tipo de agencia de cobro (Task 42, EDITABLE): su payment_form decide la exigencia de la cuenta resultante
+                     * @example 1
+                     */
+                    collection_agency_type_id?: number;
+                    /**
+                     * Format: int64
+                     * @description Agencia de cobro (Task 42, EDITABLE): activa y del tipo resultante
+                     * @example 7
+                     */
+                    collection_agency_id?: number;
+                    /**
+                     * @description Cuenta bancaria del cobro (Task 42, EDITABLE): null explícito la LIMPIA; 422 si el estado resultante exige cuenta (tarjeta magnetica) y acabó null
+                     * @example 01234567890123456789012345678
+                     */
+                    bank_account?: string | null;
                     /**
                      * @description PROHIBIDO (SGP-34): el promovente de la pensión es no modificable — 422 si se envía
                      * @example 7
@@ -4731,6 +4884,11 @@ export interface operations {
                      * @example 150.00
                      */
                     amount: string;
+                    /**
+                     * @description Porciento a aplicar (Task 42, corrección de usuario): OBLIGATORIO — decimal exacto 0-100 con dos decimales
+                     * @example 50.25
+                     */
+                    applied_percent: string;
                 };
             };
         };

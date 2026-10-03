@@ -19,7 +19,6 @@ export const VALID_CATALOG_TYPES = [
   'races',
   'positions',
   'pension-regimes',
-  'payment-types',
   'income-concepts',
 ] as const;
 
@@ -45,6 +44,5 @@ export const CATALOG_TYPE_LABELS: Record<CatalogType, { es: string; en: string }
   races: { es: 'Razas', en: 'Races' },
   positions: { es: 'Cargos', en: 'Positions' },
   'pension-regimes': { es: 'Régimenes de pensión', en: 'Pension regimes' },
-  'payment-types': { es: 'Tipos de pago', en: 'Payment types' },
   'income-concepts': { es: 'Conceptos de ingreso', en: 'Income concepts' },
 };

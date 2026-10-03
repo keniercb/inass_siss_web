@@ -26,6 +26,12 @@ export const createCaseSchema = z.object({
   phone: z.string().max(30).optional().nullable(),
   popular_council: z.string().max(120).optional().nullable(),
   termination_date: z.string().optional().nullable(),
+  current_address: z.string().min(1, 'La dirección actual es obligatoria'),
+  residence_province_id: z.number().int().positive('La provincia de residencia es obligatoria'),
+  residence_municipality_id: z.number().int().positive('El municipio de residencia es obligatorio'),
+  collection_agency_type_id: z.number().int().positive('El tipo de agencia de cobro es obligatorio'),
+  collection_agency_id: z.number().int().positive('La agencia de cobro es obligatoria'),
+  bank_account: z.string().max(34).optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
@@ -50,6 +56,12 @@ export const updateCaseSchema = z.object({
   pension_regime_id: z.number().int().positive('El régimen de pensión es obligatorio'),
   last_salary: z.number().min(0, 'El último salario debe ser ≥ 0'),
   requested_at: z.string().optional().nullable(),
+  current_address: z.string().optional(),
+  residence_province_id: z.number().int().positive().optional(),
+  residence_municipality_id: z.number().int().positive().optional(),
+  collection_agency_type_id: z.number().int().positive().optional(),
+  collection_agency_id: z.number().int().positive().optional(),
+  bank_account: z.string().max(34).optional().nullable(),
 });
 export type UpdateCaseInput = z.infer<typeof updateCaseSchema>;
 
@@ -85,6 +97,7 @@ export type WorkCycleInput = z.infer<typeof workCycleSchema>;
 export const incomeConceptRecordSchema = z.object({
   income_concept_id: z.number().int().positive('El concepto de ingreso es obligatorio'),
   amount: z.number().min(0, 'El importe debe ser ≥ 0'),
+  applied_percent: z.number().min(0, 'El porciento debe ser ≥ 0').max(100, 'El porciento debe ser ≤ 100'),
 });
 export type IncomeConceptRecordInput = z.infer<typeof incomeConceptRecordSchema>;
 
