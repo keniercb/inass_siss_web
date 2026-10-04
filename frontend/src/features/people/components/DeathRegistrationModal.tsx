@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { DatePickerField } from '@/components/ui/DatePickerField';
 import { useToast } from '@/components/ui/Toast';
 import { useRegisterDeath } from '../api/mutations';
 import { deathRegistrationSchema, type DeathRegistrationInput } from '../schemas/person.schema';
@@ -78,11 +78,11 @@ export function DeathRegistrationModal({ person, onClose }: DeathRegistrationMod
             <label htmlFor="death_date" className="block text-sm font-medium text-foreground mb-1">
               {t('form.death_date')} <span className="text-destructive">*</span>
             </label>
-            <Input
+            <DatePickerField
               id="death_date"
-              type="date"
+              value={form.watch('death_date') ?? ''}
+              onChange={(v) => form.setValue('death_date', (v || null) as never, { shouldValidate: true, shouldDirty: true })}
               error={!!form.formState.errors.death_date}
-              {...form.register('death_date')}
             />
             {form.formState.errors.death_date && (
               <p className="text-xs text-destructive mt-1" role="alert">

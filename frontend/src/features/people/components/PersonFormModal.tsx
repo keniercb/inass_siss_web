@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { DatePickerField } from '@/components/ui/DatePickerField';
 import { useToast } from '@/components/ui/Toast';
 import { useCreatePerson, useUpdatePerson } from '../api/mutations';
 import { personSchema, type PersonInput } from '../schemas/person.schema';
@@ -232,11 +233,11 @@ export function PersonFormModal({ person, initialIdentityNumber, onCreated, onCl
             <label htmlFor="birth_date" className="block text-sm font-medium text-foreground mb-1">
               {t('form.birth_date')} <span className="text-destructive">*</span>
             </label>
-            <Input
+            <DatePickerField
               id="birth_date"
-              type="date"
+              value={form.watch('birth_date') ?? ''}
+              onChange={(v) => form.setValue('birth_date', (v || null) as never, { shouldValidate: true, shouldDirty: true })}
               error={!!form.formState.errors.birth_date}
-              {...form.register('birth_date')}
             />
             {form.formState.errors.birth_date && (
               <p className="text-xs text-destructive mt-1" role="alert">

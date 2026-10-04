@@ -2,6 +2,7 @@ import { UseFormReturn, type FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/Input';
+import { DatePickerField } from '@/components/ui/DatePickerField';
 import type { FieldDef } from '@/types/crud';
 import { cn } from '@/lib/utils';
 
@@ -144,12 +145,13 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
       return (
         <div>
           {label}
-          <Input
+          <DatePickerField
             id={field.name}
-            type="date"
+            value={(form.watch(field.name as never) as unknown as string | null | undefined) ?? ''}
+            onChange={(val) => form.setValue(field.name as never, (val || null) as never, { shouldValidate: true, shouldDirty: true })}
+            placeholder={placeholderText}
             disabled={isDisabled}
             error={!!error}
-            {...form.register(field.name as never)}
           />
           {errorMessage}
           {help}

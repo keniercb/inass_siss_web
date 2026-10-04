@@ -9,6 +9,7 @@ import { usePermiso } from '@/hooks/use-permiso';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { DatePickerField } from '@/components/ui/DatePickerField';
 import { Pagination } from '@/components/crud/Pagination';
 import { Dialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
@@ -170,8 +171,8 @@ function LegalBasisFormModal({ item, onClose }: { item: LegalBasis | null; onClo
           <div><label className="block text-sm font-medium mb-1">{t('form.number')} *</label><Input type="text" error={!!form.formState.errors.number} {...form.register('number')} /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('form.issue_date')} *</label><Input type="date" error={!!form.formState.errors.issue_date} {...form.register('issue_date')} /></div>
-          <div><label className="block text-sm font-medium mb-1">{t('form.effective_date')} *</label><Input type="date" error={!!form.formState.errors.effective_date} {...form.register('effective_date')} /></div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.issue_date')} *</label><DatePickerField value={form.watch('issue_date') ?? ''} onChange={(v) => form.setValue('issue_date', (v || null) as never, { shouldValidate: true, shouldDirty: true })} error={!!form.formState.errors.issue_date} /></div>
+          <div><label className="block text-sm font-medium mb-1">{t('form.effective_date')} *</label><DatePickerField value={form.watch('effective_date') ?? ''} onChange={(v) => form.setValue('effective_date', (v || null) as never, { shouldValidate: true, shouldDirty: true })} error={!!form.formState.errors.effective_date} /></div>
         </div>
         <CatalogSearchSelect
           type="organizations"
@@ -182,7 +183,7 @@ function LegalBasisFormModal({ item, onClose }: { item: LegalBasis | null; onClo
           initialSelectedId={item?.issuing_organization_id}
           onSelect={(it) => form.setValue('issuing_organization_id', it.id)}
         />
-        <div><label className="block text-sm font-medium mb-1">{t('form.derogation_date')}</label><Input type="date" {...form.register('derogation_date')} /><p className="text-xs text-muted-foreground mt-1">{t('form.derogation_date_help')}</p></div>
+        <div><label className="block text-sm font-medium mb-1">{t('form.derogation_date')}</label><DatePickerField value={form.watch('derogation_date') ?? ''} onChange={(v) => form.setValue('derogation_date', (v || null) as never, { shouldValidate: true, shouldDirty: true })} /><p className="text-xs text-muted-foreground mt-1">{t('form.derogation_date_help')}</p></div>
         <div><label className="block text-sm font-medium mb-1">{t('form.reference')}</label><Input type="text" {...form.register('reference')} /></div>
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border"><Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
       </form>
