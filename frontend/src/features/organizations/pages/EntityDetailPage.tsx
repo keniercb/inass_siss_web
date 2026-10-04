@@ -28,7 +28,7 @@ export function EntityDetailPage() {
   const canManage = can('organizations.manage');
 
   if (isLoading) return <div className="max-w-7xl mx-auto"><p className="text-muted-foreground">{tc('status.loading')}…</p></div>;
-  if (isError || !entity) return <div className="max-w-7xl mx-auto text-center py-12"><h1 className="text-xl font-semibold mb-2">{t('entities.detail.not_found')}</h1><button onClick={() => navigate('/entidades')} className="text-primary hover:underline">{t('entities.detail.back_to_list')}</button></div>;
+  if (isError || !entity) return <div className="max-w-7xl mx-auto text-center py-12"><h1 className="text-xl font-semibold text-foreground mb-2">{t('entities.detail.not_found')}</h1><button onClick={() => navigate('/entidades')} className="text-primary hover:underline">{t('entities.detail.back_to_list')}</button></div>;
 
   return (
     <div className="max-w-7xl mx-auto">

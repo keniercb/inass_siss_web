@@ -215,5 +215,38 @@
     "success": "Case deleted successfully",
     "error": "An error occurred while deleting the case",
     "not_submitted": "Only cases in Submitted state can be deleted"
+  },
+  "transition": {
+    "button": "Change status",
+    "title": "Status transition",
+    "current": "Current status",
+    "select_target": "Target status",
+    "no_available": "You don't have permissions to transition this case from its current status.",
+    "to": {
+      "submitted": "Return to Submitted",
+      "under_review": "Move to Review",
+      "approved": "Approve",
+      "rejected": "Reject"
+    },
+    "requires_note": "Requires note",
+    "requires_legal_basis": "Requires legal basis",
+    "evidence_section": "Transition evidence",
+    "note_label": "Note",
+    "note_hint": "min 10 characters",
+    "note_placeholder": "Reason or resolution note…",
+    "note_too_short": "The note must be at least 10 characters",
+    "note_required_msg": "The note is required for this transition",
+    "legal_basis_label": "Resolution legal basis",
+    "force_label": "Force derogated legal basis",
+    "force_help": "Administrator only. The warning is recorded in the audit log.",
+    "confirm": "Confirm transition",
+    "success": "Transition applied successfully",
+    "error": "Could not apply the transition",
+    "error_409": "Reopening would break the open-case-per-person reservation",
+    "out_of_matrix": "Transition not allowed: {{from}} → {{to}}",
+    "missing_checklist": "Missing: {{items}}"
+  },
+  "history": {
+    "by": "by"
   }
 }

@@ -83,7 +83,7 @@ export function DashboardPage() {
       </div>
 
       <div className="bg-card rounded-lg border border-border p-6">
-        <h2 className="text-sm font-medium text-foreground mb-4">
+        <h2 className="text-base font-semibold text-foreground mb-4">
           Estado del sistema
         </h2>
         <div className="space-y-3 text-sm text-muted-foreground">

@@ -46,7 +46,7 @@ export function PersonDetailPage() {
     return (
       <div className="max-w-7xl mx-auto text-center py-12">
         <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <h1 className="text-xl font-semibold mb-2">{t('detail.not_found')}</h1>
+        <h1 className="text-xl font-semibold text-foreground mb-2">{t('detail.not_found')}</h1>
         <Link to="/personas" className="text-primary hover:underline">
           {t('detail.back_to_list')}
         </Link>

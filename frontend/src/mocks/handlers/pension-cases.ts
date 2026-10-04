@@ -52,6 +52,39 @@ let nextSalaryId = 100;
 let nextServiceId = 100;
 let nextCycleId = 100;
 let nextIncomeId = 100;
+let nextTransitionId = 100;
+
+// Historial append-only de transiciones por expediente (caso_id → filas)
+// S6, RF-EXP-009. Se siembra con una transición inicial para los casos aprobados/denegados.
+const caseHistory = new Map<number, components['schemas']['PensionCaseHistory'][]>([
+  [3, [
+    { id: 1, from_status: 'submitted', to_status: 'under_review', changed_by: { id: 2, name: 'Especialista' }, changed_at: '2026-09-18T09:15:00+00:00', note: 'Solicitud completa, entra a revisión.' },
+    { id: 2, from_status: 'under_review', to_status: 'approved', changed_by: { id: 2, name: 'Director' }, changed_at: '2026-09-20T10:00:00+00:00', note: 'Aprobado conforme ley 105.' },
+  ]],
+  [4, [
+    { id: 3, from_status: 'submitted', to_status: 'under_review', changed_by: { id: 2, name: 'Especialista' }, changed_at: '2026-09-12T08:30:00+00:00', note: 'En revisión.' },
+    { id: 4, from_status: 'under_review', to_status: 'rejected', changed_by: { id: 2, name: 'Director' }, changed_at: '2026-09-15T14:00:00+00:00', note: 'No cumple años mínimos de trabajo.' },
+  ]],
+]);
+
+// Matriz legal de transiciones (sección 2.4) — refleja la del backend.
+const LEGAL_TRANSITIONS: Record<string, string[]> = {
+  submitted: ['under_review'],
+  under_review: ['submitted', 'approved', 'rejected'],
+  approved: ['under_review'],
+  rejected: ['under_review'],
+};
+
+// Permisos por transición (cubre el rol del actor) — referencia documental
+// (no se valida en el mock porque el backend ya cubre 403 contra el actor real)
+// const TRANSITION_PERMISSION: Record<string, string> = {
+//   submitted_to_under_review: 'cases.review',
+//   under_review_to_submitted: 'cases.review',
+//   under_review_to_approved: 'cases.approve',
+//   under_review_to_rejected: 'cases.reject',
+//   approved_to_under_review: 'cases.reopen',
+//   rejected_to_under_review: 'cases.reopen',
+// };
 
 export const pensionCasesHandlers = [
   // GET /pension-cases — listado
@@ -282,5 +315,147 @@ export const pensionCasesHandlers = [
     c.income_concept_records = (c.income_concept_records ?? []).filter((r) => r.id !== recordId);
     cases.set(caseId, c);
     return HttpResponse.json({ message: 'Deleted.' });
+  }),
+
+  // GET /pension-cases/{id}/transitions — historial append-only (S6, RF-EXP-009)
+  http.get(`${API_BASE}/pension-cases/:id/transitions`, ({ params }) => {
+    const caseId = parseInt(params.id as string, 10);
+    const c = cases.get(caseId);
+    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    const rows = caseHistory.get(caseId) ?? [];
+    // Orden cronológico (más antigua primero), ya están sembradas así
+    return HttpResponse.json({ data: rows });
+  }),
+
+  // POST /pension-cases/{id}/transitions — Máquina declarativa (S6, RF-EXP-005..010, ADR-07)
+  http.post(`${API_BASE}/pension-cases/:id/transitions`, async ({ request, params }) => {
+    const caseId = parseInt(params.id as string, 10);
+    const c = cases.get(caseId);
+    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+
+    const body = (await request.json()) as {
+      to?: string;
+      note?: string | null;
+      legal_basis_id?: number | null;
+      force?: boolean | null;
+    };
+
+    // 1. Validación del cuerpo
+    if (!body.to || !['submitted', 'under_review', 'approved', 'rejected'].includes(body.to)) {
+      return HttpResponse.json({ message: 'Validation error.', errors: { to: ['The to field is required and must be a valid status.'] } }, { status: 422 });
+    }
+
+    const fromStatus = c.status ?? 'submitted';
+    const toStatus = body.to;
+
+    // 2. ¿Es transición legal según la matriz?
+    const legal = LEGAL_TRANSITIONS[fromStatus]?.includes(toStatus) ?? false;
+    if (!legal) {
+      return HttpResponse.json({
+        message: 'Transition not allowed by the matrix (sección 2.4).',
+        status: fromStatus,
+        attempted_to: toStatus,
+        case_id: caseId,
+      }, { status: 422 });
+    }
+
+    // 3. Validaciones de evidencia según la transición
+    const note = body.note ?? null;
+    const errors: Record<string, string[]> = {};
+    const missing: string[] = [];
+
+    // Nota obligatoria en aprobación, denegación y reapertura (mínimo 10 caracteres)
+    const noteRequired = ['approved', 'rejected'].includes(toStatus) || ['approved', 'rejected'].includes(fromStatus);
+    if (noteRequired) {
+      if (!note || note.length < 10) {
+        errors.note = ['The note is required and must be at least 10 characters.'];
+      }
+    }
+
+    // Base legal obligatoria en aprobación
+    if (toStatus === 'approved') {
+      if (!body.legal_basis_id) {
+        errors.legal_basis_id = ['The legal basis is required for approval.'];
+      }
+      // Simulamos: legal_basis_id 1 = vigente, 2 = derogada, 3 = futura
+      if (body.legal_basis_id === 3) {
+        errors.legal_basis_id = ['A future legal basis cannot be used.'];
+      }
+      if (body.legal_basis_id === 2 && !body.force) {
+        errors.legal_basis_id = ['The legal basis is derogated. Only an Administrator can force it.'];
+      }
+    } else {
+      // Base legal prohibida en otras transiciones
+      if (body.legal_basis_id) {
+        errors.legal_basis_id = ['The legal basis is forbidden in this transition.'];
+      }
+      if (body.force) {
+        errors.force = ['The force flag is forbidden in this transition.'];
+      }
+    }
+
+    // 4. Completitud al entrar en revisión (RF-EXP-006)
+    if (toStatus === 'under_review' && fromStatus === 'submitted') {
+      if (!c.salary_records || c.salary_records.length === 0) missing.push('salary_records');
+      if (!c.service_records || c.service_records.length === 0) missing.push('service_records');
+      if (c.last_salary == null || Number(c.last_salary) <= 0) missing.push('last_salary');
+    }
+
+    if (Object.keys(errors).length > 0 || missing.length > 0) {
+      const payload: Record<string, unknown> = {
+        message: 'Transition requirements not met.',
+        status: fromStatus,
+        attempted_to: toStatus,
+        case_id: caseId,
+      };
+      if (Object.keys(errors).length > 0) payload.errors = errors;
+      if (missing.length > 0) payload.missing = missing;
+      return HttpResponse.json(payload, { status: 422 });
+    }
+
+    // 5. Aplicar transición: actualiza el expediente y persiste la fila en el historial
+    const previousStatus = c.status;
+    const updated: PensionCase = {
+      ...c,
+      status: toStatus as PensionCase['status'],
+      // La reapertura limpia la evidencia de decisión (decision fields vuelven a null)
+      ...(toStatus === 'under_review' ? {
+        approval_legal_basis_id: null,
+        decision_notes: null,
+        decided_at: null,
+        decided_by: null,
+        computed_amount: null,
+        calculation_setting_id: null,
+      } : {}),
+      // La aprobación congela la evidencia
+      ...(toStatus === 'approved' ? {
+        approval_legal_basis_id: body.legal_basis_id ?? null,
+        decision_notes: note,
+        decided_at: new Date().toISOString(),
+        decided_by: 2, // mock: el usuario autenticado (Director)
+        computed_amount: c.last_salary ? String(Number(c.last_salary) * 0.5) : null,
+        calculation_setting_id: 2,
+      } : {}),
+      // La denegación persiste la nota como decision_notes
+      ...(toStatus === 'rejected' ? {
+        decision_notes: note,
+        decided_at: new Date().toISOString(),
+        decided_by: 2,
+      } : {}),
+    };
+    cases.set(caseId, updated);
+
+    const transitionRow: components['schemas']['PensionCaseHistory'] = {
+      id: nextTransitionId++,
+      from_status: previousStatus as components['schemas']['PensionCaseHistory']['from_status'],
+      to_status: toStatus as components['schemas']['PensionCaseHistory']['to_status'],
+      changed_by: { id: 2, name: 'Usuario actual' },
+      changed_at: new Date().toISOString(),
+      note,
+    };
+    const rows = caseHistory.get(caseId) ?? [];
+    caseHistory.set(caseId, [...rows, transitionRow]);
+
+    return HttpResponse.json({ data: updated, transition: transitionRow });
   }),
 ];

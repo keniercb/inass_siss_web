@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
-import { usePensionCase } from '../api/queries';
+import { usePensionCase, usePensionCaseHistory } from '../api/queries';
 import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle, useAddIncomeConceptRecord, useRemoveIncomeConceptRecord } from '../api/mutations';
-import { CASE_STATUS_META, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput, type IncomeConceptRecordInput } from '../schemas/pension-case.schema';
+import { CASE_STATUS_META, type CaseStatus, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput, type IncomeConceptRecordInput } from '../schemas/pension-case.schema';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
@@ -15,6 +15,7 @@ import { http } from '@/lib/http';
 import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import type { components } from '@/types/api';
 import { DatePickerField } from '@/components/ui/DatePickerField';
+import { CaseTransitionModal } from '../components/CaseTransitionModal';
 
 type Person = components['schemas']['Person'];
 interface EntityItem { id: number; code: string; name?: string; tax_id_number: string; }
@@ -34,6 +35,7 @@ export function PensionCaseDetailPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('summary');
   const [subModal, setSubModal] = useState<SubModalKind>(null);
+  const [transitionOpen, setTransitionOpen] = useState(false);
 
   const { data: pensionCase, isLoading, isError } = usePensionCase(id);
   // Cargar catálogo de conceptos de ingreso para etiquetar las filas
@@ -53,10 +55,13 @@ export function PensionCaseDetailPage() {
   const removeIncomeConceptMutation = useRemoveIncomeConceptRecord(id);
 
   if (isLoading) return <div className="max-w-7xl mx-auto"><p className="text-muted-foreground">{tc('status.loading')}…</p></div>;
-  if (isError || !pensionCase) return <div className="max-w-7xl mx-auto text-center py-12"><h1 className="text-xl font-semibold mb-2">{t('detail.not_found')}</h1><button onClick={() => navigate('/expedientes')} className="text-primary hover:underline">{t('detail.back_to_list')}</button></div>;
+  if (isError || !pensionCase) return <div className="max-w-7xl mx-auto text-center py-12"><h1 className="text-xl font-semibold text-foreground mb-2">{t('detail.not_found')}</h1><button onClick={() => navigate('/expedientes')} className="text-primary hover:underline">{t('detail.back_to_list')}</button></div>;
 
   const statusMeta = CASE_STATUS_META[pensionCase.status ?? 'submitted'] ?? { label: pensionCase.status ?? '—', badgeClass: '' };
   const applicantName = pensionCase.applicant ? `${pensionCase.applicant.first_surname ?? ''} ${pensionCase.applicant.first_name ?? ''}`.trim() : '—';
+  const currentStatus = (pensionCase.status ?? 'submitted') as CaseStatus;
+  // Botón Transitar visible si el usuario tiene al menos un permiso de transición
+  const canTransition = (['cases.review', 'cases.approve', 'cases.reject', 'cases.reopen'] as const).some((p) => can(p));
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -66,6 +71,13 @@ export function PensionCaseDetailPage() {
           <h1 className="text-2xl font-semibold text-foreground font-mono">{pensionCase.number}</h1>
           <p className="text-sm text-muted-foreground mt-1">{applicantName} · <span className={`badge ${statusMeta.badgeClass}`}>{t(`list.status.${pensionCase.status}`)}</span></p>
         </div>
+        {/* Botón Transitar estado — visible si hay transiciones legales permitidas para el usuario */}
+        {canTransition && (
+          <Button variant="outline" onClick={() => setTransitionOpen(true)}>
+            <GitBranch className="w-4 h-4" />
+            {t('transition.button')}
+          </Button>
+        )}
       </div>
       <div className="border-b border-border mb-6">
         <nav className="flex gap-4">
@@ -120,7 +132,9 @@ export function PensionCaseDetailPage() {
         </div>
       )}
 
-      {activeTab === 'history' && <EmptyTab icon={Clock} title={t('detail.tabs_empty.history')} desc={t('detail.tabs_empty.history_description')} />}
+      {activeTab === 'history' && (
+        <HistoryTab caseId={id} t={t} />
+      )}
       {activeTab === 'calculation' && <EmptyTab icon={Calculator} title={t('detail.tabs_empty.calculation')} desc={t('detail.tabs_empty.calculation_description')} />}
 
       {/* Modales de subregistros */}
@@ -128,6 +142,15 @@ export function PensionCaseDetailPage() {
       {subModal === 'service' && <ServiceRecordModal caseId={id} onClose={() => setSubModal(null)} />}
       {subModal === 'cycle' && <WorkCycleModal caseId={id} onClose={() => setSubModal(null)} />}
       {subModal === 'income' && <IncomeConceptRecordModal caseId={id} onClose={() => setSubModal(null)} />}
+
+      {/* Modal de transición de estado */}
+      {transitionOpen && (
+        <CaseTransitionModal
+          caseId={id}
+          currentStatus={currentStatus}
+          onClose={() => setTransitionOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -278,8 +301,63 @@ function SubrecordSection({ title, onAdd, addLabel, children }: { title: string;
   return <div><div className="flex items-center justify-between mb-2"><h3 className="text-sm font-semibold text-foreground">{title}</h3>{onAdd && <Button size="sm" variant="outline" onClick={onAdd}><Plus className="w-3.5 h-3.5" />{addLabel}</Button>}</div>{children}</div>;
 }
 
+/**
+ * Tab Historial — línea de tiempo append-only de transiciones del expediente
+ * (S6, RF-EXP-009, RN-010/DA H-09). Solo lectura: cada fila muestra estado
+ * previo → nuevo, usuario responsable, momento y nota de evidencia.
+ */
+function HistoryTab({ caseId, t }: { caseId: string; t: (key: string) => string }) {
+  const { data: history, isLoading, isError } = usePensionCaseHistory(caseId);
+  const { t: tc } = useTranslation('common');
+
+  if (isLoading) return <div className="text-sm text-muted-foreground">{tc('status.loading')}…</div>;
+  if (isError) return <div className="text-sm text-destructive">{tc('status.error')}</div>;
+  if (!history || history.length === 0) {
+    return <EmptyTab icon={Clock} title={t('detail.tabs_empty.history')} desc={t('detail.tabs_empty.history_description')} />;
+  }
+
+  return (
+    <div className="max-w-3xl">
+      <div className="space-y-0">
+        {history.map((row, idx) => {
+          const fromMeta = CASE_STATUS_META[row.from_status ?? 'submitted'] ?? { label: row.from_status ?? '—', badgeClass: '' };
+          const toMeta = CASE_STATUS_META[row.to_status ?? 'submitted'] ?? { label: row.to_status ?? '—', badgeClass: '' };
+          const isLast = idx === history.length - 1;
+          return (
+            <div key={row.id ?? idx} className="relative flex gap-4 pb-6">
+              {/* Línea conectora */}
+              {!isLast && <div className="absolute left-4 top-8 bottom-0 w-px bg-border" />}
+              {/* Nodo */}
+              <div className="flex-shrink-0 w-8 h-8 rounded-full border-2 border-primary bg-primary/10 flex items-center justify-center z-10">
+                <ArrowRight className="w-4 h-4 text-primary" />
+              </div>
+              {/* Contenido */}
+              <div className="flex-1 pt-1">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className={cn('badge', fromMeta.badgeClass)}>{t(`list.status.${row.from_status}`)}</span>
+                  <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                  <span className={cn('badge', toMeta.badgeClass)}>{t(`list.status.${row.to_status}`)}</span>
+                  {row.changed_at && (
+                    <span className="text-xs text-muted-foreground ml-auto">{formatDate(row.changed_at)}</span>
+                  )}
+                </div>
+                {row.changed_by?.name && (
+                  <p className="text-xs text-muted-foreground mb-1">{t('history.by')} {row.changed_by.name}</p>
+                )}
+                {row.note && (
+                  <p className="text-sm text-foreground bg-muted/50 rounded-md p-2 mt-1">{row.note}</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function EmptyTab({ icon: Icon, title, desc }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string }) {
-  return <div className="flex flex-col items-center justify-center min-h-[30vh] text-center"><div className="p-4 rounded-full bg-muted mb-4"><Icon className="w-10 h-10 text-muted-foreground" /></div><h2 className="text-lg font-medium mb-1">{title}</h2><p className="text-sm text-muted-foreground max-w-md">{desc}</p></div>;
+  return <div className="flex flex-col items-center justify-center min-h-[30vh] text-center"><div className="p-4 rounded-full bg-muted mb-4"><Icon className="w-10 h-10 text-muted-foreground" /></div><h2 className="text-lg font-medium text-foreground mb-1">{title}</h2><p className="text-sm text-muted-foreground max-w-md">{desc}</p></div>;
 }
 
 // Modales de subregistros

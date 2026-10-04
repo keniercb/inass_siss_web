@@ -3,6 +3,7 @@ import { http } from '@/lib/http';
 import type { components } from '@/types/api';
 
 type PensionCase = components['schemas']['PensionCase'];
+type PensionCaseHistory = components['schemas']['PensionCaseHistory'];
 
 interface ApiResponse<T> { data: T; }
 interface PaginatedResponse<T> {
@@ -41,5 +42,18 @@ export function usePensionCase(id?: number | string) {
     },
     enabled: !!id,
     staleTime: 60_000,
+  });
+}
+
+/** GET /pension-cases/{id}/transitions — historial append-only de transiciones (S6, RF-EXP-009). */
+export function usePensionCaseHistory(id?: number | string) {
+  return useQuery({
+    queryKey: ['pension-cases', 'history', id],
+    queryFn: async () => {
+      const response = await http.get<{ data: PensionCaseHistory[] }>(`/pension-cases/${id}/transitions`);
+      return response.data.data;
+    },
+    enabled: !!id,
+    staleTime: 30_000,
   });
 }

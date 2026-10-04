@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
 import type { components } from '@/types/api';
-import type { CreateCaseInput, UpdateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput, IncomeConceptRecordInput } from '../schemas/pension-case.schema';
+import type { CreateCaseInput, UpdateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput, IncomeConceptRecordInput, TransitionInput } from '../schemas/pension-case.schema';
 import type { AxiosError } from 'axios';
 
 type PensionCase = components['schemas']['PensionCase'];
+type PensionCaseHistory = components['schemas']['PensionCaseHistory'];
 interface ApiResponse<T> { data: T; }
 
 export function useCreateCase() {
@@ -213,5 +214,87 @@ export function useRemoveIncomeConceptRecord(caseId: number | string) {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('income_concept.remove_success')); },
     onError: () => { toast.error(t('income_concept.remove_error')); },
+  });
+}
+
+/**
+ * POST /pension-cases/{id}/transitions — Máquina declarativa de estados (S6, RF-EXP-005..010, ADR-07).
+ *
+ * Respuestas de error diferenciadas:
+ *  - 422 fuera de matriz / evidencia exigida ausente o corta / base legal no vigente / missing de completitud
+ *  - 403 sin el rol del permiso (cases.review | cases.approve | cases.reject | cases.reopen)
+ *  - 409 reapertura rompería la reservación expediente-abierto-por-persona
+ *
+ * El toast de error sintetiza los campos de diagnóstico que devuelve el backend
+ * (status, attempted_to, missing, message) para que el usuario entienda la causa.
+ */
+interface TransitionResponse { data: PensionCase; transition: PensionCaseHistory; }
+
+interface TransitionError422 {
+  message?: string;
+  status?: string;
+  attempted_to?: string;
+  case_id?: number | null;
+  missing?: string[];
+  errors?: Record<string, string[]>;
+}
+
+interface TransitionError409 {
+  message?: string;
+  case?: PensionCase | null;
+  case_id?: number | null;
+  status?: string | null;
+}
+
+export function useCaseTransition(caseId: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pension-cases');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (input: TransitionInput) => {
+      const r = await http.post<TransitionResponse>(`/pension-cases/${caseId}/transitions`, input);
+      return r.data;
+    },
+    onSuccess: (data) => {
+      // El expediente actualizado + la fila del historial
+      qc.setQueryData(['pension-cases', 'detail', caseId], data.data);
+      qc.invalidateQueries({ queryKey: ['pension-cases', 'history', caseId] });
+      qc.invalidateQueries({ queryKey: ['pension-cases', 'list'] });
+      toast.success(t('transition.success'));
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<TransitionError422 & TransitionError409>;
+      const status = ae.response?.status;
+
+      // 409 — reapertura rompería la reservación expediente-abierto-por-persona
+      if (status === 409) {
+        const body = ae.response?.data;
+        const detail = body?.message ?? t('transition.error_409');
+        toast.errorDetail(t('transition.error'), detail);
+        return;
+      }
+
+      // 422 — fuera de matriz / evidencia / vigencia / completitud
+      if (status === 422) {
+        const body = ae.response?.data;
+        const parts: string[] = [];
+        if (body?.status && body?.attempted_to) {
+          parts.push(t('transition.out_of_matrix', { from: body.status, to: body.attempted_to }));
+        }
+        if (body?.missing && body.missing.length > 0) {
+          parts.push(t('transition.missing_checklist', { items: body.missing.join(', ') }));
+        }
+        if (body?.errors) {
+          const fieldErrors = Object.values(body.errors).flat();
+          if (fieldErrors.length > 0) parts.push(...fieldErrors);
+        }
+        if (body?.message && parts.length === 0) parts.push(body.message);
+        if (parts.length === 0) parts.push(t('transition.error'));
+        toast.errorDetail(t('transition.error'), parts.join(' · '));
+        return;
+      }
+
+      toast.error(t('transition.error'));
+    },
   });
 }

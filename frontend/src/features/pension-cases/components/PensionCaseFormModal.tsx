@@ -246,7 +246,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         </div>
         {/* Domicilio y cobro del promovente */}
         <div className="border-t border-border pt-4 space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">{t('form.residence_section')}</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('form.residence_section')}</h3>
           <div><label className="block text-sm font-medium mb-1">{t('form.current_address')} *</label>
             <Input type="text" placeholder="Calle 8 #10 entre 5 y 7, Playa" value={currentAddress} onChange={(e) => setCurrentAddress(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">

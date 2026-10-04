@@ -42,7 +42,7 @@ export function GeneralSettingsListPage() {
       <div className="bg-primary/10 border-l-4 border-primary rounded-md p-4 mb-6">
         <div className="flex items-center gap-2 mb-2">
           <CheckCircle className="w-5 h-5 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">{t('current.title')}</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">{t('current.title')}</h2>
         </div>
         <p className="text-sm text-muted-foreground">{t('current.description')}</p>
       </div>

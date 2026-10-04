@@ -107,3 +107,70 @@ export const CASE_STATUS_META: Record<string, { label: string; badgeClass: strin
   approved: { label: 'Aprobado', badgeClass: 'badge-approved' },
   rejected: { label: 'Denegado', badgeClass: 'badge-rejected' },
 };
+
+// Estados del expediente (sección 2.4) — máquina declarativa
+export type CaseStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
+
+/**
+ * Matriz de transiciones legales (sección 2.4):
+ *   submitted     → under_review          (revisión, especialista, cases.review)
+ *   under_review  → submitted             (devolución, especialista, cases.review)
+ *   under_review  → approved              (aprobación, Director, cases.approve)
+ *   under_review  → rejected              (denegación, Director, cases.reject)
+ *   approved      → under_review          (reapertura, Administrador, cases.reopen)
+ *   rejected      → under_review          (reapertura, Administrador, cases.reopen)
+ *
+ * Cada transición legal define su permiso, si exige nota (mínimo 10 caracteres),
+ * si exige base legal vigente y si admite force (RF-LEG-003).
+ */
+export interface TransitionRule {
+  to: CaseStatus;
+  permission: 'cases.review' | 'cases.approve' | 'cases.reject' | 'cases.reopen';
+  /** La nota es obligatoria y se valida ≥ 10 caracteres */
+  noteRequired: boolean;
+  /** Base legal vigente obligatoria (solo aprobación) */
+  legalBasisRequired: boolean;
+  /** Bandera force admitida (solo aprobación, base legal derogada) */
+  forceAllowed: boolean;
+  /** Etiqueta breve de la transición para UI */
+  labelKey: string;
+}
+
+export const TRANSITION_MATRIX: Record<CaseStatus, TransitionRule[]> = {
+  submitted: [
+    { to: 'under_review', permission: 'cases.review', noteRequired: false, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.under_review' },
+  ],
+  under_review: [
+    { to: 'submitted', permission: 'cases.review', noteRequired: false, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.submitted' },
+    { to: 'approved', permission: 'cases.approve', noteRequired: true, legalBasisRequired: true, forceAllowed: true, labelKey: 'transition.to.approved' },
+    { to: 'rejected', permission: 'cases.reject', noteRequired: true, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.rejected' },
+  ],
+  approved: [
+    { to: 'under_review', permission: 'cases.reopen', noteRequired: true, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.under_review' },
+  ],
+  rejected: [
+    { to: 'under_review', permission: 'cases.reopen', noteRequired: true, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.under_review' },
+  ],
+};
+
+/**
+ * Schema para POST /pension-cases/{id}/transitions.
+ * El campo `to` es obligatorio; note/legal_basis_id/force son condicionales según la matriz.
+ */
+export const transitionSchema = z.object({
+  to: z.enum(['submitted', 'under_review', 'approved', 'rejected']),
+  note: z.string().max(2000).optional().nullable(),
+  legal_basis_id: z.number().int().positive().optional().nullable(),
+  force: z.boolean().optional().nullable(),
+}).superRefine((data, ctx) => {
+  // La validación de "nota ≥ 10 caracteres" se hace en el backend (422 con detalle),
+  // pero hacemos una pre-validación de UX para evitar viajes innecesarios.
+  if (data.note != null && data.note.length > 0 && data.note.length < 10) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['note'],
+      message: 'La nota debe tener al menos 10 caracteres',
+    });
+  }
+});
+export type TransitionInput = z.infer<typeof transitionSchema>;

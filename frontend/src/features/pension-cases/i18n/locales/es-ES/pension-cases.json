@@ -215,5 +215,38 @@
     "success": "Expediente eliminado correctamente",
     "error": "Ocurrió un error al eliminar el expediente",
     "not_submitted": "Solo se pueden eliminar expedientes en estado Solicitud"
+  },
+  "transition": {
+    "button": "Transitar estado",
+    "title": "Transición de estado",
+    "current": "Estado actual",
+    "select_target": "Estado destino",
+    "no_available": "No tiene permisos para transitar este expediente desde su estado actual.",
+    "to": {
+      "submitted": "Devolver a Solicitud",
+      "under_review": "Pasar a Revisión",
+      "approved": "Aprobar",
+      "rejected": "Denegar"
+    },
+    "requires_note": "Requiere nota",
+    "requires_legal_basis": "Requiere base legal",
+    "evidence_section": "Evidencia de la transición",
+    "note_label": "Nota",
+    "note_hint": "mínimo 10 caracteres",
+    "note_placeholder": "Motivo o nota de resolución…",
+    "note_too_short": "La nota debe tener al menos 10 caracteres",
+    "note_required_msg": "La nota es obligatoria en esta transición",
+    "legal_basis_label": "Base legal de la resolución",
+    "force_label": "Forzar base legal derogada",
+    "force_help": "Disponible solo para Administrador. La advertencia queda en bitácora.",
+    "confirm": "Confirmar transición",
+    "success": "Transición aplicada correctamente",
+    "error": "No se pudo aplicar la transición",
+    "error_409": "La reapertura rompería la reservación de expediente abierto por persona",
+    "out_of_matrix": "Transición no permitida: {{from}} → {{to}}",
+    "missing_checklist": "Faltan: {{items}}"
+  },
+  "history": {
+    "by": "por"
   }
 }
