@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.5.0"
+        "version": "1.7.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -4334,7 +4334,7 @@
                     "Expedientes"
                 ],
                 "summary": "Alta de un registro de servicio",
-                "description": "Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. Task 37 (corrección de usuario): end_date es OBLIGATORIA, estrictamente posterior a start_date (422) y el período no puede solapar NINGÚN subregistro existente del expediente (422 sobre end_date nombrando los registros cruzados) — los vínculos abiertos y los solapamientos advertidos de Sprint 5 ya no existen.",
+                "description": "Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. Task 37 (corrección de usuario): end_date es OBLIGATORIA, estrictamente posterior a start_date (422) y el período no puede solapar NINGÚN subregistro existente del expediente (422 sobre end_date nombrando los registros cruzados) — los vínculos abiertos y los solapamientos advertidos de Sprint 5 ya no existen. Task 48 (SGP-38, corrección de usuario): la fila nace con su par DERIVADO de tiempo de trabajo, calculado por el sistema al alta en el mismo momento — worked_years, número DOUBLE REDONDEADO al entero más cercano (meses de diferencia divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 6, la media sube), y worked_months, entero con los meses TOTALES de diferencia SIN divisor (2000-01-01 → 2005-12-31 responde 71) —; ambos campos JAMÁS se aceptan en el payload (422 si el cliente los envía) y quedan congelados con la fila.",
                 "operationId": "pensionCasesAddServiceRecord",
                 "parameters": [
                     {
@@ -8624,10 +8624,10 @@
             },
             "ServiceRecord": {
                 "title": "Registro de servicio",
-                "description": "Vinculo laboral declarado en el expediente (RF-EXP-003). Desde la Task 37 todo período está CERRADO y DISJUNTO: end_date obligatoria y estrictamente posterior a start_date (422 en caso contrario, CHECK chk_service_records_dates como última línea) y sin solapamiento con ningún otro subregistro del expediente (422). is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).",
+                "description": "Vinculo laboral declarado en el expediente (RF-EXP-003). Desde la Task 37 todo período está CERRADO y DISJUNTO: end_date obligatoria y estrictamente posterior a start_date (422 en caso contrario, CHECK chk_service_records_dates como última línea) y sin solapamiento con ningún otro subregistro del expediente (422). is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. Task 48 (SGP-38): worked_years responde los años de trabajo del vínculo — número DOUBLE DERIVADO calculado al alta con la fórmula del usuario REDONDEADA al entero más cercano (mitad hacia arriba) — y worked_months los meses de trabajo TOTALES del vínculo — entero DERIVADO, sin divisor —, ambos calculados en el mismo momento, congelados con la fila y jamás aceptados en el wire (422). La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).",
                 "properties": {
                     "id": {
-                        "description": "Work service projection (RF-EXP-003). Since the Task 37 user\ncorrection every period is CLOSED: end_date is mandatory,\nstrictly posterior to start_date (422 otherwise) and DISJOINT\nfrom every sibling row of the case (422 otherwise) — the open\nlink and the advertised overlaps of Sprint 5 no longer exist.\nThe full employer entity projection travels with every row (user\nrule: the service-records listing answers the entity data, not\na bare id).",
+                        "description": "Work service projection (RF-EXP-003). Since the Task 37 user\ncorrection every period is CLOSED: end_date is mandatory,\nstrictly posterior to start_date (422 otherwise) and DISJOINT\nfrom every sibling row of the case (422 otherwise) — the open\nlink and the advertised overlaps of Sprint 5 no longer exist.\nTask 48 (SGP-38) refines the derived worked time of every row:\nworked_years — the months of difference divided by the regime's\nmonths_per_year, ROUNDED to the nearest integer over a DOUBLE —\nand worked_months — the total months of difference, no divisor —\n, both serialized as JSON NUMBERS (unlike the decimal string of\nlast_salary) and frozen with the row. The full employer entity\nprojection travels with every row (user rule: the\nservice-records listing answers the entity data, not a bare id).",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -8666,6 +8666,17 @@
                             "Documental",
                             "Testifical"
                         ]
+                    },
+                    "worked_years": {
+                        "description": "Años de trabajo del vínculo (Task 48, SGP-38): número DOUBLE DERIVADO calculado al alta con la fórmula del usuario y REDONDEADO al entero más cercano (la media sube: la fracción ya no se descarta) — meses de diferencia entre start_date y end_date (el día no cuenta) divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 6 — jamás aceptado en el wire (422), congelado con la fila; el valor siempre es un entero exacto (round de enteros del servidor, decisión de usuario documentada como excepción acotada de RN-005)",
+                        "type": "number",
+                        "format": "double",
+                        "example": 6
+                    },
+                    "worked_months": {
+                        "description": "Meses de trabajo TOTALES del vínculo (Task 48, SGP-38): entero DERIVADO calculado al alta en el mismo momento que worked_years con la fórmula del usuario SIN divisor — (AÑO(end_date) - AÑO(start_date)) × 12 + (MES(end_date) - MES(start_date)), el día no cuenta; 2000-01-01 → 2005-12-31 responde 71 — jamás aceptado en el wire (422), congelado con la fila",
+                        "type": "integer",
+                        "example": 71
                     },
                     "entity": {
                         "description": "Proyeccion completa de la entidad empleadora (regla de usuario del listado)",
