@@ -9,6 +9,26 @@ type IncomeConceptRecord = components['schemas']['IncomeConceptRecord'];
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
+/**
+ * Calcula worked_months y worked_years para un ServiceRecord (Task 48 / SGP-38):
+ *  - worked_months = (AÑO(end) - AÑO(start)) × 12 + (MES(end) - MES(start))
+ *    (el día NO cuenta; 2000-01-01 → 2005-12-31 = 71)
+ *  - worked_years  = round(worked_months / months_per_year)  (mitad hacia arriba)
+ *
+ * El backend los congela al alta y jamás los acepta en el wire (422). El mock
+ * los calcula en el POST para simular ese comportamiento.
+ */
+function computeWorkedTime(startIso: string, endIso: string, monthsPerYear = 12): { worked_months: number; worked_years: number } {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return { worked_months: 0, worked_years: 0 };
+  }
+  const worked_months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+  const worked_years = Math.round(worked_months / monthsPerYear);
+  return { worked_months, worked_years };
+}
+
 // Datos mock base — alineados con docs.json (rebel_army_member + rebel_army_join_date +
 // pension_type_id + pension_regime_id + income_concept_records: [])
 const baseCase = (overrides: Partial<PensionCase>): PensionCase => ({
@@ -22,8 +42,8 @@ const baseCase = (overrides: Partial<PensionCase>): PensionCase => ({
 
 const cases = new Map<number, PensionCase>([
   [1, baseCase({ id: 1, number: '11-2026-00001', requested_at: '2026-09-15', status: 'submitted', applicant_person_id: 2, office_id: 1, employer_entity_id: 1, position_id: 1, occupational_category_id: 1, educational_level_id: 5, scientific_category_id: 1, last_salary: '5200.00', approval_legal_basis_id: null, decision_notes: null, decided_at: null, decided_by: null, computed_amount: null, calculation_setting_id: null, salary_records: [], service_records: [], work_cycles: [], applicant: { id: 2, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' } as never })],
-  [2, baseCase({ id: 2, number: '11-2026-00002', requested_at: '2026-09-14', status: 'under_review', applicant_person_id: 1, office_id: 2, employer_entity_id: 2, position_id: 2, occupational_category_id: 2, educational_level_id: 3, scientific_category_id: 2, last_salary: '4800.00', approval_legal_basis_id: null, decision_notes: null, decided_at: null, decided_by: null, computed_amount: null, calculation_setting_id: null, salary_records: [{ id: 1, pension_case_id: 2, year: 2023, earned_salary: '4500.00' } as SalaryRecord, { id: 2, pension_case_id: 2, year: 2024, earned_salary: '4800.00' } as SalaryRecord], service_records: [{ id: 1, pension_case_id: 2, entity_id: 1, entity: { id: 1, code: 'EMP001', name: 'Empresa Nacional de Servicios Técnicos', tax_id_number: 'NIT-001-123456' } as never, start_date: '2010-01-01', end_date: '2024-12-31', is_appendix: false, declaration_form: 'Documental' } as ServiceRecord], work_cycles: [{ id: 1, pension_case_id: 2, planned_days: 365, actual_days: 350, cycles_count: 1 } as WorkCycle], income_concept_records: [{ id: 1, pension_case_id: 2, income_concept_id: 3, amount: '150.00' } as IncomeConceptRecord], applicant: { id: 1, identity_number: '85061547812', first_name: 'Ana', first_surname: 'Pérez' } as never })],
-  [3, baseCase({ id: 3, number: '11-2026-00003', requested_at: '2026-09-10', status: 'approved', applicant_person_id: 3, office_id: 1, employer_entity_id: 1, position_id: 1, occupational_category_id: 1, educational_level_id: 5, scientific_category_id: 1, last_salary: '6500.00', approval_legal_basis_id: 1, decision_notes: 'Aprobado conforme ley 105', decided_at: '2026-09-20T10:00:00Z', decided_by: 2, computed_amount: '3250.00', calculation_setting_id: 2, salary_records: [{ id: 3, pension_case_id: 3, year: 2024, earned_salary: '6500.00' } as SalaryRecord], service_records: [{ id: 2, pension_case_id: 3, entity_id: 1, entity: { id: 1, code: 'EMP001', name: 'Empresa Nacional de Servicios Técnicos', tax_id_number: 'NIT-001-123456' } as never, start_date: '2005-01-01', end_date: '2024-12-31', is_appendix: false, declaration_form: 'Documental' } as ServiceRecord], work_cycles: [], applicant: { id: 3, identity_number: '65112845679', first_name: 'Josefa', first_surname: 'Martínez' } as never })],
+  [2, baseCase({ id: 2, number: '11-2026-00002', requested_at: '2026-09-14', status: 'under_review', applicant_person_id: 1, office_id: 2, employer_entity_id: 2, position_id: 2, occupational_category_id: 2, educational_level_id: 3, scientific_category_id: 2, last_salary: '4800.00', approval_legal_basis_id: null, decision_notes: null, decided_at: null, decided_by: null, computed_amount: null, calculation_setting_id: null, salary_records: [{ id: 1, pension_case_id: 2, year: 2023, earned_salary: '4500.00' } as SalaryRecord, { id: 2, pension_case_id: 2, year: 2024, earned_salary: '4800.00' } as SalaryRecord], service_records: [{ id: 1, pension_case_id: 2, entity_id: 1, entity: { id: 1, code: 'EMP001', name: 'Empresa Nacional de Servicios Técnicos', tax_id_number: 'NIT-001-123456' } as never, start_date: '2010-01-01', end_date: '2024-12-31', is_appendix: false, declaration_form: 'Documental', worked_months: 179, worked_years: 15 } as ServiceRecord], work_cycles: [{ id: 1, pension_case_id: 2, planned_days: 365, actual_days: 350, cycles_count: 1 } as WorkCycle], income_concept_records: [{ id: 1, pension_case_id: 2, income_concept_id: 3, amount: '150.00' } as IncomeConceptRecord], applicant: { id: 1, identity_number: '85061547812', first_name: 'Ana', first_surname: 'Pérez' } as never })],
+  [3, baseCase({ id: 3, number: '11-2026-00003', requested_at: '2026-09-10', status: 'approved', applicant_person_id: 3, office_id: 1, employer_entity_id: 1, position_id: 1, occupational_category_id: 1, educational_level_id: 5, scientific_category_id: 1, last_salary: '6500.00', approval_legal_basis_id: 1, decision_notes: 'Aprobado conforme ley 105', decided_at: '2026-09-20T10:00:00Z', decided_by: 2, computed_amount: '3250.00', calculation_setting_id: 2, salary_records: [{ id: 3, pension_case_id: 3, year: 2024, earned_salary: '6500.00' } as SalaryRecord], service_records: [{ id: 2, pension_case_id: 3, entity_id: 1, entity: { id: 1, code: 'EMP001', name: 'Empresa Nacional de Servicios Técnicos', tax_id_number: 'NIT-001-123456' } as never, start_date: '2005-01-01', end_date: '2024-12-31', is_appendix: false, declaration_form: 'Documental', worked_months: 239, worked_years: 20 } as ServiceRecord], work_cycles: [], applicant: { id: 3, identity_number: '65112845679', first_name: 'Josefa', first_surname: 'Martínez' } as never })],
   [4, baseCase({ id: 4, number: '11-2026-00004', requested_at: '2026-09-08', status: 'rejected', applicant_person_id: 5, office_id: 3, employer_entity_id: 3, position_id: 3, occupational_category_id: 3, educational_level_id: 2, scientific_category_id: 3, last_salary: '3200.00', approval_legal_basis_id: null, decision_notes: 'No cumple años mínimos de trabajo', decided_at: '2026-09-15T14:00:00Z', decided_by: 2, computed_amount: null, calculation_setting_id: null, salary_records: [], service_records: [], work_cycles: [], applicant: { id: 5, identity_number: '72051548124', first_name: 'Roberto', first_surname: 'Hernández' } as never })],
 ]);
 
@@ -188,7 +208,14 @@ export const pensionCasesHandlers = [
     if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const id = nextServiceId++;
-    const record = { id, pension_case_id: caseId, entity_id: body.entity_id, entity: { id: body.entity_id as number, code: 'EMP-NEW', name: 'Entidad #' + String(body.entity_id), tax_id_number: 'NIT-NEW' } as never, start_date: body.start_date as string, end_date: (body.end_date as string | null) ?? null, is_appendix: (body.is_appendix as boolean | undefined) ?? false, declaration_form: (body.declaration_form as 'Documental' | 'Testifical' | undefined) ?? 'Documental' } as unknown as ServiceRecord;
+    // Task 48 / SGP-38: worked_months y worked_years son DERIVADOS —
+    // el backend los calcula al alta y jamás los acepta en el wire (422).
+    const startDate = body.start_date as string;
+    const endDate = (body.end_date as string | null) ?? null;
+    const { worked_months, worked_years } = endDate
+      ? computeWorkedTime(startDate, endDate)
+      : { worked_months: 0, worked_years: 0 };
+    const record = { id, pension_case_id: caseId, entity_id: body.entity_id, entity: { id: body.entity_id as number, code: 'EMP-NEW', name: 'Entidad #' + String(body.entity_id), tax_id_number: 'NIT-NEW' } as never, start_date: startDate, end_date: endDate, is_appendix: (body.is_appendix as boolean | undefined) ?? false, declaration_form: (body.declaration_form as 'Documental' | 'Testifical' | undefined) ?? 'Documental', worked_months, worked_years } as unknown as ServiceRecord;
     c.service_records = [...(c.service_records ?? []), record];
     cases.set(caseId, c);
     return HttpResponse.json({ data: record }, { status: 201 });

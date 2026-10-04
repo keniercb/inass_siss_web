@@ -522,7 +522,7 @@ export interface paths {
         put?: never;
         /**
          * Alta de un registro de servicio
-         * @description Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. Task 37 (corrección de usuario): end_date es OBLIGATORIA, estrictamente posterior a start_date (422) y el período no puede solapar NINGÚN subregistro existente del expediente (422 sobre end_date nombrando los registros cruzados) — los vínculos abiertos y los solapamientos advertidos de Sprint 5 ya no existen.
+         * @description Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. Task 37 (corrección de usuario): end_date es OBLIGATORIA, estrictamente posterior a start_date (422) y el período no puede solapar NINGÚN subregistro existente del expediente (422 sobre end_date nombrando los registros cruzados) — los vínculos abiertos y los solapamientos advertidos de Sprint 5 ya no existen. Task 48 (SGP-38, corrección de usuario): la fila nace con su par DERIVADO de tiempo de trabajo, calculado por el sistema al alta en el mismo momento — worked_years, número DOUBLE REDONDEADO al entero más cercano (meses de diferencia divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 6, la media sube), y worked_months, entero con los meses TOTALES de diferencia SIN divisor (2000-01-01 → 2005-12-31 responde 71) —; ambos campos JAMÁS se aceptan en el payload (422 si el cliente los envía) y quedan congelados con la fila.
          */
         post: operations["pensionCasesAddServiceRecord"];
         delete?: never;
@@ -1894,7 +1894,7 @@ export interface components {
         };
         /**
          * Registro de servicio
-         * @description Vinculo laboral declarado en el expediente (RF-EXP-003). Desde la Task 37 todo período está CERRADO y DISJUNTO: end_date obligatoria y estrictamente posterior a start_date (422 en caso contrario, CHECK chk_service_records_dates como última línea) y sin solapamiento con ningún otro subregistro del expediente (422). is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).
+         * @description Vinculo laboral declarado en el expediente (RF-EXP-003). Desde la Task 37 todo período está CERRADO y DISJUNTO: end_date obligatoria y estrictamente posterior a start_date (422 en caso contrario, CHECK chk_service_records_dates como última línea) y sin solapamiento con ningún otro subregistro del expediente (422). is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. Task 48 (SGP-38): worked_years responde los años de trabajo del vínculo — número DOUBLE DERIVADO calculado al alta con la fórmula del usuario REDONDEADA al entero más cercano (mitad hacia arriba) — y worked_months los meses de trabajo TOTALES del vínculo — entero DERIVADO, sin divisor —, ambos calculados en el mismo momento, congelados con la fila y jamás aceptados en el wire (422). La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).
          */
         ServiceRecord: {
             /**
@@ -1904,9 +1904,14 @@ export interface components {
              *     strictly posterior to start_date (422 otherwise) and DISJOINT
              *     from every sibling row of the case (422 otherwise) — the open
              *     link and the advertised overlaps of Sprint 5 no longer exist.
-             *     The full employer entity projection travels with every row (user
-             *     rule: the service-records listing answers the entity data, not
-             *     a bare id).
+             *     Task 48 (SGP-38) refines the derived worked time of every row:
+             *     worked_years — the months of difference divided by the regime's
+             *     months_per_year, ROUNDED to the nearest integer over a DOUBLE —
+             *     and worked_months — the total months of difference, no divisor —
+             *     , both serialized as JSON NUMBERS (unlike the decimal string of
+             *     last_salary) and frozen with the row. The full employer entity
+             *     projection travels with every row (user rule: the
+             *     service-records listing answers the entity data, not a bare id).
              * @example 1
              */
             id?: number;
@@ -1942,6 +1947,17 @@ export interface components {
              * @enum {string}
              */
             declaration_form?: "Documental" | "Testifical";
+            /**
+             * Format: double
+             * @description Años de trabajo del vínculo (Task 48, SGP-38): número DOUBLE DERIVADO calculado al alta con la fórmula del usuario y REDONDEADO al entero más cercano (la media sube: la fracción ya no se descarta) — meses de diferencia entre start_date y end_date (el día no cuenta) divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 6 — jamás aceptado en el wire (422), congelado con la fila; el valor siempre es un entero exacto (round de enteros del servidor, decisión de usuario documentada como excepción acotada de RN-005)
+             * @example 6
+             */
+            worked_years?: number;
+            /**
+             * @description Meses de trabajo TOTALES del vínculo (Task 48, SGP-38): entero DERIVADO calculado al alta en el mismo momento que worked_years con la fórmula del usuario SIN divisor — (AÑO(end_date) - AÑO(start_date)) × 12 + (MES(end_date) - MES(start_date)), el día no cuenta; 2000-01-01 → 2005-12-31 responde 71 — jamás aceptado en el wire (422), congelado con la fila
+             * @example 71
+             */
+            worked_months?: number;
             /** @description Proyeccion completa de la entidad empleadora (regla de usuario del listado) */
             entity?: components["schemas"]["Entity"] | null;
         };
