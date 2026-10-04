@@ -149,6 +149,7 @@
       "entity": "Entidad",
       "start_date": "Inicio",
       "end_date": "Fin",
+      "worked_months": "Meses",
       "is_appendix": "Coletilla",
       "declaration_form": "Declaración"
     },

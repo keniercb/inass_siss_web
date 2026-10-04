@@ -10,7 +10,7 @@ import { CASE_STATUS_META, type SalaryRecordInput, type ServiceRecordInput, type
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
-import { formatDate, formatCUP, cn } from '@/lib/utils';
+import { formatDate, formatCUP, cn, workedMonths } from '@/lib/utils';
 import { http } from '@/lib/http';
 import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import type { components } from '@/types/api';
@@ -93,10 +93,11 @@ export function PensionCaseDetailPage() {
           {/* Servicios */}
           <SubrecordSection title={t('service.title')} onAdd={canEdit ? () => setSubModal('service') : undefined} addLabel={t('service.add')}>
             {(pensionCase.service_records ?? []).length > 0 ? (
-              <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('service.columns.entity')}</th><th className="text-left px-3 py-2">{t('service.columns.start_date')}</th><th className="text-left px-3 py-2">{t('service.columns.end_date')}</th><th className="text-left px-3 py-2">{t('service.columns.is_appendix')}</th><th className="text-left px-3 py-2">{t('service.columns.declaration_form')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
+              <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('service.columns.entity')}</th><th className="text-left px-3 py-2">{t('service.columns.start_date')}</th><th className="text-left px-3 py-2">{t('service.columns.end_date')}</th><th className="text-right px-3 py-2">{t('service.columns.worked_months')}</th><th className="text-left px-3 py-2">{t('service.columns.is_appendix')}</th><th className="text-left px-3 py-2">{t('service.columns.declaration_form')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
                 <tbody className="divide-y divide-border">{(pensionCase.service_records ?? []).map((r) => {
                   const entityLabel = r.entity ? (r.entity.name ?? `${r.entity.code ?? ''} ${r.entity.tax_id_number ?? ''}`.trim()) : (r.entity_id ? `#${r.entity_id}` : '—');
-                  return (<tr key={r.id}><td className="px-3 py-2 text-xs">{entityLabel}</td><td className="px-3 py-2">{r.start_date ? formatDate(r.start_date) : '—'}</td><td className="px-3 py-2">{r.end_date ? formatDate(r.end_date) : '—'}</td><td className="px-3 py-2">{r.is_appendix ? '✓' : '—'}</td><td className="px-3 py-2 text-xs">{r.declaration_form ?? '—'}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeServiceMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>);
+                  const months = workedMonths(r.start_date, r.end_date);
+                  return (<tr key={r.id}><td className="px-3 py-2 text-xs">{entityLabel}</td><td className="px-3 py-2">{r.start_date ? formatDate(r.start_date) : '—'}</td><td className="px-3 py-2">{r.end_date ? formatDate(r.end_date) : '—'}</td><td className="px-3 py-2 text-right font-mono">{months != null ? months : '—'}</td><td className="px-3 py-2">{r.is_appendix ? '✓' : '—'}</td><td className="px-3 py-2 text-xs">{r.declaration_form ?? '—'}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeServiceMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>);
                 })}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}

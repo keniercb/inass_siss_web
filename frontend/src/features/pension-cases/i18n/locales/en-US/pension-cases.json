@@ -149,6 +149,7 @@
       "entity": "Entity",
       "start_date": "Start",
       "end_date": "End",
+      "worked_months": "Months",
       "is_appendix": "Appendix",
       "declaration_form": "Declaration"
     },

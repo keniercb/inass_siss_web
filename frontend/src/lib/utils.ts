@@ -25,6 +25,22 @@ export function formatDate(isoDate: string | Date, locale = 'es-CU'): string {
   }).format(date);
 }
 
+/**
+ * Calcula los meses trabajados entre dos fechas (inclusive ambos extremos).
+ * Convención: el mes de inicio y el mes de fin cuentan como meses completos.
+ * Ej: 2010-01-01 → 2024-12-31 = 180 meses (15 años × 12).
+ * Devuelve null si alguna fecha falta o end < start.
+ */
+export function workedMonths(startIso?: string | null, endIso?: string | null): number | null {
+  if (!startIso || !endIso) return null;
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  if (end < start) return null;
+  const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+  return months < 0 ? 0 : months;
+}
+
 /** Genera un UUID v4 (para Idempotency-Key) */
 export function uuidv4(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
