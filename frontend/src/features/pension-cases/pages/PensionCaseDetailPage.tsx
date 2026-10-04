@@ -365,13 +365,15 @@ function SalaryRecordModal({ caseId, onClose }: { caseId: string; onClose: () =>
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddSalaryRecord(caseId);
   const [year, setYear] = useState(''); const [salary, setSalary] = useState('');
-  return <Dialog open onClose={onClose} title={t('salary.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('salary.form.year')} *</label><Input type="number" min="1950" max={new Date().getFullYear() + 1} value={year} onChange={(e) => setYear(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('salary.form.earned_salary')} *</label><Input type="number" step="0.01" min="0" value={salary} onChange={(e) => setSalary(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!year || !salary || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ year: Number(year), earned_salary: Number(salary) } as SalaryRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div></div></Dialog>;
+  const reset = () => { setYear(''); setSalary(''); };
+  return <Dialog open onClose={onClose} title={t('salary.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('salary.form.year')} *</label><Input type="number" min="1950" max={new Date().getFullYear() + 1} value={year} onChange={(e) => setYear(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('salary.form.earned_salary')} *</label><Input type="number" step="0.01" min="0" value={salary} onChange={(e) => setSalary(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.close')}</Button><Button disabled={!year || !salary || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ year: Number(year), earned_salary: Number(salary) } as SalaryRecordInput); reset(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save_and_continue')}</Button></div></div></Dialog>;
 }
 
 function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddServiceRecord(caseId);
   const [entityId, setEntityId] = useState(0); const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState(''); const [isAppendix, setIsAppendix] = useState(false); const [formaDeclaracion, setFormaDeclaracion] = useState<'Documental' | 'Testifical'>('Documental');
+  const reset = () => { setEntityId(0); setStartDate(''); setEndDate(''); setIsAppendix(false); setFormaDeclaracion('Documental'); };
   // Cargar entidades del backend
   const { data: entitiesData } = useQuery({
     queryKey: ['entities', 'all'],
@@ -394,7 +396,7 @@ function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () =
         <option value="Documental">{t('service.form.declaration_form_documental')}</option>
         <option value="Testifical">{t('service.form.declaration_form_testifical')}</option>
       </select></div>
-    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!entityId || !startDate || !endDate || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ entity_id: entityId, start_date: startDate, end_date: endDate || null, is_appendix: isAppendix, declaration_form: formaDeclaracion } as ServiceRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
+    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.close')}</Button><Button disabled={!entityId || !startDate || !endDate || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ entity_id: entityId, start_date: startDate, end_date: endDate || null, is_appendix: isAppendix, declaration_form: formaDeclaracion } as ServiceRecordInput); reset(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save_and_continue')}</Button></div>
   </div></Dialog>;
 }
 
@@ -402,15 +404,20 @@ function WorkCycleModal({ caseId, onClose }: { caseId: string; onClose: () => vo
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddWorkCycle(caseId);
   const [planned, setPlanned] = useState(''); const [actual, setActual] = useState(''); const [count, setCount] = useState('');
-  return <Dialog open onClose={onClose} title={t('cycle.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('cycle.form.planned_days')} *</label><Input type="number" min="0" value={planned} onChange={(e) => setPlanned(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('cycle.form.actual_days')} *</label><Input type="number" min="0" value={actual} onChange={(e) => setActual(e.target.value)} /></div><div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('cycle.form.cycles_count')} *</label><Input type="number" min="0" value={count} onChange={(e) => setCount(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!planned || !actual || !count || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ planned_days: Number(planned), actual_days: Number(actual), cycles_count: Number(count) } as WorkCycleInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div></div></Dialog>;
+  const reset = () => { setPlanned(''); setActual(''); setCount(''); };
+  return <Dialog open onClose={onClose} title={t('cycle.add')} size="md"><div className="grid grid-cols-2 gap-3"><div><label className="block text-sm font-medium mb-1">{t('cycle.form.planned_days')} *</label><Input type="number" min="0" value={planned} onChange={(e) => setPlanned(e.target.value)} /></div><div><label className="block text-sm font-medium mb-1">{t('cycle.form.actual_days')} *</label><Input type="number" min="0" value={actual} onChange={(e) => setActual(e.target.value)} /></div><div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('cycle.form.cycles_count')} *</label><Input type="number" min="0" value={count} onChange={(e) => setCount(e.target.value)} /></div><div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.close')}</Button><Button disabled={!planned || !actual || !count || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ planned_days: Number(planned), actual_days: Number(actual), cycles_count: Number(count) } as WorkCycleInput); reset(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save_and_continue')}</Button></div></div></Dialog>;
 }
 
 function IncomeConceptRecordModal({ caseId, onClose }: { caseId: string; onClose: () => void }) {
   const { t } = useTranslation('pension-cases'); const { t: tc } = useTranslation('common');
   const mutation = useAddIncomeConceptRecord(caseId);
   const [conceptId, setConceptId] = useState(0); const [appliedPercent, setAppliedPercent] = useState('');
+  // resetKey fuerza el remount del CatalogSearchSelect (que mantiene estado interno)
+  const [resetKey, setResetKey] = useState(0);
+  const reset = () => { setConceptId(0); setAppliedPercent(''); setResetKey((k) => k + 1); };
   return <Dialog open onClose={onClose} title={t('income_concept.add')} size="md"><div className="grid grid-cols-2 gap-3">
     <div className="col-span-2"><CatalogSearchSelect
+      key={`concept-${resetKey}`}
       type="income-concepts"
       label={t('income_concept.form.income_concept_id')}
       placeholder={tc('actions.search') + '…'}
@@ -418,6 +425,6 @@ function IncomeConceptRecordModal({ caseId, onClose }: { caseId: string; onClose
       onSelect={(item) => setConceptId(item.id)}
     /></div>
     <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('income_concept.form.applied_percent')} *</label><Input type="number" step="0.01" min="0" max="100" placeholder="100.00" value={appliedPercent} onChange={(e) => setAppliedPercent(e.target.value)} /></div>
-    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!conceptId || !appliedPercent || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ income_concept_id: conceptId, applied_percent: Number(appliedPercent) } as IncomeConceptRecordInput); onClose(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}</Button></div>
+    <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.close')}</Button><Button disabled={!conceptId || !appliedPercent || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ income_concept_id: conceptId, applied_percent: Number(appliedPercent) } as IncomeConceptRecordInput); reset(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save_and_continue')}</Button></div>
   </div></Dialog>;
 }
