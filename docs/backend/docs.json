@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.7.0"
+        "version": "1.8.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -3366,7 +3366,7 @@
                     "Expedientes"
                 ],
                 "summary": "Listado de expedientes",
-                "description": "Listado filtrable por estado, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011; la búsqueda afinada con volumen llega en S6), con ALCANCE TERRITORIAL (SGP-35, corrección de usuario): solo cargan los expedientes cuya oficina coincide con la OFICINA DEL USUARIO AUTENTICADO — la oficina no viaja en la query (422 prohibido si llega) porque el servidor la deriva de la asignación del actor (ADR-33/ADR-29, el mismo patrón del alta), y un actor sin oficina recibe una página VACÍA (fail-closed, nunca el directorio sin scope). Cada fila viaja con la proyección COMPLETA del promovente (regla de usuario 3) y, desde la Task 44 (SGP-37, corrección de usuario), con el DOMICILIO y COBRO del promovente: residence_province y residence_municipality como {id, code, name}, el tipo de agencia de cobro con su payment_form y la agencia de cobro COMPLETA (código, nombre, tipo, provincia y municipio) — las mismas proyecciones del detalle, sin segunda consulta por fila.",
+                "description": "Listado filtrable por estado, persona, número y rango de fechas de solicitud, paginado (RF-EXP-011), con ALCANCE TERRITORIAL (SGP-35, corrección de usuario): solo cargan los expedientes cuya oficina coincide con la OFICINA DEL USUARIO AUTENTICADO — la oficina no viaja en la query (422 prohibido si llega) porque el servidor la deriva de la asignación del actor (ADR-33/ADR-29, el mismo patrón del alta), y un actor sin oficina recibe una página VACÍA (fail-closed, nunca el directorio sin scope). Desde el Sprint 6 la búsqueda es AFINADA (S6.5): el filtro q cruza al promovente — cada palabra debe aparecer en sus nombres o en su número de identidad (fragmento en cualquier posición), con semántica AND — y compone con los demás filtros DENTRO del alcance territorial. Cada fila viaja con la proyección COMPLETA del promovente (regla de usuario 3) y, desde la Task 44 (SGP-37, corrección de usuario), con el DOMICILIO y COBRO del promovente: residence_province y residence_municipality como {id, code, name}, el tipo de agencia de cobro con su payment_form y la agencia de cobro COMPLETA (código, nombre, tipo, provincia y municipio) — las mismas proyecciones del detalle, sin segunda consulta por fila.",
                 "operationId": "pensionCasesIndex",
                 "parameters": [
                     {
@@ -3380,6 +3380,15 @@
                                 "approved",
                                 "rejected"
                             ]
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Búsqueda afinada por persona (S6.5): cada palabra debe aparecer en los nombres o el número de identidad del promovente — semántica AND, dentro del alcance territorial",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 120
                         }
                     },
                     {
@@ -4166,6 +4175,237 @@
                     },
                     "409": {
                         "description": "Expediente fuera de submitted (devuelve estado actual)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pension-cases/{id}/transitions": {
+            "get": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Historial de transiciones del expediente (append-only)",
+                "description": "Sprint 6 (RF-EXP-009, RN-010/DA H-09): la bitácora completa de transiciones del expediente — cada fila con estado previo/nuevo, usuario responsable (id y nombre), fecha y nota — ordenada por momento (la más antigua primero). El historial es APPEND-ONLY: solo crece (jamás se actualiza ni se borra, el modelo lo rechaza de raíz) y responde a cases.view, de modo que los roles con permiso de auditoría — el Auditor entre ellos — consultan la línea de tiempo del expediente. La bitácora genérica (ADR-19) registra además cada cambio de estado con ambos lados y los intentos fuera de la matriz con evento transition_rejected.",
+                "operationId": "pensionCasesHistory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Línea de tiempo completa del expediente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PensionCaseHistory"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Expedientes"
+                ],
+                "summary": "Transición de estado del expediente (máquina declarativa)",
+                "description": "Sprint 6 (RF-EXP-005..010, ADR-07/arquitectura 9.1): UN solo endpoint declarativo para toda la máquina de estados — POST /pension-cases/{id}/transitions con {\"to\", \"note\", \"legal_basis_id\", \"force\"} en lugar de verbos RPC por transición. La decisión corre sobre la FILA BLOQUEADA dentro de una transacción (dos aprobaciones concurrentes del mismo expediente no pueden ocurrir: el segundo actor relee el estado ya resuelto y responde 422) y sigue el orden: la MATRIZ de la sección 2.4 primero (fuera de ella: 422 con el estado actual y el intento aterriza en bitácora), el ROL de la transición después (403: la revisión/devolución exige cases.review del especialista, la aprobación/denegación exige cases.approve/cases.reject del Director, la reapertura exige cases.reopen del Administrador), la EVIDENCIA después (la aprobación exige base legal VIGENTE y nota de resolución — una derogada solo el Administrador puede forzarla con force:true y la advertencia queda en bitácora, RF-LEG-003; la denegación y la reapertura exigen motivo de mínimo 10 caracteres, RF-EXP-008/010) y la COMPLETITUD al entrar en revisión (RF-EXP-006: al menos un servicio, la serie salarial y último salario positivo; 422 con la lista missing). La REAPERTURA administrativa (approved/rejected → under_review, solo Administrador) limpia la evidencia de decisión del expediente — la historia completa queda en las filas append-only — y respeta la reservación de expediente-abierto-por-persona (409 si el promovente ya tiene otro expediente abierto). Cada transición legal persiste from_status, to_status, usuario, fecha y nota en el historial inmutable y la respuesta viaja con el expediente actualizado (proyección completa de subregistros) y el objeto transition de la fila creada.",
+                "operationId": "pensionCasesTransition",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "to"
+                                ],
+                                "properties": {
+                                    "to": {
+                                        "description": "Estado destino de la matriz de la sección 2.4",
+                                        "type": "string",
+                                        "example": "approved",
+                                        "enum": [
+                                            "submitted",
+                                            "under_review",
+                                            "approved",
+                                            "rejected"
+                                        ]
+                                    },
+                                    "note": {
+                                        "description": "Nota de la transición: OBLIGATORIA (mínimo 10 caracteres) en la aprobación (nota de resolución), la denegación (motivo) y la reapertura (motivo); texto libre opcional en la revisión y la devolución",
+                                        "type": "string",
+                                        "example": "Procede la pensión por la Ley 128.",
+                                        "nullable": true,
+                                        "maxLength": 2000
+                                    },
+                                    "legal_basis_id": {
+                                        "description": "Base legal de la resolución: OBLIGATORIA en la aprobación y PROHIBIDA en las demás transiciones (422); debe estar VIGENTE — una derogada solo el Administrador puede forzarla, una futura jamás",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 12,
+                                        "nullable": true
+                                    },
+                                    "force": {
+                                        "description": "Bandera RF-LEG-003: el Administrador fuerza una base legal DEROGADA en la aprobación; la advertencia aterriza en bitácora; PROHIBIDA en las demás transiciones",
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transición aplicada: el expediente actualizado y la fila del historial",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data",
+                                        "transition"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PensionCase"
+                                        },
+                                        "transition": {
+                                            "$ref": "#/components/schemas/PensionCaseHistory"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Expediente inexistente"
+                    },
+                    "409": {
+                        "description": "La reapertura rompería la reservación de expediente-abierto-por-persona (devuelve el expediente vivo)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case": {
+                                            "oneOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PensionCase"
+                                                }
+                                            ],
+                                            "nullable": true
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "nullable": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Fuera de la matriz (con el estado actual y el destino intentado), evidencia exigida ausente o corta, base legal no vigente o checklist de completitud (lista missing)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "submitted",
+                                            "nullable": true
+                                        },
+                                        "attempted_to": {
+                                            "type": "string",
+                                            "example": "approved",
+                                            "nullable": true
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "nullable": true
+                                        },
+                                        "missing": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "example": [
+                                                "service_records",
+                                                "salary_records"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -8292,12 +8532,75 @@
                 },
                 "type": "object"
             },
+            "PensionCaseHistory": {
+                "title": "Transición de expediente",
+                "description": "Una fila del historial append-only de transiciones del expediente (RF-EXP-009, RN-010): estado previo y nuevo de la matriz de la sección 2.4, usuario responsable, momento y nota de evidencia. La línea de tiempo solo crece: jamás se actualiza ni se borra.",
+                "properties": {
+                    "id": {
+                        "description": "Transition history projection (RF-EXP-009, S6.5): one row of the\nappend-only timeline — the from/to statuses of the section 2.4\nmatrix, the acting user (id + name, the projection the Auditor\nneeds to resolve WHO moved the case), the moment and the evidence\nnote. The resource never offers a writable surface: the timeline\nonly grows (RN-010).",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "from_status": {
+                        "description": "Estado previo (sección 2.4)",
+                        "type": "string",
+                        "example": "submitted",
+                        "enum": [
+                            "submitted",
+                            "under_review",
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "to_status": {
+                        "description": "Estado nuevo (sección 2.4)",
+                        "type": "string",
+                        "example": "under_review",
+                        "enum": [
+                            "submitted",
+                            "under_review",
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "changed_by": {
+                        "description": "Usuario responsable de la transición (null cuando la escritura ocurrió fuera de una sesión autenticada)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 3
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Especialista de Tramitación"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "changed_at": {
+                        "description": "Momento de la transición",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-04T10:30:00+00:00"
+                    },
+                    "note": {
+                        "description": "Nota de la transición: motivo obligatorio en la denegación y la reapertura, nota de resolución en la aprobación, texto libre opcional en la revisión y la devolución",
+                        "type": "string",
+                        "example": "Solicitud completa, entra a revisión.",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "PensionCase": {
                 "title": "Expediente de pensión",
                 "description": "Expediente de pensión (RF-EXP-001): número compuesto PPMMAACCCCC — provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio, once dígitos contiguos (regla de usuario 2/ADR-34) —, estado de la sección 2.4, clasificación de pensión, par de Ejército Rebelde y marca de internacionalista (Task 37), contacto del promovente (teléfono y consejo popular, Task 37), fecha de desvinculación del promovente (Task 38) y subregistros declarados — con los períodos de servicio cerrados y disjuntos. Los campos de decisión quedan null hasta las transiciones de S6.",
                 "properties": {
                     "id": {
-                        "description": "Pension case projection (RF-EXP-001..004 + user rules 0-5): the\naggregate with its subrecords. The applicant travels as the FULL\nPerson projection (user rule 3 — reused from the People module's\nresource so the promovente is never a summary that drifts from\nthe people surface). The advisory analysis (missing salary years,\noverlapping and open services) travels as a sibling `warnings`\nobject of the envelope — never inside data — because it is\nderived evidence for the specialist, not case state. The decision\nfields (approval_legal_basis_id, decision_notes, decided_at,\ndecided_by, computed_amount) stay null until the S6 transitions\nwrite them. The filer (Task 35, user correction over Task\n34; English column names since Task 36) is a REFERENCE to a\nregistered person: filed_by_person_id plus\nthe FULL Person projection of the filer under filed_by — the\nsame shape as the applicant (user rule 3, reused from the People\nmodule's resource so the projection never drifts). Since the\nTask 37 user correction (SGP-31) the case also answers the\ninternationalist flag of the promovente (beside the rebel army\npair) and the promovente contact pair (phone, popular_council) —\nand the service periods travel closed and disjoint, so the\nwarnings envelope only carries the salary analysis. Since the\nTask 38 user correction (SGP-32) the case also answers the\npromovente's fecha de desvinculación — termination_date, an\noptional date serialized as Y-m-d and null when absent. Since the\nTask 42 user correction (SGP-36) the case answers the promovente\nresidence + collection group — current_address, the residence\ngeography and the collection point with their projections\n(province, municipality, agency type carrying its payment form,\nfull agency) and the bank account, null when the payment form of\nthe collection agency type leaves it optional.",
+                        "description": "Pension case projection (RF-EXP-001..004 + user rules 0-5): the\naggregate with its subrecords. The applicant travels as the FULL\nPerson projection (user rule 3 — reused from the People module's\nresource so the promovente is never a summary that drifts from\nthe people surface). The advisory analysis (missing salary years,\noverlapping and open services) travels as a sibling `warnings`\nobject of the envelope — never inside data — because it is\nderived evidence for the specialist, not case state. The decision\nfields (approval_legal_basis_id, decision_notes, decided_at,\ndecided_by) are written by the S6 transitions — the approval and\nthe denial register the resolution evidence, the administrative\nreopening clears it (the full trail survives in the history\nrows) — while computed_amount stays null until the Fase 4\ncalculation engine freezes it. The filer (Task 35, user correction over Task\n34; English column names since Task 36) is a REFERENCE to a\nregistered person: filed_by_person_id plus\nthe FULL Person projection of the filer under filed_by — the\nsame shape as the applicant (user rule 3, reused from the People\nmodule's resource so the projection never drifts). Since the\nTask 37 user correction (SGP-31) the case also answers the\ninternationalist flag of the promovente (beside the rebel army\npair) and the promovente contact pair (phone, popular_council) —\nand the service periods travel closed and disjoint, so the\nwarnings envelope only carries the salary analysis. Since the\nTask 38 user correction (SGP-32) the case also answers the\npromovente's fecha de desvinculación — termination_date, an\noptional date serialized as Y-m-d and null when absent. Since the\nTask 42 user correction (SGP-36) the case answers the promovente\nresidence + collection group — current_address, the residence\ngeography and the collection point with their projections\n(province, municipality, agency type carrying its payment form,\nfull agency) and the bank account, null when the payment form of\nthe collection agency type leaves it optional.",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -8519,14 +8822,14 @@
                         ]
                     },
                     "approval_legal_basis_id": {
-                        "description": "Resolución aprobatoria (H-05); la fija la aprobación de S6",
+                        "description": "Resolución aprobatoria (H-05): la fija la aprobación de S6 (base legal vigente, o derogada forzada por el Administrador, RF-LEG-003); la reapertura la limpia",
                         "type": "integer",
                         "format": "int64",
                         "example": null,
                         "nullable": true
                     },
                     "decision_notes": {
-                        "description": "Nota de resolución o motivo de denegación (S6)",
+                        "description": "Nota de resolución (aprobación) o motivo (denegación/reapertura), escrito por las transiciones de S6; la reapertura la limpia",
                         "type": "string",
                         "example": null,
                         "nullable": true
