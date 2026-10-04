@@ -150,6 +150,7 @@
       "start_date": "Inicio",
       "end_date": "Fin",
       "worked_months": "Meses",
+      "worked_years": "Años",
       "is_appendix": "Coletilla",
       "declaration_form": "Declaración"
     },

@@ -150,6 +150,7 @@
       "start_date": "Start",
       "end_date": "End",
       "worked_months": "Months",
+      "worked_years": "Years",
       "is_appendix": "Appendix",
       "declaration_form": "Declaration"
     },
