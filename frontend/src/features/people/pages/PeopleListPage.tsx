@@ -115,6 +115,7 @@ export function PeopleListPage() {
               <th className="text-left px-4 py-3 font-medium">{t('list.columns.ci')}</th>
               <th className="text-left px-4 py-3 font-medium">{t('list.columns.name')}</th>
               <th className="text-left px-4 py-3 font-medium">{t('list.columns.sex')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('list.columns.citizen_card_id')}</th>
               <th className="text-left px-4 py-3 font-medium">{t('list.columns.birth_date')}</th>
               <th className="text-left px-4 py-3 font-medium">{t('list.columns.status')}</th>
               {(canManage || can('people.view')) && (
@@ -125,19 +126,19 @@ export function PeopleListPage() {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   {tc('status.loading')}…
                 </td>
               </tr>
             ) : isError ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-destructive">
+                <td colSpan={7} className="px-4 py-8 text-center text-destructive">
                   {tc('errors.server')}
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   {t('list.empty')}
                 </td>
               </tr>
@@ -157,6 +158,7 @@ export function PeopleListPage() {
                     <td className="px-4 py-3 text-xs">
                       {person.sex === 'M' ? t('list.columns.sex_male') : t('list.columns.sex_female')}
                     </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{person.citizen_card_id || '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {person.birth_date ? formatDate(person.birth_date) : '—'}
                     </td>
