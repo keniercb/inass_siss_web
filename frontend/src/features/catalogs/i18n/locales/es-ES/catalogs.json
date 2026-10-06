@@ -11,7 +11,11 @@
       "actions": "Acciones",
       "sector": "Sector",
       "deceased_person": "Fallecido",
-      "payment_form": "Forma de pago"
+      "payment_form": "Forma de pago",
+      "min_work_years": "Años mín.",
+      "min_age_men": "Edad min. H",
+      "min_age_women": "Edad min. M",
+      "base_calc_percent": "% Base"
     }
   },
   "create": {
@@ -43,10 +47,28 @@
     "name": "Nombre",
     "description": "Descripción",
     "months_per_year": "Meses por año",
+    "months_per_year_help": "Meses por año del régimen de pensión",
     "applies_base_salary": "Aplica a salario base",
     "sector": "Sector",
+    "sector_help": "Sector del régimen de jubilación (opcional)",
     "deceased_person": "Persona fallecida",
-    "payment_form": "Forma de pago"
+    "payment_form": "Forma de pago",
+    "base_calc_percent": "Porciento base de cálculo",
+    "base_calc_percent_help": "Fracción [0–1] del salario base para el cálculo (p. ej. 0.6 = 60%)",
+    "annual_increase_percent": "Porciento de incremento anual",
+    "annual_increase_percent_help": "Fracción [0–1] aplicada por cada año excedente",
+    "limit_percent": "Porciento límite de la cuantía",
+    "limit_percent_help": "Tope de la cuantía calculada (fracción [0–1])",
+    "min_work_years": "Años mínimos trabajados",
+    "min_work_years_help": "Años mínimos generales (sin distinción de sexo)",
+    "min_age_men": "Edad mínima hombres",
+    "min_age_men_help": "Edad mínima de elegibilidad para hombres",
+    "min_age_women": "Edad mínima mujeres",
+    "min_age_women_help": "Edad mínima de elegibilidad para mujeres",
+    "required_salary_records": "Cantidad de salarios requeridos",
+    "required_salary_records_help": "Cantidad EXACTA de registros salariales (1–15); el (N+1)-ésimo responde 422",
+    "average_strategy": "Estrategia de promedio salarial",
+    "average_strategy_help": "Mejores N / Últimos N / Todos (divisor N×12)"
   },
   "errors": {
     "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…"

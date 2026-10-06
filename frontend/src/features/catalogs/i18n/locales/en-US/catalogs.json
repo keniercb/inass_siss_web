@@ -11,7 +11,11 @@
       "actions": "Actions",
       "sector": "Sector",
       "deceased_person": "Deceased person",
-      "payment_form": "Payment form"
+      "payment_form": "Payment form",
+      "min_work_years": "Min yrs",
+      "min_age_men": "Min age M",
+      "min_age_women": "Min age W",
+      "base_calc_percent": "Base %"
     }
   },
   "create": {
@@ -43,10 +47,28 @@
     "name": "Name",
     "description": "Description",
     "months_per_year": "Months per year",
+    "months_per_year_help": "Months per year of the pension regime",
     "applies_base_salary": "Applies to base salary",
     "sector": "Sector",
+    "sector_help": "Pension regime sector (optional)",
     "deceased_person": "Deceased person",
-    "payment_form": "Payment form"
+    "payment_form": "Payment form",
+    "base_calc_percent": "Base calculation percent",
+    "base_calc_percent_help": "Fraction [0–1] of the base salary used for calculation (e.g. 0.6 = 60%)",
+    "annual_increase_percent": "Annual increase percent",
+    "annual_increase_percent_help": "Fraction [0–1] applied per excess year",
+    "limit_percent": "Limit percent of the amount",
+    "limit_percent_help": "Cap of the calculated amount (fraction [0–1])",
+    "min_work_years": "Minimum work years",
+    "min_work_years_help": "General minimum years (gender-independent)",
+    "min_age_men": "Minimum age men",
+    "min_age_men_help": "Minimum eligibility age for men",
+    "min_age_women": "Minimum age women",
+    "min_age_women_help": "Minimum eligibility age for women",
+    "required_salary_records": "Required salary records",
+    "required_salary_records_help": "EXACT number of salary records (1–15); the (N+1)-th returns 422",
+    "average_strategy": "Average salary strategy",
+    "average_strategy_help": "Best N / Last N / All (divisor N×12)"
   },
   "errors": {
     "rate_limited": "The server is processing too many requests. Retrying…"

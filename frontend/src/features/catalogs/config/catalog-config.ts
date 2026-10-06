@@ -22,6 +22,15 @@ const schemasByType: Record<string, z.ZodSchema> = {
   'pension-regimes': baseSchema.extend({
     months_per_year: z.number().int().positive(),
     sector: z.number().int().nullable().optional(),
+    // Task 50 (S7 reajuste): parámetros de cálculo por régimen
+    base_calc_percent: z.number().min(0).max(1).optional(),
+    annual_increase_percent: z.number().min(0).max(1).optional(),
+    limit_percent: z.number().min(0).max(1).optional(),
+    min_work_years: z.number().int().min(1).optional(),
+    min_age_men: z.number().int().min(1).optional(),
+    min_age_women: z.number().int().min(1).optional(),
+    required_salary_records: z.number().int().min(1).max(15).optional(),
+    average_strategy: z.enum(['best_n', 'last_n', 'all']).optional(),
   }),
   'pension-types': baseSchema.extend({
     deceased_person: z.boolean().default(false),
@@ -38,7 +47,13 @@ const schemasByType: Record<string, z.ZodSchema> = {
 function getColumns(type: CatalogType): Array<{ id: string }> {
   const cols = [{ id: 'code' }, { id: 'name' }, { id: 'description' }];
   if (type === 'agency-types') cols.push({ id: 'payment_form' });
-  if (type === 'pension-regimes') cols.push({ id: 'sector' });
+  if (type === 'pension-regimes') {
+    cols.push({ id: 'sector' });
+    cols.push({ id: 'min_work_years' });
+    cols.push({ id: 'min_age_men' });
+    cols.push({ id: 'min_age_women' });
+    cols.push({ id: 'base_calc_percent' });
+  }
   if (type === 'pension-types') cols.push({ id: 'deceased_person' });
   return cols;
 }
@@ -90,13 +105,81 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       label: 'catalogs:form.months_per_year',
       required: true,
       min: 1,
-      help: 'Meses por año del régimen de pensión',
+      help: 'catalogs:form.months_per_year_help',
     });
     baseFields.push({
       name: 'sector',
       type: 'number',
       label: 'catalogs:form.sector',
-      help: 'Sector del régimen de jubilación (opcional)',
+      help: 'catalogs:form.sector_help',
+    });
+    // Task 50 (S7 reajuste): parámetros de cálculo del régimen
+    baseFields.push({
+      name: 'base_calc_percent',
+      type: 'number',
+      label: 'catalogs:form.base_calc_percent',
+      min: 0,
+      max: 1,
+      step: 0.01,
+      help: 'catalogs:form.base_calc_percent_help',
+    });
+    baseFields.push({
+      name: 'annual_increase_percent',
+      type: 'number',
+      label: 'catalogs:form.annual_increase_percent',
+      min: 0,
+      max: 1,
+      step: 0.01,
+      help: 'catalogs:form.annual_increase_percent_help',
+    });
+    baseFields.push({
+      name: 'limit_percent',
+      type: 'number',
+      label: 'catalogs:form.limit_percent',
+      min: 0,
+      max: 1,
+      step: 0.01,
+      help: 'catalogs:form.limit_percent_help',
+    });
+    baseFields.push({
+      name: 'min_work_years',
+      type: 'number',
+      label: 'catalogs:form.min_work_years',
+      min: 1,
+      help: 'catalogs:form.min_work_years_help',
+    });
+    baseFields.push({
+      name: 'min_age_men',
+      type: 'number',
+      label: 'catalogs:form.min_age_men',
+      min: 1,
+      help: 'catalogs:form.min_age_men_help',
+    });
+    baseFields.push({
+      name: 'min_age_women',
+      type: 'number',
+      label: 'catalogs:form.min_age_women',
+      min: 1,
+      help: 'catalogs:form.min_age_women_help',
+    });
+    baseFields.push({
+      name: 'required_salary_records',
+      type: 'number',
+      label: 'catalogs:form.required_salary_records',
+      min: 1,
+      max: 15,
+      help: 'catalogs:form.required_salary_records_help',
+    });
+    baseFields.push({
+      name: 'average_strategy',
+      type: 'select',
+      label: 'catalogs:form.average_strategy',
+      help: 'catalogs:form.average_strategy_help',
+      options: [
+        { value: 'best_n', label: 'Mejores N' },
+        { value: 'last_n', label: 'Últimos N' },
+        { value: 'all', label: 'Todos' },
+      ],
     });
   }
 
