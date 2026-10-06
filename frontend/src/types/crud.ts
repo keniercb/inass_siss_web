@@ -24,6 +24,13 @@ export interface FieldDef<TResource> {
   min?: number;
   max?: number;
   step?: number;
+  /**
+   * Ancho del campo en el grid del formulario (default: 'full').
+   * - 'full': ocupa toda la fila (1 col en grid-cols-1, 2 cols en grid-cols-2…)
+   * - 'half': media fila (1 col en grid-cols-2)
+   * - 'third': un tercio de fila (1 col en grid-cols-3)
+   */
+  width?: 'full' | 'half' | 'third';
 }
 
 /** Definición de un filtro del listado */
