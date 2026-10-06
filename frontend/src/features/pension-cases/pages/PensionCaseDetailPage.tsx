@@ -263,7 +263,6 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
             <Field label={t('detail.fields.decided_by')} value={pensionCase.decided_by != null ? `Usuario #${pensionCase.decided_by}` : '—'} />
             {pensionCase.computed_amount != null && <Field label={t('detail.fields.computed_amount')} value={formatCUP(Number(pensionCase.computed_amount))} />}
             <Field label={t('detail.fields.approval_legal_basis')} value={lookup(legalBasesData, pensionCase.approval_legal_basis_id, (lb) => (lb as { title: string }).title)} />
-            {pensionCase.calculation_setting_id != null && <Field label={t('detail.fields.calculation_setting')} value={`#${pensionCase.calculation_setting_id}`} />}
             {pensionCase.decision_notes && <Field label={t('detail.fields.decision_notes')} value={pensionCase.decision_notes} fullWidth />}
           </div>
         </div>

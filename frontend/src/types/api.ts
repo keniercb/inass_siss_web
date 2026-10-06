@@ -419,6 +419,46 @@ export interface paths {
         patch: operations["officesUpdate"];
         trace?: never;
     };
+    "/api/v1/pension-cases/{id}/calculation-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vista previa del cálculo (RF-CAL-006)
+         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía v1 (SPM×PCI + ATE×PIA×SPM topeada por SPM×PIL), junto con los parámetros del régimen usados y las advertencias (serie salarial incompleta respecto al N del gate, criterios de elegibilidad fallidos). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
+         */
+        post: operations["pensionCasesCalculationPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/calculation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cálculo congelado del expediente (RF-CAL-008)
+         * @description El snapshot VIGENTE del cálculo que resolvió el expediente aprobado — entradas y parámetros del régimen CONGELADOS al momento de la aprobación (la mutación posterior del régimen no reescribe la historia; la re-ejecución histórica reproduce la cuantía exacta, RNF-010) — junto con la línea de versiones por resolución (sequence: la reapertura administrativa y una re-aprobación generan sequence 2 y el cálculo anterior sobrevive). Responde data null mientras el expediente no tenga cálculo congelado.
+         */
+        get: operations["pensionCasesCalculationShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pension-cases": {
         parameters: {
             query?: never;
@@ -1285,6 +1325,11 @@ export interface components {
              */
             required_salary_records?: number;
             /**
+             * @description Solo pension-regimes (Task 51/S8.1, V-1): N de la ESTRATEGIA de promedio, desacoplado del gate — divisor N propio × 12, nunca mayor que el gate e IGUAL a él con all
+             * @example 5
+             */
+            average_years_count?: number;
+            /**
              * @description Solo pension-regimes (Task 50): estrategia del salario promedio mensual (divisor N×12)
              * @example best_n
              * @enum {string}
@@ -1659,6 +1704,172 @@ export interface components {
             scope_cases_count?: number;
         };
         /**
+         * Vista previa del cálculo
+         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía v1, los parámetros del régimen usados y las advertencias.
+         */
+        CalculationPreview: {
+            /**
+             * @description Estado del expediente en el momento de la simulación
+             * @example under_review
+             * @enum {string}
+             */
+            status: "submitted" | "under_review";
+            eligibility: {
+                /** @example true */
+                eligible?: boolean;
+                criteria?: {
+                    /** @example age */
+                    criterion?: string;
+                    /** @example true */
+                    passes?: boolean;
+                    /** @example El solicitante cumple 60 años el 2026-05-10, la edad mínima de los hombres del régimen. */
+                    explanation?: string;
+                }[];
+            };
+            service_years: {
+                /**
+                 * @description Σ meses de los service_records NO coletilla
+                 * @example 311
+                 */
+                months?: number;
+                /**
+                 * Format: double
+                 * @example 25.916666666666668
+                 */
+                exact?: number;
+                /**
+                 * @description C-3: solo cuentan los años cumplidos
+                 * @example 25
+                 */
+                truncated?: number;
+            };
+            /**
+             * @description SPM = Σ(selección de la estrategia)/(N propio × 12), Money half-even
+             * @example 475.00
+             */
+            average_monthly_salary: string;
+            /**
+             * @description ATE = max(0, AT truncado − min_work_years)
+             * @example 0
+             */
+            excess_years: number;
+            /**
+             * @description Cuantía v1 = SPM×PCI + ATE×PIA×SPM topeada por mínimo(Cuantía, SPM×PIL)
+             * @example 285.00
+             */
+            amount: string;
+            regime_parameters: {
+                /** @example 12 */
+                months_per_year?: number;
+                /** @example 0.6 */
+                base_calc_percent?: string;
+                /** @example 0.02 */
+                annual_increase_percent?: string;
+                /** @example 0.9 */
+                limit_percent?: string;
+                /** @example 25 */
+                min_work_years?: number;
+                /** @example 60 */
+                min_age_men?: number;
+                /** @example 55 */
+                min_age_women?: number;
+                /**
+                 * @description El GATE: exactamente N registros de salario
+                 * @example 5
+                 */
+                required_salary_records?: number;
+                /**
+                 * @description El N de la ESTRATEGIA (V-1), desacoplado del gate — divisor N propio × 12
+                 * @example 5
+                 */
+                average_years_count?: number;
+                /**
+                 * @example best_n
+                 * @enum {string}
+                 */
+                average_strategy?: "best_n" | "last_n" | "all";
+            };
+            /** @example [] */
+            warnings: string[];
+        };
+        /**
+         * Cálculo congelado
+         * @description El snapshot append-only del cálculo que resolvió el expediente (RF-CAL-007/008, Task 51/S8.3): cuantía y resultados congelados junto con las entradas y los parámetros del régimen EXACTOS de la resolución — la evidencia que la re-ejecución histórica reproduce (RNF-010).
+         */
+        CaseCalculation: {
+            /**
+             * Format: int64
+             * @example 42
+             */
+            pension_case_id: number;
+            /**
+             * @description La resolución n-ésima del expediente: la reapertura + re-aprobación generan sequence 2 y el cálculo anterior SOBREVIVE
+             * @example 1
+             */
+            sequence: number;
+            /** @example 2026-10-06 12:00:00 */
+            computed_at: string;
+            computed_by: {
+                /**
+                 * Format: int64
+                 * @example 3
+                 */
+                id?: number;
+                /** @example Director Provincial */
+                name?: string;
+            };
+            /** @example 311 */
+            service_months: number;
+            /**
+             * Format: double
+             * @example 25.916666666666668
+             */
+            service_years_exact: number;
+            /** @example 25 */
+            service_years_truncated: number;
+            /**
+             * @example best_n
+             * @enum {string}
+             */
+            average_strategy: "best_n" | "last_n" | "all";
+            /**
+             * @description El N de la estrategia congelado (V-1)
+             * @example 5
+             */
+            average_years_count: number;
+            /** @example 475.00 */
+            average_monthly_salary: string;
+            /** @example 0 */
+            excess_years: number;
+            /**
+             * @description La cuantía congelada: el expediente resuelto JAMÁS se recalcula
+             * @example 285.00
+             */
+            amount: string;
+            eligibility: Record<string, never>;
+            /** @description Los parámetros del régimen CONGELADOS al aprobar — la mutación posterior del catálogo no reescribe la historia */
+            regime_parameters: Record<string, never>;
+            /** @description Los ids y valores usados: registros de salario seleccionados, registros de servicio con sus meses, requested_at, nacimiento y sexo */
+            inputs: Record<string, never>;
+            versions: {
+                /** @example 1 */
+                sequence?: number;
+                /** @example 285.00 */
+                amount?: string;
+                /** @example 2026-10-06 12:00:00 */
+                computed_at?: string;
+                computed_by?: {
+                    /**
+                     * Format: int64
+                     * @example 3
+                     */
+                    id?: number;
+                    /** @example Director Provincial */
+                    name?: string;
+                };
+            }[];
+        };
+        /**
          * Concepto de ingreso del expediente
          * @description Valor declarado de un concepto de ingreso del expediente (regla de usuario 5): el par expediente-concepto es único, el valor es DECIMAL(12,2) no negativo (RN-005) y el porciento a aplicar (Task 42, corrección de usuario) es DECIMAL(5,2) en el rango 0-100 con dos decimales exactos.
          */
@@ -1967,16 +2178,10 @@ export interface components {
              */
             decided_by?: number | null;
             /**
-             * @description Cuantía congelada al aprobar (S6)
+             * @description Cuantía vigente congelada al aprobar (Task 51/S8.3, RF-CAL-007: escrita por la misma transacción de la aprobación y limpiada por la reapertura; la EVIDENCIA completa — parámetros del régimen congelados — vive en pension_case_calculations, servida por GET /{id}/calculation)
              * @example null
              */
             computed_amount?: string | null;
-            /**
-             * Format: int64
-             * @description Versión de parámetros usada (RF-CAL-008, S6)
-             * @example null
-             */
-            calculation_setting_id?: number | null;
             /** @description Serie salarial: máximo 15 filas (regla 1) */
             salary_records?: components["schemas"]["SalaryRecord"][];
             service_records?: components["schemas"]["ServiceRecord"][];
@@ -2825,6 +3030,11 @@ export interface operations {
                      * @example 5
                      */
                     required_salary_records?: number;
+                    /**
+                     * @description Solo pension-regimes (Task 51/S8.1, V-1 2026-10-06): N de la ESTRATEGIA de promedio, parámetro propio desacoplado del gate — nunca mayor que required_salary_records e IGUAL a él con la estrategia all
+                     * @example 5
+                     */
+                    average_years_count?: number;
                     /**
                      * @description Solo pension-regimes (Task 50, S7 reajuste): estrategia del salario promedio — mejores N / últimos N / todos, con divisor N×12 (promedio mensual)
                      * @example best_n
@@ -4217,6 +4427,92 @@ export interface operations {
                 content?: never;
             };
             422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionCasesCalculationPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultado completo del motor sin persistir */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CalculationPreview"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Expediente inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Case not found. */
+                        message?: string;
+                    };
+                };
+            };
+            /** @description El expediente no está en submitted/under_review */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example The calculation preview is only available while the case is submitted or under_review. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    pensionCasesCalculationShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Snapshot vigente con su línea de versiones (o data null) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CaseCalculation"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Expediente inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Case not found. */
+                        message?: string;
+                    };
+                };
+            };
         };
     };
     pensionCasesIndex: {
