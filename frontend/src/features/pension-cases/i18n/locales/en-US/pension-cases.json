@@ -248,5 +248,40 @@
   },
   "history": {
     "by": "by"
+  },
+  "calculation": {
+    "current_snapshot": "Current snapshot",
+    "eligibility_section": "Eligibility",
+    "regime_parameters_section": "Regime parameters (frozen)",
+    "inputs_section": "Inputs used",
+    "versions_section": "Versions by resolution",
+    "fields": {
+      "sequence": "Resolution",
+      "computed_at": "Computed at",
+      "computed_by": "Computed by",
+      "amount": "Amount",
+      "service_months": "Worked months",
+      "service_years_exact": "AT exact",
+      "service_years_truncated": "AT truncated",
+      "average_strategy": "Strategy",
+      "average_years_count": "Own N",
+      "average_monthly_salary": "AMS",
+      "excess_years": "Excess years"
+    }
+  },
+  "calculation_preview": {
+    "title": "Calculation preview",
+    "button": "Preview",
+    "help": "Runs the calculation engine without persisting. Available only in Submitted or Under review state.",
+    "run": "Run simulation",
+    "run_again": "Re-run",
+    "status": "Status",
+    "eligible": "Eligible",
+    "not_eligible": "Not eligible",
+    "results_section": "Results",
+    "warnings_section": "Warnings",
+    "no_persistence_warning": "This preview does NOT persist: the engine opens no write transaction and does not modify computed_amount.",
+    "error": "Could not run the simulation",
+    "error_409": "The preview is only available in Submitted or Under review state"
   }
 }

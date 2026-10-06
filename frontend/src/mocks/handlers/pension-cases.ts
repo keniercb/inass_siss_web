@@ -6,6 +6,8 @@ type SalaryRecord = components['schemas']['SalaryRecord'];
 type ServiceRecord = components['schemas']['ServiceRecord'];
 type WorkCycle = components['schemas']['WorkCycle'];
 type IncomeConceptRecord = components['schemas']['IncomeConceptRecord'];
+type CalculationPreview = components['schemas']['CalculationPreview'];
+type CaseCalculation = components['schemas']['CaseCalculation'];
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
@@ -455,5 +457,139 @@ export const pensionCasesHandlers = [
     caseHistory.set(caseId, [...rows, transitionRow]);
 
     return HttpResponse.json({ data: updated, transition: transitionRow });
+  }),
+
+  // GET /pension-cases/{id}/calculation — snapshot congelado (Task 51/S8.4, RF-CAL-008)
+  // Devuelve null mientras no haya snapshot (no aprobado).
+  http.get(`${API_BASE}/pension-cases/:id/calculation`, ({ params }) => {
+    const caseId = parseInt(params.id as string, 10);
+    const c = cases.get(caseId);
+    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    // Snapshot solo existe si el caso fue aprobado alguna vez
+    if (c.status !== 'approved') {
+      return HttpResponse.json({ data: null });
+    }
+    // Snapshot simulado: cuantía vigente, regime_parameters con los valores del catálogo General
+    // (api.ts codegen tipa eligibility/regime_parameters/inputs como Record<string, never>
+    //  porque el OpenAPI solo dice type:object; usamos as never para asignar objetos estructurados)
+    const snapshot = {
+      pension_case_id: caseId,
+      sequence: 1,
+      computed_at: c.decided_at ?? new Date().toISOString(),
+      computed_by: { id: c.decided_by ?? 2, name: 'Director' },
+      service_months: (c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0),
+      service_years_exact: ((c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0)) / 12,
+      service_years_truncated: Math.floor(((c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0)) / 12),
+      average_strategy: 'best_n' as const,
+      average_years_count: 5,
+      average_monthly_salary: c.last_salary ?? '0.00',
+      excess_years: Math.max(0, Math.floor(((c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0)) / 12) - 25),
+      amount: c.computed_amount ?? '0.00',
+      eligibility: { eligible: true, criteria: [{ criterion: 'age', passes: true, explanation: 'Cumple edad mínima.' }, { criterion: 'work_years', passes: true, explanation: 'Cumple años mínimos.' }] },
+      regime_parameters: {
+        months_per_year: 12,
+        base_calc_percent: '0.5',
+        annual_increase_percent: '0.01',
+        limit_percent: '0.9',
+        min_work_years: 25,
+        min_age_men: 60,
+        min_age_women: 55,
+        required_salary_records: 5,
+        average_years_count: 5,
+        average_strategy: 'best_n',
+      },
+      inputs: {
+        last_salary: c.last_salary ?? '0.00',
+        salary_records_count: (c.salary_records ?? []).length,
+        service_records_count: (c.service_records ?? []).length,
+      },
+      versions: [
+        {
+          sequence: 1,
+          amount: c.computed_amount ?? '0.00',
+          computed_at: c.decided_at ?? new Date().toISOString(),
+          computed_by: { id: c.decided_by ?? 2, name: 'Director' },
+        },
+      ],
+    } as unknown as CaseCalculation;
+    return HttpResponse.json({ data: snapshot });
+  }),
+
+  // POST /pension-cases/{id}/calculation-preview — vista previa SIN persistir (Task 51/S8.2, RF-CAL-006)
+  http.post(`${API_BASE}/pension-cases/:id/calculation-preview`, ({ params }) => {
+    const caseId = parseInt(params.id as string, 10);
+    const c = cases.get(caseId);
+    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+
+    // Solo disponible en submitted/under_review
+    if (c.status !== 'submitted' && c.status !== 'under_review') {
+      return HttpResponse.json({
+        message: 'Calculation preview only available for submitted or under_review cases.',
+      }, { status: 409 });
+    }
+
+    // Simula el motor: si no hay salarioRecords o servicios, warnings
+    const salaryCount = (c.salary_records ?? []).length;
+    const serviceMonths = (c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0);
+    const warnings: string[] = [];
+
+    // Warnings: serie salarial incompleta respecto al gate (5)
+    if (salaryCount < 5) {
+      warnings.push(`Serie salarial incompleta: ${salaryCount}/5 registros requeridos por el gate del régimen.`);
+    }
+    // AT truncado vs min_work_years (25)
+    const atTruncated = Math.floor(serviceMonths / 12);
+    if (atTruncated < 25) {
+      warnings.push(`Años trabajados (${atTruncated}) por debajo del mínimo general del régimen (25).`);
+    }
+    // Sin service_records
+    if (serviceMonths === 0) {
+      warnings.push('Sin registros de servicio declarados.');
+    }
+
+    // Elegibilidad: edad y años (no podemos verificar edad sin birth_date en este mock)
+    // Siempre elegible en este mock básico
+    const eligible = warnings.length === 0;
+
+    // SPM = último salario (mock simplificado; en el real es estrategia+divisor)
+    const spm = c.last_salary ?? '0.00';
+    // Cuantía v1 = SPM × 0.5 (PCI del General) + ATE × 0.01 × SPM, topeado por SPM × 0.9
+    const ate = Math.max(0, atTruncated - 25);
+    const base = Number(spm) * 0.5;
+    const excess = ate * 0.01 * Number(spm);
+    const amount = Math.min(base + excess, Number(spm) * 0.9);
+
+    const preview: CalculationPreview = {
+      status: c.status as 'submitted' | 'under_review',
+      eligibility: {
+        eligible,
+        criteria: [
+          { criterion: 'age', passes: true, explanation: 'Cálculo mock: edad no verificable sin birth_date.' },
+          { criterion: 'work_years', passes: atTruncated >= 25, explanation: atTruncated >= 25 ? `Cumple ${atTruncated} años ≥ 25.` : `Solo ${atTruncated} años < 25 mínimos.` },
+        ],
+      },
+      service_years: {
+        months: serviceMonths,
+        exact: serviceMonths / 12,
+        truncated: atTruncated,
+      },
+      average_monthly_salary: spm,
+      excess_years: ate,
+      amount: amount.toFixed(2),
+      regime_parameters: {
+        months_per_year: 12,
+        base_calc_percent: '0.5',
+        annual_increase_percent: '0.01',
+        limit_percent: '0.9',
+        min_work_years: 25,
+        min_age_men: 60,
+        min_age_women: 55,
+        required_salary_records: 5,
+        average_years_count: 5,
+        average_strategy: 'best_n',
+      },
+      warnings,
+    };
+    return HttpResponse.json({ data: preview });
   }),
 ];

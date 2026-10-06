@@ -248,5 +248,40 @@
   },
   "history": {
     "by": "por"
+  },
+  "calculation": {
+    "current_snapshot": "Snapshot vigente",
+    "eligibility_section": "Elegibilidad",
+    "regime_parameters_section": "Parámetros del régimen (congelados)",
+    "inputs_section": "Entradas usadas",
+    "versions_section": "Línea de versiones por resolución",
+    "fields": {
+      "sequence": "Resolución",
+      "computed_at": "Calculado el",
+      "computed_by": "Calculado por",
+      "amount": "Cuantía",
+      "service_months": "Meses trabajados",
+      "service_years_exact": "AT exacto",
+      "service_years_truncated": "AT truncado",
+      "average_strategy": "Estrategia",
+      "average_years_count": "N propio",
+      "average_monthly_salary": "SPM",
+      "excess_years": "Años excedentes"
+    }
+  },
+  "calculation_preview": {
+    "title": "Vista previa del cálculo",
+    "button": "Vista previa",
+    "help": "Ejecuta el motor de cálculo sin persistir. Disponible solo en estado Solicitud o Revisión.",
+    "run": "Ejecutar simulación",
+    "run_again": "Re-ejecutar",
+    "status": "Estado",
+    "eligible": "Elegible",
+    "not_eligible": "No elegible",
+    "results_section": "Resultados",
+    "warnings_section": "Advertencias",
+    "no_persistence_warning": "Esta vista previa NO persiste: el motor no abre transacción de escritura ni modifica computed_amount.",
+    "error": "No se pudo ejecutar la simulación",
+    "error_409": "La vista previa solo está disponible en estado Solicitud o Revisión"
   }
 }
