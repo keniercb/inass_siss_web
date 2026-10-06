@@ -106,12 +106,14 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       required: true,
       min: 1,
       help: 'catalogs:form.months_per_year_help',
+      width: 'half',
     });
     baseFields.push({
       name: 'sector',
       type: 'number',
       label: 'catalogs:form.sector',
       help: 'catalogs:form.sector_help',
+      width: 'half',
     });
     // Task 50 (S7 reajuste): parámetros de cálculo del régimen
     baseFields.push({
@@ -122,6 +124,7 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       max: 1,
       step: 0.01,
       help: 'catalogs:form.base_calc_percent_help',
+      width: 'half',
     });
     baseFields.push({
       name: 'annual_increase_percent',
@@ -131,6 +134,7 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       max: 1,
       step: 0.01,
       help: 'catalogs:form.annual_increase_percent_help',
+      width: 'half',
     });
     baseFields.push({
       name: 'limit_percent',
@@ -140,6 +144,7 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       max: 1,
       step: 0.01,
       help: 'catalogs:form.limit_percent_help',
+      width: 'half',
     });
     baseFields.push({
       name: 'min_work_years',
@@ -147,6 +152,7 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       label: 'catalogs:form.min_work_years',
       min: 1,
       help: 'catalogs:form.min_work_years_help',
+      width: 'half',
     });
     baseFields.push({
       name: 'min_age_men',
@@ -154,6 +160,7 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       label: 'catalogs:form.min_age_men',
       min: 1,
       help: 'catalogs:form.min_age_men_help',
+      width: 'half',
     });
     baseFields.push({
       name: 'min_age_women',
@@ -161,6 +168,7 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       label: 'catalogs:form.min_age_women',
       min: 1,
       help: 'catalogs:form.min_age_women_help',
+      width: 'half',
     });
     baseFields.push({
       name: 'required_salary_records',
@@ -169,6 +177,7 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       min: 1,
       max: 15,
       help: 'catalogs:form.required_salary_records_help',
+      width: 'half',
     });
     baseFields.push({
       name: 'average_strategy',
@@ -180,6 +189,7 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
         { value: 'last_n', label: 'Últimos N' },
         { value: 'all', label: 'Todos' },
       ],
+      width: 'half',
     });
   }
 

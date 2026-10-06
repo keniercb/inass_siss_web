@@ -70,20 +70,34 @@ export function ResourceFormModal<
       description={t(isEdit ? 'edit.description' : 'create.description')}
       size="lg"
     >
-      <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        {config.fields.map((field) => (
-          <FieldRenderer
-            key={String(field.name)}
-            field={field as never}
-            form={form as never}
-            disabled={
-              isEdit && config.inmutableFields?.includes(field.name as keyof TResource)
-            }
-            context={config.context}
-          />
-        ))}
+      <form onSubmit={onSubmit} noValidate>
+        {/* Grid responsive: 1 col en mobile, 2 cols en sm+ (640px) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {config.fields.map((field) => {
+            const width = (field as { width?: 'full' | 'half' | 'third' }).width ?? 'full';
+            // mapear width → clases de col-span Tailwind (sm = breakpoint 640px)
+            const colClass =
+              width === 'half'
+                ? 'col-span-1 sm:col-span-1' // media fila en sm+
+                : width === 'third'
+                  ? 'col-span-1 sm:col-span-1' // (no hay grid-cols-3 aquí, cae a 1 col)
+                  : 'col-span-1 sm:col-span-2'; // 'full' por defecto
+            return (
+              <div key={String(field.name)} className={colClass}>
+                <FieldRenderer
+                  field={field as never}
+                  form={form as never}
+                  disabled={
+                    isEdit && config.inmutableFields?.includes(field.name as keyof TResource)
+                  }
+                  context={config.context}
+                />
+              </div>
+            );
+          })}
+        </div>
 
-        <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+        <div className="flex items-center justify-end gap-2 pt-4 mt-4 border-t border-border">
           <Button type="button" variant="outline" onClick={onClose}>
             {tc('actions.cancel')}
           </Button>
