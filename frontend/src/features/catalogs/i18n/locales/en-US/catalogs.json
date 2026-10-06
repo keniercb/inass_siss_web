@@ -67,6 +67,8 @@
     "min_age_women_help": "Minimum eligibility age for women",
     "required_salary_records": "Required salary records",
     "required_salary_records_help": "EXACT number of salary records (1–15); the (N+1)-th returns 422",
+    "average_years_count": "Average N",
+    "average_years_count_help": "Own N of the average strategy (1–15, ≤ gate). With 'all' it must equal the gate",
     "average_strategy": "Average salary strategy",
     "average_strategy_help": "Best N / Last N / All (divisor N×12)"
   },

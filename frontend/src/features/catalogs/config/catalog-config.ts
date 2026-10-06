@@ -31,6 +31,8 @@ const schemasByType: Record<string, z.ZodSchema> = {
     min_age_women: z.number().int().min(1).optional(),
     required_salary_records: z.number().int().min(1).max(15).optional(),
     average_strategy: z.enum(['best_n', 'last_n', 'all']).optional(),
+    // Task 51 (S8.1): N propio de la estrategia, desacoplado del gate
+    average_years_count: z.number().int().min(1).max(15).optional(),
   }),
   'pension-types': baseSchema.extend({
     deceased_person: z.boolean().default(false),
@@ -177,6 +179,15 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       min: 1,
       max: 15,
       help: 'catalogs:form.required_salary_records_help',
+      width: 'half',
+    });
+    baseFields.push({
+      name: 'average_years_count',
+      type: 'number',
+      label: 'catalogs:form.average_years_count',
+      min: 1,
+      max: 15,
+      help: 'catalogs:form.average_years_count_help',
       width: 'half',
     });
     baseFields.push({

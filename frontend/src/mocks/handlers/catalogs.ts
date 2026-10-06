@@ -105,6 +105,8 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
         min_age_women: 55,
         required_salary_records: 5,
         average_strategy: 'best_n',
+        // Task 51 (S8.1): N propio de la estrategia = 5 (≤ gate 5, con all sería igual al gate)
+        average_years_count: 5,
       },
     },
     {
@@ -121,6 +123,7 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
         min_age_women: 50,
         required_salary_records: 3,
         average_strategy: 'last_n',
+        average_years_count: 3,
       },
     },
   ]),
@@ -158,6 +161,8 @@ function seedCatalog(
       min_age_women: item.extra?.min_age_women as number | undefined,
       required_salary_records: item.extra?.required_salary_records as number | undefined,
       average_strategy: item.extra?.average_strategy as 'best_n' | 'last_n' | 'all' | undefined,
+      // Task 51 (S8.1): N propio de la estrategia, desacoplado del gate
+      average_years_count: item.extra?.average_years_count as number | undefined,
       deactivated_at: null,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
@@ -265,6 +270,8 @@ export const catalogsHandlers = [
       min_age_women: body.min_age_women as number | undefined,
       required_salary_records: body.required_salary_records as number | undefined,
       average_strategy: body.average_strategy as 'best_n' | 'last_n' | 'all' | undefined,
+      // Task 51 (S8.1): N propio de la estrategia
+      average_years_count: body.average_years_count as number | undefined,
       deactivated_at: null,
       created_at: now,
       updated_at: now,
@@ -327,6 +334,8 @@ export const catalogsHandlers = [
       min_age_women: body.min_age_women !== undefined ? body.min_age_women as number : item.min_age_women,
       required_salary_records: body.required_salary_records !== undefined ? body.required_salary_records as number : item.required_salary_records,
       average_strategy: body.average_strategy !== undefined ? body.average_strategy as 'best_n' | 'last_n' | 'all' : item.average_strategy,
+      // Task 51 (S8.1)
+      average_years_count: body.average_years_count !== undefined ? body.average_years_count as number : item.average_years_count,
       updated_at: new Date().toISOString(),
     } as CatalogItem;
     store.set(id, updated);

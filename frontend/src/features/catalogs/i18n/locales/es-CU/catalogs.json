@@ -67,6 +67,8 @@
     "min_age_women_help": "Edad mínima de elegibilidad para mujeres",
     "required_salary_records": "Cantidad de salarios requeridos",
     "required_salary_records_help": "Cantidad EXACTA de registros salariales (1–15); el (N+1)-ésimo responde 422",
+    "average_years_count": "N de la estrategia",
+    "average_years_count_help": "N propio de la estrategia de promedio (1–15, ≤ gate). Con 'all' debe igualar al gate",
     "average_strategy": "Estrategia de promedio salarial",
     "average_strategy_help": "Mejores N / Últimos N / Todos (divisor N×12)"
   },
