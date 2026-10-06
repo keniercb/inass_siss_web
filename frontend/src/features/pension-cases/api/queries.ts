@@ -1,9 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { http } from '@/lib/http';
+import { useToast } from '@/components/ui/Toast';
+import { useTranslation } from 'react-i18next';
 import type { components } from '@/types/api';
+import type { AxiosError } from 'axios';
 
 type PensionCase = components['schemas']['PensionCase'];
 type PensionCaseHistory = components['schemas']['PensionCaseHistory'];
+type CaseCalculation = components['schemas']['CaseCalculation'];
 
 interface ApiResponse<T> { data: T; }
 interface PaginatedResponse<T> {
@@ -55,5 +59,47 @@ export function usePensionCaseHistory(id?: number | string) {
     },
     enabled: !!id,
     staleTime: 30_000,
+  });
+}
+
+/**
+ * GET /pension-cases/{id}/calculation — snapshot congelado del cálculo (Task 51/S8.4, RF-CAL-008).
+ * Devuelve null mientras el expediente no tenga cálculo congelado (no aprobado).
+ */
+export function useCaseCalculation(id?: number | string) {
+  return useQuery({
+    queryKey: ['pension-cases', 'calculation', id],
+    queryFn: async () => {
+      const response = await http.get<{ data: CaseCalculation | null }>(`/pension-cases/${id}/calculation`);
+      return response.data.data;
+    },
+    enabled: !!id,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * POST /pension-cases/{id}/calculation-preview — vista previa del cálculo SIN persistir
+ * (Task 51/S8.2, RF-CAL-006). Disponible solo en submitted/under_review.
+ *
+ * Es una mutation porque ejecuta el motor de cálculo en el backend (aunque no escriba).
+ * 409 si el expediente está aprobado/rejected (cálculo congelado o no disponible).
+ */
+export function useCalculationPreview(caseId: number | string) {
+  const toast = useToast();
+  const { t } = useTranslation('pension-cases');
+  return useMutation({
+    mutationFn: async () => {
+      const r = await http.post<{ data: components['schemas']['CalculationPreview'] }>(`/pension-cases/${caseId}/calculation-preview`);
+      return r.data.data;
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ message?: string }>;
+      if (ae.response?.status === 409) {
+        toast.error(t('calculation_preview.error_409'));
+        return;
+      }
+      toast.error(t('calculation_preview.error'));
+    },
   });
 }

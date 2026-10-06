@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight } from 'lucide-react';
+import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight, CheckCircle2, XCircle, AlertTriangle, History as HistoryIcon } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
-import { usePensionCase, usePensionCaseHistory } from '../api/queries';
+import { usePensionCase, usePensionCaseHistory, useCaseCalculation, useCalculationPreview } from '../api/queries';
 import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle, useAddIncomeConceptRecord, useRemoveIncomeConceptRecord } from '../api/mutations';
 import { CASE_STATUS_META, type CaseStatus, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput, type IncomeConceptRecordInput } from '../schemas/pension-case.schema';
 import { Button } from '@/components/ui/Button';
@@ -36,6 +36,7 @@ export function PensionCaseDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('summary');
   const [subModal, setSubModal] = useState<SubModalKind>(null);
   const [transitionOpen, setTransitionOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: pensionCase, isLoading, isError } = usePensionCase(id);
   // Cargar catálogo de conceptos de ingreso para etiquetar las filas
@@ -62,6 +63,8 @@ export function PensionCaseDetailPage() {
   const currentStatus = (pensionCase.status ?? 'submitted') as CaseStatus;
   // Botón Transitar visible si el usuario tiene al menos un permiso de transición
   const canTransition = (['cases.review', 'cases.approve', 'cases.reject', 'cases.reopen'] as const).some((p) => can(p));
+  // Botón Vista previa del cálculo: solo en submitted/under_review + permiso cases.calculate
+  const canCalculate = can('cases.calculate') && (currentStatus === 'submitted' || currentStatus === 'under_review');
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -71,13 +74,22 @@ export function PensionCaseDetailPage() {
           <h1 className="text-2xl font-semibold text-foreground font-mono">{pensionCase.number}</h1>
           <p className="text-sm text-muted-foreground mt-1">{applicantName} · <span className={`badge ${statusMeta.badgeClass}`}>{t(`list.status.${pensionCase.status}`)}</span></p>
         </div>
-        {/* Botón Transitar estado — visible si hay transiciones legales permitidas para el usuario */}
-        {canTransition && (
-          <Button variant="outline" onClick={() => setTransitionOpen(true)}>
-            <GitBranch className="w-4 h-4" />
-            {t('transition.button')}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Botón Vista previa del cálculo — visible si el estado es submitted/under_review + permiso cases.calculate */}
+          {canCalculate && (
+            <Button variant="outline" onClick={() => setPreviewOpen(true)}>
+              <Calculator className="w-4 h-4" />
+              {t('calculation_preview.button')}
+            </Button>
+          )}
+          {/* Botón Transitar estado — visible si hay transiciones legales permitidas para el usuario */}
+          {canTransition && (
+            <Button variant="outline" onClick={() => setTransitionOpen(true)}>
+              <GitBranch className="w-4 h-4" />
+              {t('transition.button')}
+            </Button>
+          )}
+        </div>
       </div>
       <div className="border-b border-border mb-6">
         <nav className="flex gap-4">
@@ -135,7 +147,9 @@ export function PensionCaseDetailPage() {
       {activeTab === 'history' && (
         <HistoryTab caseId={id} t={t} />
       )}
-      {activeTab === 'calculation' && <EmptyTab icon={Calculator} title={t('detail.tabs_empty.calculation')} desc={t('detail.tabs_empty.calculation_description')} />}
+      {activeTab === 'calculation' && (
+        <CalculationTab caseId={id} currentStatus={currentStatus} t={t} />
+      )}
 
       {/* Modales de subregistros */}
       {subModal === 'salary' && <SalaryRecordModal caseId={id} onClose={() => setSubModal(null)} />}
@@ -150,6 +164,11 @@ export function PensionCaseDetailPage() {
           currentStatus={currentStatus}
           onClose={() => setTransitionOpen(false)}
         />
+      )}
+
+      {/* Modal de vista previa del cálculo */}
+      {previewOpen && (
+        <CalculationPreviewModal caseId={id} onClose={() => setPreviewOpen(false)} t={t} tc={tc} />
       )}
     </div>
   );
@@ -352,6 +371,244 @@ function HistoryTab({ caseId, t }: { caseId: string; t: (key: string) => string 
         })}
       </div>
     </div>
+  );
+}
+
+/**
+ * Tab Cálculo — muestra el snapshot congelado del expediente aprobado (RF-CAL-008, S8.4).
+ * Si el expediente NO está aprobado, muestra EmptyTab con instrucciones.
+ * Si está aprobado, renderiza el snapshot vigente + línea de versiones por sequence.
+ */
+function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentStatus: CaseStatus; t: (key: string) => string }) {
+  const { t: tc } = useTranslation('common');
+  const { data: calculation, isLoading } = useCaseCalculation(caseId);
+
+  if (currentStatus !== 'approved') {
+    return <EmptyTab icon={Calculator} title={t('detail.tabs_empty.calculation')} desc={t('detail.tabs_empty.calculation_description')} />;
+  }
+  if (isLoading) return <div className="text-sm text-muted-foreground">{tc('status.loading')}…</div>;
+  if (!calculation) {
+    return <EmptyTab icon={Calculator} title={t('detail.tabs_empty.calculation')} desc={t('detail.tabs_empty.calculation_description')} />;
+  }
+
+  // Casts necesarios porque el api.ts codegen tipa estos como Record<string, never>
+  const eligibility = calculation.eligibility as unknown as { eligible?: boolean; criteria?: Array<{ criterion: string; passes: boolean; explanation: string }> } | null;
+  const regimeParameters = calculation.regime_parameters as unknown as Record<string, string | number | null> | null;
+  const inputs = calculation.inputs as unknown as Record<string, string | number | null> | null;
+  const versions = (calculation.versions ?? []) as Array<{ sequence?: number; amount?: string; computed_at?: string; computed_by?: { id?: number; name?: string } }>;
+
+  return (
+    <div className="space-y-6">
+      {/* Resumen del snapshot vigente */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t('calculation.current_snapshot')}</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <Field label={t('calculation.fields.sequence')} value={`#${calculation.sequence}`} mono />
+          <Field label={t('calculation.fields.computed_at')} value={calculation.computed_at ? formatDate(calculation.computed_at) : '—'} />
+          <Field label={t('calculation.fields.computed_by')} value={calculation.computed_by?.name ?? `Usuario #${calculation.computed_by?.id ?? '—'}`} />
+          <Field label={t('calculation.fields.amount')} value={calculation.amount != null ? formatCUP(Number(calculation.amount)) : '—'} mono />
+          <Field label={t('calculation.fields.service_months')} value={String(calculation.service_months ?? '—')} mono />
+          <Field label={t('calculation.fields.service_years_exact')} value={String(calculation.service_years_exact ?? '—')} mono />
+          <Field label={t('calculation.fields.service_years_truncated')} value={String(calculation.service_years_truncated ?? '—')} mono />
+          <Field label={t('calculation.fields.average_strategy')} value={calculation.average_strategy ?? '—'} />
+          <Field label={t('calculation.fields.average_years_count')} value={String(calculation.average_years_count ?? '—')} mono />
+          <Field label={t('calculation.fields.average_monthly_salary')} value={calculation.average_monthly_salary != null ? formatCUP(Number(calculation.average_monthly_salary)) : '—'} mono />
+          <Field label={t('calculation.fields.excess_years')} value={String(calculation.excess_years ?? '—')} mono />
+        </div>
+      </div>
+
+      {/* Elegibilidad */}
+      {eligibility?.criteria && eligibility.criteria.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('calculation.eligibility_section')}</h3>
+          <ul className="space-y-2">
+            {eligibility.criteria.map((c, idx) => (
+              <li key={idx} className="flex items-start gap-2 text-sm">
+                {c.passes
+                  ? <CheckCircle2 className="w-4 h-4 mt-0.5 text-success flex-shrink-0" />
+                  : <XCircle className="w-4 h-4 mt-0.5 text-destructive flex-shrink-0" />}
+                <div>
+                  <span className="font-medium text-foreground">{c.criterion}</span>
+                  <span className="text-muted-foreground ml-2">{c.explanation}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Parámetros del régimen congelados */}
+      {regimeParameters && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('calculation.regime_parameters_section')}</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            {Object.entries(regimeParameters).map(([k, v]) => (
+              <div key={k} className="flex justify-between">
+                <span className="text-muted-foreground font-mono text-xs">{k}</span>
+                <span className="text-foreground font-mono">{String(v ?? '—')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Inputs congelados */}
+      {inputs && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('calculation.inputs_section')}</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            {Object.entries(inputs).map(([k, v]) => (
+              <div key={k} className="flex justify-between">
+                <span className="text-muted-foreground font-mono text-xs">{k}</span>
+                <span className="text-foreground font-mono">{String(v ?? '—')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Línea de versiones por reapertura/re-aprobación */}
+      {versions.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('calculation.versions_section')}</h3>
+          <div className="space-y-2">
+            {versions.map((v, idx) => (
+              <div key={idx} className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+                <HistoryIcon className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">#{v.sequence}</span>
+                <span className="text-sm font-mono text-foreground">{v.amount != null ? formatCUP(Number(v.amount)) : '—'}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{v.computed_at ? formatDate(v.computed_at) : '—'}</span>
+                <span className="text-xs text-muted-foreground">· {v.computed_by?.name ?? '—'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Modal de vista previa del cálculo — POST /pension-cases/{id}/calculation-preview
+ * Ejecuta el motor SIN persistir (RF-CAL-006, S8.2). Disponible en submitted/under_review.
+ */
+function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; onClose: () => void; t: (key: string) => string; tc: (key: string) => string }) {
+  const mutation = useCalculationPreview(caseId);
+  const preview = mutation.data;
+
+  // Casts para los objects anidados (api.ts codegen)
+  const eligibility = preview?.eligibility as unknown as { eligible?: boolean; criteria?: Array<{ criterion: string; passes: boolean; explanation: string }> } | null;
+  const regimeParameters = preview?.regime_parameters as unknown as Record<string, string | number | null> | null;
+
+  return (
+    <Dialog open onClose={onClose} title={t('calculation_preview.title')} size="lg">
+      <div className="space-y-4">
+        {/* Botón ejecutar simulación */}
+        {!preview && (
+          <div className="flex flex-col items-center justify-center py-8">
+            <Calculator className="w-10 h-10 text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">{t('calculation_preview.help')}</p>
+            <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+              {mutation.isPending ? tc('status.loading') + '…' : t('calculation_preview.run')}
+            </Button>
+          </div>
+        )}
+
+        {/* Error / loading */}
+        {mutation.isError && !mutation.isPending && (
+          <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/30">
+            <AlertTriangle className="w-4 h-4 mt-0.5 text-destructive flex-shrink-0" />
+            <p className="text-sm text-destructive">{t('calculation_preview.error')}</p>
+          </div>
+        )}
+
+        {/* Resultado */}
+        {preview && (
+          <div className="space-y-4">
+            {/* Elegibilidad */}
+            {eligibility && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-2">{t('calculation.eligibility_section')}</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm text-muted-foreground">{t('calculation_preview.status')}:</span>
+                  {eligibility.eligible
+                    ? <span className="badge badge-approved"><CheckCircle2 className="w-3 h-3" />{t('calculation_preview.eligible')}</span>
+                    : <span className="badge badge-rejected"><XCircle className="w-3 h-3" />{t('calculation_preview.not_eligible')}</span>}
+                </div>
+                <ul className="space-y-1">
+                  {eligibility.criteria?.map((c, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm">
+                      {c.passes
+                        ? <CheckCircle2 className="w-4 h-4 mt-0.5 text-success flex-shrink-0" />
+                        : <XCircle className="w-4 h-4 mt-0.5 text-destructive flex-shrink-0" />}
+                      <div>
+                        <span className="font-medium text-foreground">{c.criterion}</span>
+                        <span className="text-muted-foreground ml-2">{c.explanation}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Resultados numéricos */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">{t('calculation_preview.results_section')}</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t('calculation.fields.service_months')} value={String(preview.service_years?.months ?? '—')} mono />
+                <Field label={t('calculation.fields.service_years_exact')} value={String(preview.service_years?.exact ?? '—')} mono />
+                <Field label={t('calculation.fields.service_years_truncated')} value={String(preview.service_years?.truncated ?? '—')} mono />
+                <Field label={t('calculation.fields.excess_years')} value={String(preview.excess_years ?? '—')} mono />
+                <Field label={t('calculation.fields.average_monthly_salary')} value={preview.average_monthly_salary != null ? formatCUP(Number(preview.average_monthly_salary)) : '—'} mono />
+                <Field label={t('calculation.fields.amount')} value={preview.amount != null ? formatCUP(Number(preview.amount)) : '—'} mono />
+              </div>
+            </div>
+
+            {/* Warnings */}
+            {preview.warnings && preview.warnings.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-2">{t('calculation_preview.warnings_section')}</h3>
+                <ul className="space-y-1">
+                  {preview.warnings.map((w, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-amber-900">
+                      <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                      <span>{w}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Parámetros del régimen usados */}
+            {regimeParameters && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-2">{t('calculation.regime_parameters_section')}</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {Object.entries(regimeParameters).map(([k, v]) => (
+                    <div key={k} className="flex justify-between">
+                      <span className="text-muted-foreground font-mono text-xs">{k}</span>
+                      <span className="text-foreground font-mono">{String(v ?? '—')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground italic">{t('calculation_preview.no_persistence_warning')}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-border">
+        <Button variant="outline" onClick={onClose}>{tc('actions.close')}</Button>
+        {preview && (
+          <Button variant="outline" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+            {mutation.isPending ? tc('status.loading') + '…' : t('calculation_preview.run_again')}
+          </Button>
+        )}
+      </div>
+    </Dialog>
   );
 }
 
