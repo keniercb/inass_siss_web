@@ -267,6 +267,18 @@
       "average_years_count": "Own N",
       "average_monthly_salary": "AMS",
       "excess_years": "Excess years"
+    },
+    "criteria": {
+      "age": "Age",
+      "work_years": "Work years"
+    },
+    "inputs": {
+      "last_salary": "Last salary",
+      "salary_records_count": "Salary records count",
+      "service_records_count": "Service records count",
+      "requested_at": "Requested at",
+      "birth_date": "Birth date",
+      "sex": "Sex"
     }
   },
   "calculation_preview": {

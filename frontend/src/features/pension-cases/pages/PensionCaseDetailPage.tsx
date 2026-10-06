@@ -379,7 +379,7 @@ function HistoryTab({ caseId, t }: { caseId: string; t: (key: string) => string 
  * Si el expediente NO está aprobado, muestra EmptyTab con instrucciones.
  * Si está aprobado, renderiza el snapshot vigente + línea de versiones por sequence.
  */
-function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentStatus: CaseStatus; t: (key: string) => string }) {
+function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentStatus: CaseStatus; t: (key: string, options?: Record<string, unknown>) => string }) {
   const { t: tc } = useTranslation('common');
   const { data: calculation, isLoading } = useCaseCalculation(caseId);
 
@@ -396,6 +396,11 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
   const regimeParameters = calculation.regime_parameters as unknown as Record<string, string | number | null> | null;
   const inputs = calculation.inputs as unknown as Record<string, string | number | null> | null;
   const versions = (calculation.versions ?? []) as Array<{ sequence?: number; amount?: string; computed_at?: string; computed_by?: { id?: number; name?: string } }>;
+
+  // Helpers para traducir claves de datos crudos del backend
+  const catalogLabel = (k: string): string => t(`catalogs:form.${k}`, { defaultValue: k });
+  const criterionLabel = (k: string): string => t(`calculation.criteria.${k}`, { defaultValue: k });
+  const inputLabel = (k: string): string => t(`calculation.inputs.${k}`, { defaultValue: k });
 
   return (
     <div className="space-y-6">
@@ -428,7 +433,7 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
                   ? <CheckCircle2 className="w-4 h-4 mt-0.5 text-success flex-shrink-0" />
                   : <XCircle className="w-4 h-4 mt-0.5 text-destructive flex-shrink-0" />}
                 <div>
-                  <span className="font-medium text-foreground">{c.criterion}</span>
+                  <span className="font-medium text-foreground">{criterionLabel(c.criterion)}</span>
                   <span className="text-muted-foreground ml-2">{c.explanation}</span>
                 </div>
               </li>
@@ -444,7 +449,7 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
           <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
             {Object.entries(regimeParameters).map(([k, v]) => (
               <div key={k} className="flex justify-between">
-                <span className="text-muted-foreground font-mono text-xs">{k}</span>
+                <span className="text-muted-foreground text-xs">{catalogLabel(k)}</span>
                 <span className="text-foreground font-mono">{String(v ?? '—')}</span>
               </div>
             ))}
@@ -459,7 +464,7 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
           <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
             {Object.entries(inputs).map(([k, v]) => (
               <div key={k} className="flex justify-between">
-                <span className="text-muted-foreground font-mono text-xs">{k}</span>
+                <span className="text-muted-foreground text-xs">{inputLabel(k)}</span>
                 <span className="text-foreground font-mono">{String(v ?? '—')}</span>
               </div>
             ))}
@@ -492,13 +497,19 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
  * Modal de vista previa del cálculo — POST /pension-cases/{id}/calculation-preview
  * Ejecuta el motor SIN persistir (RF-CAL-006, S8.2). Disponible en submitted/under_review.
  */
-function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; onClose: () => void; t: (key: string) => string; tc: (key: string) => string }) {
+function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; onClose: () => void; t: (key: string, options?: Record<string, unknown>) => string; tc: (key: string, options?: Record<string, unknown>) => string }) {
   const mutation = useCalculationPreview(caseId);
   const preview = mutation.data;
 
   // Casts para los objects anidados (api.ts codegen)
   const eligibility = preview?.eligibility as unknown as { eligible?: boolean; criteria?: Array<{ criterion: string; passes: boolean; explanation: string }> } | null;
   const regimeParameters = preview?.regime_parameters as unknown as Record<string, string | number | null> | null;
+
+  // Helper para traducir claves de catálogo cross-namespace (catalogs:form.{key})
+  const catalogLabel = (k: string): string => t(`catalogs:form.${k}`, { defaultValue: k });
+
+  // Helper para traducir criterios de elegibilidad (pension-cases:calculation.criteria.{key})
+  const criterionLabel = (k: string): string => t(`calculation.criteria.${k}`, { defaultValue: k });
 
   return (
     <Dialog open onClose={onClose} title={t('calculation_preview.title')} size="lg">
@@ -542,7 +553,7 @@ function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; o
                         ? <CheckCircle2 className="w-4 h-4 mt-0.5 text-success flex-shrink-0" />
                         : <XCircle className="w-4 h-4 mt-0.5 text-destructive flex-shrink-0" />}
                       <div>
-                        <span className="font-medium text-foreground">{c.criterion}</span>
+                        <span className="font-medium text-foreground">{criterionLabel(c.criterion)}</span>
                         <span className="text-muted-foreground ml-2">{c.explanation}</span>
                       </div>
                     </li>
@@ -586,7 +597,7 @@ function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; o
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   {Object.entries(regimeParameters).map(([k, v]) => (
                     <div key={k} className="flex justify-between">
-                      <span className="text-muted-foreground font-mono text-xs">{k}</span>
+                      <span className="text-muted-foreground text-xs">{catalogLabel(k)}</span>
                       <span className="text-foreground font-mono">{String(v ?? '—')}</span>
                     </div>
                   ))}

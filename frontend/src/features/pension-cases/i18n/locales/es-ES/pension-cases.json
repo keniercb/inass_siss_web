@@ -267,6 +267,18 @@
       "average_years_count": "N propio",
       "average_monthly_salary": "SPM",
       "excess_years": "Años excedentes"
+    },
+    "criteria": {
+      "age": "Edad",
+      "work_years": "Años trabajados"
+    },
+    "inputs": {
+      "last_salary": "Último salario",
+      "salary_records_count": "Cantidad de salarios",
+      "service_records_count": "Cantidad de servicios",
+      "requested_at": "Fecha de solicitud",
+      "birth_date": "Fecha de nacimiento",
+      "sex": "Sexo"
     }
   },
   "calculation_preview": {
