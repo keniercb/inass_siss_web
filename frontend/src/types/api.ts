@@ -1247,6 +1247,50 @@ export interface components {
              */
             payment_form?: "tarjeta magnetica" | "nomina electronica";
             /**
+             * Format: double
+             * @description Solo pension-regimes (Task 50, S7 reajuste 2026-10-06): porciento de base de cálculo — fracción [0,1] del régimen
+             * @example 0.6
+             */
+            base_calc_percent?: number;
+            /**
+             * Format: double
+             * @description Solo pension-regimes (Task 50): porciento de incremento anual — fracción [0,1]
+             * @example 0.02
+             */
+            annual_increase_percent?: number;
+            /**
+             * Format: double
+             * @description Solo pension-regimes (Task 50): porciento límite de la cuantía — fracción [0,1]
+             * @example 0.9
+             */
+            limit_percent?: number;
+            /**
+             * @description Solo pension-regimes (Task 50): años mínimos trabajados GENERALES
+             * @example 25
+             */
+            min_work_years?: number;
+            /**
+             * @description Solo pension-regimes (Task 50): edad mínima de elegibilidad de los hombres
+             * @example 60
+             */
+            min_age_men?: number;
+            /**
+             * @description Solo pension-regimes (Task 50): edad mínima de elegibilidad de las mujeres
+             * @example 55
+             */
+            min_age_women?: number;
+            /**
+             * @description Solo pension-regimes (Task 50): cantidad EXACTA de registros de salario — tope de la serie y gate excluyente del paso a revisión
+             * @example 5
+             */
+            required_salary_records?: number;
+            /**
+             * @description Solo pension-regimes (Task 50): estrategia del salario promedio mensual (divisor N×12)
+             * @example best_n
+             * @enum {string}
+             */
+            average_strategy?: "best_n" | "last_n" | "all";
+            /**
              * Format: date-time
              * @description Borrado lógico (RF-CAT-001)
              */
@@ -2743,6 +2787,50 @@ export interface operations {
                      * @enum {string}
                      */
                     payment_form?: "tarjeta magnetica" | "nomina electronica";
+                    /**
+                     * Format: double
+                     * @description Solo pension-regimes (Task 50, S7 reajuste): porciento de base de cálculo — fracción entre cero y uno, DOUBLE (excepción RN-005 decidida por el usuario)
+                     * @example 0.6
+                     */
+                    base_calc_percent?: number;
+                    /**
+                     * Format: double
+                     * @description Solo pension-regimes (Task 50, S7 reajuste): porciento de incremento anual por año excedente — fracción [0,1]
+                     * @example 0.02
+                     */
+                    annual_increase_percent?: number;
+                    /**
+                     * Format: double
+                     * @description Solo pension-regimes (Task 50, S7 reajuste): porciento límite que topea la cuantía — fracción [0,1]
+                     * @example 0.9
+                     */
+                    limit_percent?: number;
+                    /**
+                     * @description Solo pension-regimes (Task 50, S7 reajuste): años mínimos trabajados GENERALES (sin distinción de sexo)
+                     * @example 25
+                     */
+                    min_work_years?: number;
+                    /**
+                     * @description Solo pension-regimes (Task 50, S7 reajuste): edad mínima de elegibilidad de los hombres
+                     * @example 60
+                     */
+                    min_age_men?: number;
+                    /**
+                     * @description Solo pension-regimes (Task 50, S7 reajuste): edad mínima de elegibilidad de las mujeres
+                     * @example 55
+                     */
+                    min_age_women?: number;
+                    /**
+                     * @description Solo pension-regimes (Task 50, S7 reajuste): cantidad EXACTA de registros de salario del expediente — el (N+1)-ésimo responde 422 y el paso a revisión exige exactamente N (techo 15, regla de usuario 1)
+                     * @example 5
+                     */
+                    required_salary_records?: number;
+                    /**
+                     * @description Solo pension-regimes (Task 50, S7 reajuste): estrategia del salario promedio — mejores N / últimos N / todos, con divisor N×12 (promedio mensual)
+                     * @example best_n
+                     * @enum {string}
+                     */
+                    average_strategy?: "best_n" | "last_n" | "all";
                 };
             };
         };

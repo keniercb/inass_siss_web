@@ -90,7 +90,39 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
     { name: 'Operario' },
   ]),
   'pension-regimes': seedCatalog('pension-regimes', [
-    { code: 'GEN', name: 'General', extra: { months_per_year: 12, sector: null } },
+    {
+      code: 'GEN',
+      name: 'General',
+      extra: {
+        months_per_year: 12,
+        sector: null,
+        // Task 50 (S7 reajuste)
+        base_calc_percent: 0.5,
+        annual_increase_percent: 0.01,
+        limit_percent: 0.9,
+        min_work_years: 25,
+        min_age_men: 60,
+        min_age_women: 55,
+        required_salary_records: 5,
+        average_strategy: 'best_n',
+      },
+    },
+    {
+      code: 'DISC',
+      name: 'Discapacidad total',
+      extra: {
+        months_per_year: 12,
+        sector: 1,
+        base_calc_percent: 0.6,
+        annual_increase_percent: 0.02,
+        limit_percent: 0.95,
+        min_work_years: 15,
+        min_age_men: 55,
+        min_age_women: 50,
+        required_salary_records: 3,
+        average_strategy: 'last_n',
+      },
+    },
   ]),
   // payment-types eliminado (Task 42: el cobro se gestiona por agency-types.payment_form)
   'income-concepts': seedCatalog('income-concepts', [
@@ -115,6 +147,17 @@ function seedCatalog(
       description: null,
       months_per_year: (item.extra?.months_per_year as number | undefined) ?? null,
       applies_base_salary: (item.extra?.applies_base_salary as boolean | undefined) ?? null,
+      // Task 50 (S7 reajuste): parámetros de cálculo por régimen (pension-regimes).
+      // El OpenAPI no marca nullable estos campos, así que usamos undefined (no null)
+      // cuando no están presentes en el seed.
+      base_calc_percent: item.extra?.base_calc_percent as number | undefined,
+      annual_increase_percent: item.extra?.annual_increase_percent as number | undefined,
+      limit_percent: item.extra?.limit_percent as number | undefined,
+      min_work_years: item.extra?.min_work_years as number | undefined,
+      min_age_men: item.extra?.min_age_men as number | undefined,
+      min_age_women: item.extra?.min_age_women as number | undefined,
+      required_salary_records: item.extra?.required_salary_records as number | undefined,
+      average_strategy: item.extra?.average_strategy as 'best_n' | 'last_n' | 'all' | undefined,
       deactivated_at: null,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
@@ -213,6 +256,15 @@ export const catalogsHandlers = [
       description: (body.description as string | null) ?? null,
       months_per_year: (body.months_per_year as number | null | undefined) ?? null,
       applies_base_salary: (body.applies_base_salary as boolean | null | undefined) ?? null,
+      // Task 50 (S7 reajuste): pension-regimes calculation params
+      base_calc_percent: body.base_calc_percent as number | undefined,
+      annual_increase_percent: body.annual_increase_percent as number | undefined,
+      limit_percent: body.limit_percent as number | undefined,
+      min_work_years: body.min_work_years as number | undefined,
+      min_age_men: body.min_age_men as number | undefined,
+      min_age_women: body.min_age_women as number | undefined,
+      required_salary_records: body.required_salary_records as number | undefined,
+      average_strategy: body.average_strategy as 'best_n' | 'last_n' | 'all' | undefined,
       deactivated_at: null,
       created_at: now,
       updated_at: now,
@@ -266,6 +318,15 @@ export const catalogsHandlers = [
       ...body,
       months_per_year: (body.months_per_year as number | null | undefined) ?? item.months_per_year,
       applies_base_salary: (body.applies_base_salary as boolean | null | undefined) ?? item.applies_base_salary,
+      // Task 50 (S7 reajuste): pension-regimes calculation params (PATCH semantics)
+      base_calc_percent: body.base_calc_percent !== undefined ? body.base_calc_percent as number : item.base_calc_percent,
+      annual_increase_percent: body.annual_increase_percent !== undefined ? body.annual_increase_percent as number : item.annual_increase_percent,
+      limit_percent: body.limit_percent !== undefined ? body.limit_percent as number : item.limit_percent,
+      min_work_years: body.min_work_years !== undefined ? body.min_work_years as number : item.min_work_years,
+      min_age_men: body.min_age_men !== undefined ? body.min_age_men as number : item.min_age_men,
+      min_age_women: body.min_age_women !== undefined ? body.min_age_women as number : item.min_age_women,
+      required_salary_records: body.required_salary_records !== undefined ? body.required_salary_records as number : item.required_salary_records,
+      average_strategy: body.average_strategy !== undefined ? body.average_strategy as 'best_n' | 'last_n' | 'all' : item.average_strategy,
       updated_at: new Date().toISOString(),
     } as CatalogItem;
     store.set(id, updated);
