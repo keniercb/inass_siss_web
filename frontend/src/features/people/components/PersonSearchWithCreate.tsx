@@ -128,7 +128,7 @@ export function PersonSearchWithCreate({
       />
       {/* Dropdown de resultados */}
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-48 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-60 overflow-y-auto">
           {results.map((p) => (
             <button
               key={p.id}
