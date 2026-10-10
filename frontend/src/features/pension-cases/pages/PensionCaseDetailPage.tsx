@@ -10,6 +10,7 @@ import { CASE_STATUS_META, type CaseStatus, type SalaryRecordInput, type Service
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { formatDate, formatCUP, cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
@@ -768,21 +769,29 @@ function ServiceRecordModal({ caseId, onClose }: { caseId: string; onClose: () =
     staleTime: 5 * 60 * 1000,
   });
   const entities = entitiesData?.data ?? [];
-  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
   return <Dialog open onClose={onClose} title={t('service.add')} size="lg"><div className="grid grid-cols-2 gap-3">
     <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('service.form.entity_id')} *</label>
-      <select className={selectClass} value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}>
-        <option value="0">{tc('actions.select')}</option>
-        {entities.map((e) => <option key={e.id} value={e.id}>{e.code} — {e.name ?? e.tax_id_number}</option>)}
-      </select></div>
+      <SearchSelect
+        value={entityId || undefined}
+        onChange={(v) => setEntityId(Number(v) || 0)}
+        options={entities.map((e) => ({ value: e.id, label: e.name ?? e.tax_id_number, secondary: e.code }))}
+        placeholder={tc('actions.select')}
+        required
+        error={!entityId}
+      /></div>
     <div><label className="block text-sm font-medium mb-1">{t('service.form.start_date')} *</label><DatePickerField value={startDate} onChange={setStartDate} /></div>
     <div><label className="block text-sm font-medium mb-1">{t('service.form.end_date')} *</label><DatePickerField value={endDate} onChange={setEndDate} /></div>
     <label className="col-span-2 flex items-center gap-2 pt-1"><input type="checkbox" checked={isAppendix} onChange={(e) => setIsAppendix(e.target.checked)} className="w-4 h-4" /><span className="text-sm">{t('service.form.is_appendix')}</span></label>
     <div className="col-span-2"><label className="block text-sm font-medium mb-1">{t('service.form.declaration_form')}</label>
-      <select className={selectClass} value={formaDeclaracion} onChange={(e) => setFormaDeclaracion(e.target.value as 'Documental' | 'Testifical')}>
-        <option value="Documental">{t('service.form.declaration_form_documental')}</option>
-        <option value="Testifical">{t('service.form.declaration_form_testifical')}</option>
-      </select></div>
+      <SearchSelect
+        value={formaDeclaracion}
+        onChange={(v) => setFormaDeclaracion(v as 'Documental' | 'Testifical')}
+        options={[
+          { value: 'Documental', label: t('service.form.declaration_form_documental') },
+          { value: 'Testifical', label: t('service.form.declaration_form_testifical') },
+        ]}
+        placeholder={t('service.form.declaration_form_documental')}
+      /></div>
     <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.close')}</Button><Button disabled={!entityId || !startDate || !endDate || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ entity_id: entityId, start_date: startDate, end_date: endDate || null, is_appendix: isAppendix, declaration_form: formaDeclaracion } as ServiceRecordInput); reset(); } catch { /* error handled by mutation.onError toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : tc('actions.save_and_continue')}</Button></div>
   </div></Dialog>;
 }

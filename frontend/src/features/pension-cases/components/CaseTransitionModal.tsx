@@ -8,6 +8,7 @@ import { useCaseTransition } from '../api/mutations';
 import { CASE_STATUS_META, TRANSITION_MATRIX, type CaseStatus, type TransitionRule } from '../schemas/pension-case.schema';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { http } from '@/lib/http';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -186,18 +187,16 @@ export function CaseTransitionModal({ caseId, currentStatus, onClose }: CaseTran
             {needsLegalBasis && (
               <div>
                 <label className="block text-sm font-medium mb-1">{t('transition.legal_basis_label')} *</label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  value={legalBasisId}
-                  onChange={(e) => setLegalBasisId(Number(e.target.value))}
-                >
-                  <option value="0">{tc('actions.select')}</option>
-                  {legalBases.map((lb) => (
-                    <option key={lb.id} value={lb.id}>
-                      {lb.number} · {formatDate(lb.issue_date)}{lb.reference ? ` · ${lb.reference}` : ''}
-                    </option>
-                  ))}
-                </select>
+                <SearchSelect
+                  value={legalBasisId || undefined}
+                  onChange={(v) => setLegalBasisId(Number(v) || 0)}
+                  options={legalBases.map((lb) => ({
+                    value: lb.id,
+                    label: `${lb.number} · ${formatDate(lb.issue_date)}${lb.reference ? ` · ${lb.reference}` : ''}`,
+                  }))}
+                  placeholder={tc('actions.select')}
+                  required
+                />
                 {/* Force flag: solo si la regla lo permite */}
                 {selectedRule.forceAllowed && legalBasisId !== 0 && (
                   <label className="flex items-start gap-2 mt-2 p-2 rounded-md bg-amber-50 border border-amber-200">

@@ -10,6 +10,7 @@ import { formatCI } from '@/lib/cuban-ci';
 import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { Pagination } from '@/components/crud/Pagination';
 import { Dialog } from '@/components/ui/Dialog';
 import { PersonFormModal } from '../components/PersonFormModal';
@@ -96,15 +97,18 @@ export function PeopleListPage() {
           />
         </div>
 
-        <select
-          value={deceased}
-          onChange={(e) => updateParams({ deceased: e.target.value, page: 1 })}
-          className="px-3 py-2 text-sm rounded-md border border-input bg-white"
-        >
-          <option value="all">{t('list.filter.all')}</option>
-          <option value="alive">{t('list.filter.alive')}</option>
-          <option value="deceased">{t('list.filter.deceased')}</option>
-        </select>
+        <div className="w-48">
+          <SearchSelect
+            value={deceased}
+            onChange={(v) => updateParams({ deceased: String(v ?? 'all'), page: 1 })}
+            options={[
+              { value: 'all', label: t('list.filter.all') },
+              { value: 'alive', label: t('list.filter.alive') },
+              { value: 'deceased', label: t('list.filter.deceased') },
+            ]}
+            placeholder={t('list.filter.all')}
+          />
+        </div>
       </div>
 
       {/* Tabla */}
