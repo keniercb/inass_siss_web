@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { useToast } from '@/components/ui/Toast';
 import { useCreateEntity, useUpdateEntity } from '../api/mutations';
 import { entitySchema, type EntityInput } from '../schemas/organization.schema';
@@ -13,7 +14,6 @@ import { PersonSearchWithCreate } from '@/features/people/components/PersonSearc
 import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import { handleFormError } from '@/lib/backend-errors';
 import type { Entity } from '@/types/domain';
-import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
 interface CatalogItem { id: number; name: string; code?: string; }
@@ -78,7 +78,7 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
     }
   });
 
-  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
+  // selectClass eliminado: todos los selects usan SearchSelect
 
   return (
     <Dialog open onClose={onClose} title={t(isEdit ? 'entities.edit.title' : 'entities.create.title')} description={t(isEdit ? 'entities.edit.description' : 'entities.create.description')} size="xl">
@@ -121,20 +121,30 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
           />
           <div>
             <label className="block text-sm font-medium mb-1">{t('entities.form.province')} *</label>
-            <select className={selectClass} disabled={isEdit} value={selectedProvinceId ?? ''} onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setSelectedProvinceId(v); form.setValue('province_id', v ?? 0); }}>
-              <option value="">{tc('actions.select')}</option>
-              {(provincesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+            <SearchSelect
+              value={selectedProvinceId ?? undefined}
+              onChange={(v) => { const n = v ? Number(v) : null; setSelectedProvinceId(n); form.setValue('province_id', n ?? 0); }}
+              options={(provincesData?.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
+              placeholder={tc('actions.select')}
+              disabled={isEdit}
+              required
+              error={!selectedProvinceId}
+            />
           </div>
         </div>
         {/* Municipio + Dirección (2 columnas) */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">{t('entities.form.municipality')} *</label>
-            <select className={selectClass} disabled={!selectedProvinceId} {...form.register('municipality_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}>
-              <option value="">{!selectedProvinceId ? t('agencies.form.select_province_first') : tc('actions.select')}</option>
-              {(municipalitiesData?.data ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+            <SearchSelect
+              value={form.watch('municipality_id') as number | undefined}
+              onChange={(v) => form.setValue('municipality_id', Number(v) || 0, { shouldValidate: true, shouldDirty: true })}
+              options={(municipalitiesData?.data ?? []).map((m) => ({ value: m.id, label: m.name }))}
+              placeholder={!selectedProvinceId ? t('agencies.form.select_province_first') : tc('actions.select')}
+              disabled={!selectedProvinceId}
+              required
+              error={!!form.formState.errors.municipality_id}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('entities.form.address')} *</label>

@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { Input } from '@/components/ui/Input';
 import { useCreateCase, useUpdateCase } from '../api/mutations';
 import { type CreateCaseInput, type UpdateCaseInput } from '../schemas/pension-case.schema';
 import { PersonSearchWithCreate } from '@/features/people/components/PersonSearchWithCreate';
 import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
-import { cn } from '@/lib/utils';
 import type { components } from '@/types/api';
 
 type PensionCase = components['schemas']['PensionCase'];
@@ -16,6 +16,7 @@ import { http } from '@/lib/http';
 import { DatePickerField } from '@/components/ui/DatePickerField';
 
 interface EntityListItem { id: number; code: string; name?: string; tax_id_number: string; }
+interface EntityListResponse { data: EntityListItem[]; }
 
 // Firma autorizada resumida (GET /authorized-signatures?entity_id=X&status=active)
 interface AuthorizedSignatureItem {
@@ -37,8 +38,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
   const createMutation = useCreateCase();
   const updateMutation = useUpdateCase();
 
-  // Cargar entidades
-  const { data: entitiesData } = useQuery({ queryKey: ['entities', 'all'], queryFn: async () => { const r = await http.get<{ data: EntityListItem[] }>('/entities', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
+  // Entidades se cargan via SearchSelect.loadOptions al focus (no preload)
 
   // Estado local
   const [selectedPerson, setSelectedPerson] = useState<number | null>(pensionCase?.applicant_person_id ?? null);
@@ -96,8 +96,6 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
   const { data: residenceMunisData } = useQuery({ queryKey: ['municipalities', 'residence', { province_id: residenceProvinceId }], queryFn: async () => { if (!residenceProvinceId) return { data: [] }; const r = await http.get<{ data: { id: number; name: string }[] }>('/municipalities', { params: { per_page: 100, province_id: residenceProvinceId } }); return r.data; }, enabled: !!residenceProvinceId, staleTime: 60_000 });
   // Cargar agencias de cobro filtradas por tipo seleccionado
   const { data: collectionAgenciesData } = useQuery({ queryKey: ['agencies', 'collection', { agency_type_id: collectionAgencyTypeId }], queryFn: async () => { if (!collectionAgencyTypeId) return { data: [] }; const r = await http.get<{ data: { id: number; name: string }[] }>('/agencies', { params: { per_page: 100, agency_type_id: collectionAgencyTypeId } }); return r.data; }, enabled: !!collectionAgencyTypeId, staleTime: 60_000 });
-
-  const selectClass = cn('flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50');
 
   const onSubmit = async () => {
     if (!selectedPerson || !entityId || !positionId || !occCatId || !eduId || !sciCatId || !pensionTypeId || !pensionRegimeId || lastSalary === '') return;
@@ -175,10 +173,21 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         )}
         {/* Entidad + Último salario */}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('form.employer_entity_id')} *</label>
-            <select className={selectClass} value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}>
-              <option value="">{tc('actions.select')}</option>{(entitiesData?.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.code} — {e.name ?? e.tax_id_number}</option>)}
-            </select></div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('form.employer_entity_id')} *</label>
+            <SearchSelect
+              value={entityId || undefined}
+              onChange={(v) => setEntityId(Number(v) || 0)}
+              loadOptions={async (q) => {
+                const r = await http.get<EntityListResponse>('/entities', { params: { per_page: 100, ...(q && { search: q }) } });
+                return (r.data.data ?? []).map((e) => ({ value: e.id, label: e.name ?? e.tax_id_number, secondary: e.code }));
+              }}
+              initialDisplayValue={(pensionCase as { employer_entity?: { name?: string } })?.employer_entity?.name}
+              placeholder={tc('actions.select')}
+              required
+              error={!entityId}
+            />
+          </div>
           <div><label className="block text-sm font-medium mb-1">{t('form.last_salary')} *</label>
             <Input type="number" step="0.01" min="0" placeholder="0.00" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} /></div>
         </div>
@@ -186,18 +195,17 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">{t('form.requested_by')}</label>
-            <select
-              className={selectClass}
-              value={requestedByPersonId ?? 0}
+            <SearchSelect
+              value={requestedByPersonId ?? undefined}
+              onChange={(v) => setRequestedByPersonId(v ? Number(v) : null)}
+              options={signatures.map((s) => ({
+                value: s.person.id ?? 0,
+                label: s.person.full_name ?? `${s.person.first_name ?? ''} ${s.person.first_surname ?? ''}`.trim() ?? s.person.identity_number ?? '—',
+                secondary: s.position.name,
+              }))}
+              placeholder={!entityId ? t('form.requested_by_disabled') : isLoadingSignatures ? tc('status.loading') + '…' : signatures.length === 0 ? t('form.requested_by_empty') : tc('actions.select')}
               disabled={isEdit || !entityId || isLoadingSignatures || signatures.length === 0}
-              onChange={(e) => { const pid = e.target.value ? Number(e.target.value) : null; setRequestedByPersonId(pid); }}
-            >
-              <option value="">{!entityId ? t('form.requested_by_disabled') : isLoadingSignatures ? tc('status.loading') + '…' : signatures.length === 0 ? t('form.requested_by_empty') : tc('actions.select')}</option>
-              {signatures.map((s) => {
-                const label = s.person.full_name ?? `${s.person.first_name ?? ''} ${s.person.first_surname ?? ''}`.trim() ?? s.person.identity_number;
-                return <option key={s.id} value={s.person.id}>{label} — {s.position.name}</option>;
-              })}
-            </select>
+            />
             <p className="text-xs text-muted-foreground mt-1">{t('form.requested_by_help')}</p>
           </div>
           <div><label className="block text-sm font-medium mb-1">{t('form.termination_date')}</label>
@@ -261,14 +269,25 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
             <Input type="text" placeholder="Calle 8 #10 entre 5 y 7, Playa" value={currentAddress} onChange={(e) => setCurrentAddress(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-sm font-medium mb-1">{t('form.residence_province_id')} *</label>
-              <select className={selectClass} disabled={isEdit} value={residenceProvinceId} onChange={(e) => { const v = Number(e.target.value); setResidenceProvinceId(v); setResidenceMunicipalityId(0); }}>
-                <option value="">{tc('actions.select')}</option>{(provincesData?.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select></div>
+              <SearchSelect
+                value={residenceProvinceId || undefined}
+                onChange={(v) => { const n = Number(v) || 0; setResidenceProvinceId(n); setResidenceMunicipalityId(0); }}
+                options={(provincesData?.data ?? []).map((p) => ({ value: p.id, label: p.name }))}
+                placeholder={tc('actions.select')}
+                disabled={isEdit}
+                required
+                error={!residenceProvinceId}
+              /></div>
             <div><label className="block text-sm font-medium mb-1">{t('form.residence_municipality_id')} *</label>
-              <select className={selectClass} disabled={!residenceProvinceId} value={residenceMunicipalityId} onChange={(e) => setResidenceMunicipalityId(Number(e.target.value))}>
-                <option value="">{!residenceProvinceId ? tc('actions.select') : tc('actions.select')}</option>
-                {(residenceMunisData?.data ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select></div>
+              <SearchSelect
+                value={residenceMunicipalityId || undefined}
+                onChange={(v) => setResidenceMunicipalityId(Number(v) || 0)}
+                options={(residenceMunisData?.data ?? []).map((m) => ({ value: m.id, label: m.name }))}
+                placeholder={tc('actions.select')}
+                disabled={!residenceProvinceId}
+                required
+                error={!residenceMunicipalityId}
+              /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <CatalogSearchSelect
@@ -281,10 +300,15 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
               onSelect={(item) => { setCollectionAgencyTypeId(item.id); setCollectionAgencyId(0); }}
             />
             <div><label className="block text-sm font-medium mb-1">{t('form.collection_agency_id')} *</label>
-              <select className={selectClass} disabled={!collectionAgencyTypeId} value={collectionAgencyId} onChange={(e) => setCollectionAgencyId(Number(e.target.value))}>
-                <option value="">{!collectionAgencyTypeId ? tc('actions.select') : tc('actions.select')}</option>
-                {(collectionAgenciesData?.data ?? []).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select></div>
+              <SearchSelect
+                value={collectionAgencyId || undefined}
+                onChange={(v) => setCollectionAgencyId(Number(v) || 0)}
+                options={(collectionAgenciesData?.data ?? []).map((a) => ({ value: a.id, label: a.name }))}
+                placeholder={tc('actions.select')}
+                disabled={!collectionAgencyTypeId}
+                required
+                error={!collectionAgencyId}
+              /></div>
           </div>
           <div><label className="block text-sm font-medium mb-1">{t('form.bank_account')}</label>
             <Input type="text" placeholder="01234567890123456789012345678" maxLength={34} value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} /></div>
@@ -292,15 +316,16 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         {/* Task 52/S8.8: declaración de imputabilidad de salarios ausentes */}
         <div className="p-3 rounded-md border border-border space-y-2">
           <div><label className="block text-sm font-medium mb-1">{t('form.missing_salaries_attributable')}</label>
-            <select
-              className={cn('flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring')}
+            <SearchSelect
               value={missingSalariesAttributable}
-              onChange={(e) => setMissingSalariesAttributable(e.target.value as 'unset' | 'true' | 'false')}
-            >
-              <option value="unset">{t('form.missing_salaries_attributable_unset')}</option>
-              <option value="true">{t('form.missing_salaries_attributable_true')}</option>
-              <option value="false">{t('form.missing_salaries_attributable_false')}</option>
-            </select>
+              onChange={(v) => setMissingSalariesAttributable(v as 'unset' | 'true' | 'false')}
+              options={[
+                { value: 'unset', label: t('form.missing_salaries_attributable_unset') },
+                { value: 'true', label: t('form.missing_salaries_attributable_true') },
+                { value: 'false', label: t('form.missing_salaries_attributable_false') },
+              ]}
+              placeholder={t('form.missing_salaries_attributable_unset')}
+            />
             <p className="text-xs text-muted-foreground mt-1">{t('form.missing_salaries_attributable_help')}</p>
           </div>
         </div>

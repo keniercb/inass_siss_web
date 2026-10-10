@@ -145,7 +145,7 @@ export function CatalogSearchSelect({
       />
       {/* Dropdown de resultados */}
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-48 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-60 overflow-y-auto">
           {results.map((item) => (
             <button
               key={item.id}
