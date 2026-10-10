@@ -191,7 +191,8 @@
     "remove_error": "Error removing concept",
     "columns": {
       "income_concept": "Concept",
-      "amount": "Amount"
+      "amount": "Amount",
+      "applied_percent": "%"
     },
     "form": {
       "income_concept_id": "Income concept",
@@ -278,7 +279,11 @@
       "service_records_count": "Service records count",
       "requested_at": "Requested at",
       "birth_date": "Birth date",
-      "sex": "Sex"
+      "sex": "Sex",
+      "salaries": "Salaries",
+      "services": "Services",
+      "year": "Year",
+      "earned_salary": "Earned salary"
     }
   },
   "calculation_preview": {
