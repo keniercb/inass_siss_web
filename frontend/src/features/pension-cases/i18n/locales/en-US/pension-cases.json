@@ -74,6 +74,10 @@
       "phone": "Phone",
       "popular_council": "Popular council",
       "termination_date": "Termination date",
+      "missing_salaries_attributable": "Missing salaries attributable",
+      "missing_salaries_attributable_unset": "Undeclared",
+      "missing_salaries_attributable_true": "Yes, attributable",
+      "missing_salaries_attributable_false": "No, not attributable",
       "current_address": "Current address",
       "residence_province": "Residence province",
       "residence_municipality": "Residence municipality",
@@ -120,7 +124,12 @@
     "residence_municipality_id": "Residence municipality",
     "collection_agency_type_id": "Collection agency type",
     "collection_agency_id": "Collection agency",
-    "bank_account": "Bank account"
+    "bank_account": "Bank account",
+    "missing_salaries_attributable": "Missing salaries attributable",
+    "missing_salaries_attributable_unset": "Undeclared (no deficit)",
+    "missing_salaries_attributable_true": "Yes, attributable to the worker",
+    "missing_salaries_attributable_false": "No, not attributable to the worker",
+    "missing_salaries_attributable_help": "Required when the declared salary series is smaller than the strategy's N of the regime. With no deficit, leave it as 'Undeclared'."
   },
   "salary": {
     "title": "Salary records",
@@ -267,11 +276,19 @@
       "average_strategy": "Strategy",
       "average_years_count": "Own N",
       "average_monthly_salary": "AMS",
-      "excess_years": "Excess years"
+      "excess_years": "Excess years",
+      "average_years_used": "Effective N divisor",
+      "income_concept_percent": "Σ % concepts"
     },
     "criteria": {
       "age": "Age",
       "work_years": "Work years"
+    },
+    "income_concept_terms_section": "Applicable income concepts (Task 53/S8.9)",
+    "income_concept_terms": {
+      "code": "Code",
+      "name": "Name",
+      "applied_percent": "Applied %"
     },
     "inputs": {
       "last_salary": "Last salary",

@@ -270,6 +270,11 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
           <Field label={t('detail.fields.phone')} value={pensionCase.phone ?? '—'} />
           <Field label={t('detail.fields.popular_council')} value={pensionCase.popular_council ?? '—'} />
           <Field label={t('detail.fields.termination_date')} value={pensionCase.termination_date ? formatDate(pensionCase.termination_date) : '—'} />
+          <Field label={t('detail.fields.missing_salaries_attributable')} value={
+            pensionCase.missing_salaries_attributable == null ? t('detail.fields.missing_salaries_attributable_unset')
+              : pensionCase.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
+              : t('detail.fields.missing_salaries_attributable_false')
+          } />
         </div>
       </div>
 
@@ -419,6 +424,14 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
           <Field label={t('calculation.fields.average_years_count')} value={String(calculation.average_years_count ?? '—')} mono />
           <Field label={t('calculation.fields.average_monthly_salary')} value={calculation.average_monthly_salary != null ? formatCUP(Number(calculation.average_monthly_salary)) : '—'} mono />
           <Field label={t('calculation.fields.excess_years')} value={String(calculation.excess_years ?? '—')} mono />
+          {/* Task 52/S8.8 V-8: N efectivo divisor congelado (api usa 'average_years_effective' en el snapshot) */}
+          <Field label={t('calculation.fields.average_years_used')} value={String((calculation as { average_years_effective?: number }).average_years_effective ?? '—')} mono />
+          {/* Task 52/S8.8 V-8: declaración de imputabilidad congelada */}
+          <Field label={t('detail.fields.missing_salaries_attributable')} value={
+            calculation.missing_salaries_attributable == null ? t('detail.fields.missing_salaries_attributable_unset')
+              : calculation.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
+              : t('detail.fields.missing_salaries_attributable_false')
+          } />
         </div>
       </div>
 
@@ -644,8 +657,43 @@ function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; o
                 <Field label={t('calculation.fields.excess_years')} value={String(preview.excess_years ?? '—')} mono />
                 <Field label={t('calculation.fields.average_monthly_salary')} value={preview.average_monthly_salary != null ? formatCUP(Number(preview.average_monthly_salary)) : '—'} mono />
                 <Field label={t('calculation.fields.amount')} value={preview.amount != null ? formatCUP(Number(preview.amount)) : '—'} mono />
+                {/* Task 52/S8.8 V-7: N efectivo divisor */}
+                <Field label={t('calculation.fields.average_years_used')} value={String(preview.average_years_used ?? '—')} mono />
+                {/* Task 52/S8.8 V-6: declaración de imputabilidad */}
+                <Field label={t('detail.fields.missing_salaries_attributable')} value={
+                  preview.missing_salaries_attributable == null ? t('detail.fields.missing_salaries_attributable_unset')
+                    : preview.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
+                    : t('detail.fields.missing_salaries_attributable_false')
+                } />
+                {/* Task 53/S8.9: porciento total de conceptos aplicables */}
+                <Field label={t('calculation.fields.income_concept_percent')} value={preview.income_concept_percent != null ? `${preview.income_concept_percent}%` : '—'} mono />
               </div>
             </div>
+
+            {/* Task 53/S8.9: conceptos de ingreso aplicables */}
+            {preview.income_concept_terms && preview.income_concept_terms.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-2">{t('calculation.income_concept_terms_section')}</h3>
+                <table className="w-full text-xs border border-border rounded">
+                  <thead className="bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="text-left px-2 py-1">{t('calculation.income_concept_terms.code')}</th>
+                      <th className="text-left px-2 py-1">{t('calculation.income_concept_terms.name')}</th>
+                      <th className="text-right px-2 py-1">{t('calculation.income_concept_terms.applied_percent')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.income_concept_terms.map((term, idx) => (
+                      <tr key={idx} className="border-t border-border">
+                        <td className="px-2 py-1 font-mono">{String(term.code ?? '—')}</td>
+                        <td className="px-2 py-1">{String(term.name ?? '—')}</td>
+                        <td className="px-2 py-1 text-right font-mono">{term.applied_percent != null ? `${term.applied_percent}%` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* Warnings */}
             {preview.warnings && preview.warnings.length > 0 && (

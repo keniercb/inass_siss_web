@@ -300,9 +300,15 @@ export const pensionCasesHandlers = [
     const errors: Record<string, string[]> = {};
     if (!body.income_concept_id) errors.income_concept_id = ['The income concept is required.'];
     if (body.applied_percent === undefined || body.applied_percent === null || body.applied_percent === '') errors.applied_percent = ['The applied percent is required.'];
+    // Task 54/SGP-39: amount NO se acepta en el wire (422 si llega, D-14 b/D-15 a)
+    if (body.amount !== undefined && body.amount !== null) {
+      errors.amount = ['The amount field is not accepted in the wire: the v2 engine derives it from the applied percent.'];
+    }
     if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
     const id = nextIncomeId++;
-    const record = { id, pension_case_id: caseId, income_concept_id: body.income_concept_id, applied_percent: String(body.applied_percent) } as unknown as IncomeConceptRecord;
+    // El amount lo deriva el motor v2 — aquí simulamos con un valor fijo para que la proyección tenga dato
+    const derivedAmount = String((Number(body.applied_percent) / 100) * 1000);
+    const record = { id, pension_case_id: caseId, income_concept_id: body.income_concept_id, applied_percent: String(body.applied_percent), amount: derivedAmount } as unknown as IncomeConceptRecord;
     c.income_concept_records = [...(c.income_concept_records ?? []), record];
     cases.set(caseId, c);
     return HttpResponse.json({ data: record }, { status: 201 });
@@ -482,6 +488,11 @@ export const pensionCasesHandlers = [
       service_years_truncated: Math.floor(((c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0)) / 12),
       average_strategy: 'best_n' as const,
       average_years_count: 5,
+      // Task 52/S8.8 V-8: N efectivo congelado = N (backfill = gate exacto histórico)
+      // Ojo: el schema CaseCalculation usa 'average_years_effective', no 'average_years_used'
+      average_years_effective: 5,
+      // Task 52/S8.8 V-8: declaración congelada con la resolución (null sin déficit)
+      missing_salaries_attributable: null as boolean | null,
       average_monthly_salary: c.last_salary ?? '0.00',
       excess_years: Math.max(0, Math.floor(((c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0)) / 12) - 25),
       amount: c.computed_amount ?? '0.00',
@@ -503,10 +514,14 @@ export const pensionCasesHandlers = [
         requested_at: c.requested_at ?? '—',
         birth_date: '1960-02-03',
         sex: 'M',
+        missing_salaries_attributable: null as boolean | null,
         salaries: (c.salary_records ?? []).map((r) => ({ id: r.id, year: r.year, earned_salary: r.earned_salary })),
-        services: (c.service_records ?? []).length > 0
-          ? (c.service_records ?? []).map((r) => ({ id: r.id, entity_id: r.entity_id, start_date: r.start_date, end_date: r.end_date, worked_months: r.worked_months, worked_years: r.worked_years }))
-          : [],
+        // Task 53/S8.9: lista income_concepts[] congelada con el porciento (sin amount desde Task 54)
+        income_concepts: (c.income_concept_records ?? []).map((icr) => ({
+          income_concept_id: icr.income_concept_id,
+          code: 'SALB',
+          applied_percent: icr.applied_percent,
+        })),
       },
       versions: [
         {
@@ -564,7 +579,7 @@ export const pensionCasesHandlers = [
     const excess = ate * 0.01 * Number(spm);
     const amount = Math.min(base + excess, Number(spm) * 0.9);
 
-    const preview: CalculationPreview = {
+    const preview = {
       status: c.status as 'submitted' | 'under_review',
       eligibility: {
         eligible,
@@ -593,8 +608,21 @@ export const pensionCasesHandlers = [
         average_years_count: 5,
         average_strategy: 'best_n',
       },
+      // Task 52/S8.8 V-7: N efectivo divisor (R >= N ⇒ N; déficit no imputable ⇒ R; imputable ⇒ N con ausentes a salario cero)
+      average_years_used: salaryCount >= 5 ? 5 : salaryCount,
+      // Task 52/S8.8 V-6: declaración de imputabilidad (null sin déficit)
+      missing_salaries_attributable: salaryCount < 5 ? (c.missing_salaries_attributable ?? null) : null,
+      // Task 53/S8.9 V-11: conceptos APLICABLES (applies_base_salary) que el motor consumió como incrementos
+      income_concept_terms: (c.income_concept_records ?? []).map((icr) => ({
+        income_concept_id: icr.income_concept_id,
+        code: 'SALB',
+        name: 'Salario base',
+        applied_percent: icr.applied_percent,
+      })),
+      // Task 53/S8.9: porciento total (Σ)
+      income_concept_percent: (c.income_concept_records ?? []).reduce((acc, icr) => acc + Number(icr.applied_percent ?? 0), 0).toFixed(2),
       warnings,
-    };
+    } as unknown as CalculationPreview;
     return HttpResponse.json({ data: preview });
   }),
 ];

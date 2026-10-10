@@ -74,6 +74,10 @@
       "phone": "Teléfono",
       "popular_council": "Consejo popular",
       "termination_date": "Fecha de desvinculación",
+      "missing_salaries_attributable": "Salarios ausentes imputables",
+      "missing_salaries_attributable_unset": "Sin declaración",
+      "missing_salaries_attributable_true": "Sí, imputables",
+      "missing_salaries_attributable_false": "No, no imputables",
       "current_address": "Dirección actual",
       "residence_province": "Provincia de residencia",
       "residence_municipality": "Municipio de residencia",
@@ -120,7 +124,12 @@
     "residence_municipality_id": "Municipio de residencia",
     "collection_agency_type_id": "Tipo de agencia de cobro",
     "collection_agency_id": "Agencia de cobro",
-    "bank_account": "Cuenta bancaria"
+    "bank_account": "Cuenta bancaria",
+    "missing_salaries_attributable": "Salarios ausentes imputables",
+    "missing_salaries_attributable_unset": "Sin declaración (sin déficit)",
+    "missing_salaries_attributable_true": "Sí, imputables al trabajador",
+    "missing_salaries_attributable_false": "No, no imputables al trabajador",
+    "missing_salaries_attributable_help": "Obligatorio cuando la serie salarial declarada es menor que el N de la estrategia del régimen. Sin déficit, déjalo en 'Sin declaración'."
   },
   "salary": {
     "title": "Registros de salario",
@@ -267,11 +276,19 @@
       "average_strategy": "Estrategia",
       "average_years_count": "N propio",
       "average_monthly_salary": "SPM",
-      "excess_years": "Años excedentes"
+      "excess_years": "Años excedentes",
+      "average_years_used": "N efectivo divisor",
+      "income_concept_percent": "Σ % conceptos"
     },
     "criteria": {
       "age": "Edad",
       "work_years": "Años trabajados"
+    },
+    "income_concept_terms_section": "Conceptos de ingreso aplicables (Task 53/S8.9)",
+    "income_concept_terms": {
+      "code": "Código",
+      "name": "Nombre",
+      "applied_percent": "% aplicado"
     },
     "inputs": {
       "last_salary": "Último salario",
