@@ -6,13 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { useToast } from '@/components/ui/Toast';
 import { useCrudResource } from '@/hooks/crud/useCrudResource';
 import { municipalityConfig, type MunicipalityInput } from '../config/municipality-config';
 import { handleFormError } from '@/lib/backend-errors';
 import type { CrudConfig } from '@/types/crud';
 import type { components } from '@/types/api';
-import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
 type Municipality = components['schemas']['Municipality'];
@@ -140,25 +140,16 @@ export function MunicipalityFormModal<TResource, TCreateInput, TUpdateInput>({
               {t('form.province')}
               {!isSpecial && <span className="text-destructive ml-1">*</span>}
             </label>
-            <select
+            <SearchSelect
               id="province_id"
+              value={(form.watch('province_id') as number | null) ?? undefined}
+              onChange={(v) => form.setValue('province_id', v ? Number(v) : null, { shouldValidate: true, shouldDirty: true })}
+              options={provinces.map((p) => ({ value: p.id, label: p.name }))}
+              placeholder={tc('actions.select')}
               disabled={isSpecial || isEdit}
-              className={cn(
-                'flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                form.formState.errors.province_id ? 'border-destructive' : 'border-input',
-              )}
-              {...form.register('province_id', { setValueAs: (v) => v === '' ? null : Number(v) })}
-              value={String(form.watch('province_id') ?? '')}
-            >
-              <option value="">{tc('actions.select')}</option>
-              {provinces.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              required={!isSpecial}
+              error={!!form.formState.errors.province_id}
+            />
             {form.formState.errors.province_id && (
               <p className="text-xs text-destructive mt-1" role="alert">
                 {String(form.formState.errors.province_id.message)}

@@ -9,6 +9,7 @@ import { usePermiso } from '@/hooks/use-permiso';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { DatePickerField } from '@/components/ui/DatePickerField';
 import { Pagination } from '@/components/crud/Pagination';
 import { Dialog } from '@/components/ui/Dialog';
@@ -76,11 +77,18 @@ export function LegalBasisListPage() {
       </div>
       <div className="bg-card rounded-lg border border-border p-4 mb-4 flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[240px]"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input type="text" placeholder={t('list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" /></div>
-        <select value={status} onChange={(e) => updateParams({ status: e.target.value, page: 1 })} className="px-3 py-2 text-sm rounded-md border border-input bg-white">
-          <option value="all">{t('list.filter.all')}</option>
-          <option value="vigent">{t('list.filter.vigent')}</option>
-          <option value="derogated">{t('list.filter.derogated')}</option>
-        </select>
+        <div className="w-48">
+          <SearchSelect
+            value={status || undefined}
+            onChange={(v) => updateParams({ status: String(v ?? 'all'), page: 1 })}
+            options={[
+              { value: 'all', label: t('list.filter.all') },
+              { value: 'vigent', label: t('list.filter.vigent') },
+              { value: 'derogated', label: t('list.filter.derogated') },
+            ]}
+            placeholder={t('list.filter.all')}
+          />
+        </div>
       </div>
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <table className="w-full text-sm">

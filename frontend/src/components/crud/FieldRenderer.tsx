@@ -1,8 +1,8 @@
 import { UseFormReturn, type FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/Input';
 import { DatePickerField } from '@/components/ui/DatePickerField';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import type { FieldDef } from '@/types/crud';
 import { cn } from '@/lib/utils';
 
@@ -162,24 +162,15 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
       return (
         <div>
           {label}
-          <select
+          <SearchSelect
             id={field.name}
+            value={(form.watch(field.name as never) as unknown as string | number | null) ?? undefined}
+            onChange={(v) => form.setValue(field.name as never, (v ?? null) as never, { shouldValidate: true, shouldDirty: true })}
+            options={(field.options ?? []).map((opt) => ({ value: opt.value, label: opt.label }))}
+            placeholder={placeholderText ?? tc('common:actions.select')}
             disabled={isDisabled}
-            className={cn(
-              'flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-              error ? 'border-destructive' : 'border-input',
-            )}
-            {...form.register(field.name as never)}
-          >
-            <option value="">{tc('common:actions.select')}</option>
-            {field.options?.map((opt) => (
-              <option key={String(opt.value)} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            error={!!error}
+          />
           {errorMessage}
           {help}
         </div>
@@ -187,90 +178,27 @@ export function FieldRenderer<TFieldValues extends FieldValues>({
 
     case 'async-select':
       return (
-        <AsyncSelectField
-          field={field}
-          form={form}
-          disabled={isDisabled}
-          label={label}
-          errorMessage={errorMessage}
-          helpText={help}
-          placeholderText={placeholderText ?? tc('common:actions.select')}
-        />
+        <div>
+          {label}
+          <SearchSelect
+            id={field.name}
+            value={(form.watch(field.name as never) as unknown as string | number | null) ?? undefined}
+            onChange={(v) => form.setValue(field.name as never, (v ?? null) as never, { shouldValidate: true, shouldDirty: true })}
+            loadOptions={async (q) => {
+              if (!field.loadOptions) return [];
+              return field.loadOptions(q);
+            }}
+            placeholder={placeholderText ?? tc('common:actions.select')}
+            disabled={isDisabled}
+            error={!!error}
+          />
+          {errorMessage}
+          {help}
+        </div>
       );
 
     default:
       return null;
   }
-}
-
-/** Campo select con opciones cargadas asíncronamente (p. ej. provincias) */
-function AsyncSelectField<TFieldValues extends FieldValues>({
-  field,
-  form,
-  disabled,
-  label,
-  errorMessage,
-  helpText,
-  placeholderText,
-}: {
-  field: FieldDef<unknown>;
-  form: UseFormReturn<TFieldValues>;
-  disabled?: boolean;
-  label: React.ReactNode;
-  errorMessage: React.ReactNode;
-  helpText: React.ReactNode;
-  placeholderText: string;
-}) {
-  const [options, setOptions] = useState<Array<{ value: string | number; label: string }>>([]);
-  const [loading, setLoading] = useState(false);
-  const [t] = useTranslation();
-
-  useEffect(() => {
-    let cancelled = false;
-    if (field.loadOptions) {
-      setLoading(true);
-      field
-        .loadOptions('')
-        .then((opts) => {
-          if (!cancelled) {
-            setOptions(opts);
-            setLoading(false);
-          }
-        })
-        .catch(() => {
-          if (!cancelled) setLoading(false);
-        });
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [field.loadOptions]);
-
-  return (
-    <div>
-      {label}
-      <select
-        id={field.name}
-        disabled={disabled || loading}
-        className={cn(
-          'flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-        )}
-        {...form.register(field.name as never)}
-      >
-        <option value="">
-          {loading ? `${t('common:status.loading')}…` : placeholderText}
-        </option>
-        {options.map((opt) => (
-          <option key={String(opt.value)} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      {errorMessage}
-      {helpText}
-    </div>
-  );
 }
 

@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { useToast } from '@/components/ui/Toast';
 import { useCrudResource } from '@/hooks/crud/useCrudResource';
 import { agencyConfig, type AgencyInput } from '../config/agency-config';
@@ -13,7 +14,6 @@ import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearc
 import { handleFormError } from '@/lib/backend-errors';
 import type { CrudConfig } from '@/types/crud';
 import type { components } from '@/types/api';
-import { cn } from '@/lib/utils';
 import { http } from '@/lib/http';
 
 type Agency = components['schemas']['Agency'];
@@ -121,12 +121,6 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
   const provinces = provincesData?.data ?? [];
   const municipalities = municipalitiesData?.data ?? [];
 
-  const selectClass = cn(
-    'flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-    'disabled:cursor-not-allowed disabled:opacity-50',
-  );
-
   return (
     <Dialog
       open
@@ -142,24 +136,16 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
             <label htmlFor="province_id" className="block text-sm font-medium text-foreground mb-1">
               {t('form.province')} <span className="text-destructive">*</span>
             </label>
-            <select
+            <SearchSelect
               id="province_id"
-              className={cn(selectClass, form.formState.errors.province_id && 'border-destructive')}
+              value={selectedProvinceId ?? undefined}
+              onChange={(v) => { const n = v ? Number(v) : null; setSelectedProvinceId(n); form.setValue('province_id', n ?? 0, { shouldValidate: true, shouldDirty: true }); }}
+              options={provinces.map((p) => ({ value: p.id, label: p.name }))}
+              placeholder={tc('actions.select')}
               disabled={isEdit}
-              value={selectedProvinceId ?? ''}
-              onChange={(e) => {
-                const v = e.target.value ? Number(e.target.value) : null;
-                setSelectedProvinceId(v);
-                form.setValue('province_id', v ?? 0);
-              }}
-            >
-              <option value="">{tc('actions.select')}</option>
-              {provinces.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              required
+              error={!!form.formState.errors.province_id}
+            />
             {form.formState.errors.province_id && (
               <p className="text-xs text-destructive mt-1" role="alert">
                 {String(form.formState.errors.province_id.message)}
@@ -171,21 +157,16 @@ export function AgencyFormModal<TResource, TCreateInput, TUpdateInput>({
             <label htmlFor="municipality_id" className="block text-sm font-medium text-foreground mb-1">
               {t('form.municipality')} <span className="text-destructive">*</span>
             </label>
-            <select
+            <SearchSelect
               id="municipality_id"
+              value={form.watch('municipality_id') as number | undefined}
+              onChange={(v) => form.setValue('municipality_id', Number(v) || 0, { shouldValidate: true, shouldDirty: true })}
+              options={municipalities.map((m) => ({ value: m.id, label: m.name }))}
+              placeholder={!selectedProvinceId ? t('form.select_province_first') : tc('actions.select')}
               disabled={!selectedProvinceId}
-              className={cn(selectClass, form.formState.errors.municipality_id && 'border-destructive')}
-              {...form.register('municipality_id', { setValueAs: (v) => v === '' ? 0 : Number(v) })}
-            >
-              <option value="">
-                {!selectedProvinceId ? t('form.select_province_first') : tc('actions.select')}
-              </option>
-              {municipalities.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
+              required
+              error={!!form.formState.errors.municipality_id}
+            />
             {form.formState.errors.municipality_id && (
               <p className="text-xs text-destructive mt-1" role="alert">
                 {String(form.formState.errors.municipality_id.message)}

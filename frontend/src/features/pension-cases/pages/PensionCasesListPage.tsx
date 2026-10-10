@@ -12,6 +12,7 @@ import type { components } from '@/types/api';
 type PensionCase = components['schemas']['PensionCase'];
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { SearchSelect } from '@/components/ui/SearchSelect';
 import { Pagination } from '@/components/crud/Pagination';
 import { Dialog } from '@/components/ui/Dialog';
 import { PensionCaseFormModal } from '../components/PensionCaseFormModal';
@@ -87,13 +88,20 @@ export function PensionCasesListPage() {
       </div>
       <div className="bg-card rounded-lg border border-border p-4 mb-4 flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[240px]"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input type="text" placeholder={t('list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" /></div>
-        <select value={status} onChange={(e) => updateParams({ status: e.target.value, page: 1 })} className="px-3 py-2 text-sm rounded-md border border-input bg-white">
-          <option value="">{t('list.filter.all')}</option>
-          <option value="submitted">{t('list.filter.submitted')}</option>
-          <option value="under_review">{t('list.filter.under_review')}</option>
-          <option value="approved">{t('list.filter.approved')}</option>
-          <option value="rejected">{t('list.filter.rejected')}</option>
-        </select>
+        <div className="w-48">
+          <SearchSelect
+            value={status || undefined}
+            onChange={(v) => updateParams({ status: String(v ?? ''), page: 1 })}
+            options={[
+              { value: '', label: t('list.filter.all') },
+              { value: 'submitted', label: t('list.filter.submitted') },
+              { value: 'under_review', label: t('list.filter.under_review') },
+              { value: 'approved', label: t('list.filter.approved') },
+              { value: 'rejected', label: t('list.filter.rejected') },
+            ]}
+            placeholder={t('list.filter.all')}
+          />
+        </div>
       </div>
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <table className="w-full text-sm">
