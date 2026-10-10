@@ -191,7 +191,8 @@
     "remove_error": "Error al eliminar concepto",
     "columns": {
       "income_concept": "Concepto",
-      "amount": "Importe"
+      "amount": "Importe",
+      "applied_percent": "%"
     },
     "form": {
       "income_concept_id": "Concepto de ingreso",
@@ -278,7 +279,11 @@
       "service_records_count": "Cantidad de servicios",
       "requested_at": "Fecha de solicitud",
       "birth_date": "Fecha de nacimiento",
-      "sex": "Sexo"
+      "sex": "Sexo",
+      "salaries": "Salarios",
+      "services": "Servicios",
+      "year": "Año",
+      "earned_salary": "Salario devengado"
     }
   },
   "calculation_preview": {

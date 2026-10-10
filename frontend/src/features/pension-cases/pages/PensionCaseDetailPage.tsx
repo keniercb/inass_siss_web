@@ -136,8 +136,8 @@ export function PensionCaseDetailPage() {
           {/* Conceptos de ingreso */}
           <SubrecordSection title={t('income_concept.title')} onAdd={canEdit ? () => setSubModal('income') : undefined} addLabel={t('income_concept.add')}>
             {(pensionCase.income_concept_records ?? []).length > 0 ? (
-              <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('income_concept.columns.income_concept')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
-                <tbody className="divide-y divide-border">{(pensionCase.income_concept_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{incomeConceptLabel(r.income_concept_id)}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeIncomeConceptMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
+              <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('income_concept.columns.income_concept')}</th><th className="text-right px-3 py-2">{t('income_concept.columns.applied_percent')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
+                <tbody className="divide-y divide-border">{(pensionCase.income_concept_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{incomeConceptLabel(r.income_concept_id)}</td><td className="px-3 py-2 text-right font-mono">{r.applied_percent != null ? `${r.applied_percent}%` : '—'}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeIncomeConceptMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
           </SubrecordSection>
@@ -461,13 +461,85 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
       {inputs && (
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3">{t('calculation.inputs_section')}</h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-            {Object.entries(inputs).map(([k, v]) => (
-              <div key={k} className="flex justify-between">
-                <span className="text-muted-foreground text-xs">{inputLabel(k)}</span>
-                <span className="text-foreground font-mono">{String(v ?? '—')}</span>
-              </div>
-            ))}
+          <div className="space-y-2">
+            {Object.entries(inputs).map(([k, v]) => {
+              // Detectar tipos compuestos: arrays y objetos anidados
+              const isObjectOrArray = v !== null && typeof v === 'object';
+              const isArray = Array.isArray(v);
+              const entries = isObjectOrArray ? Object.entries(v as Record<string, unknown>) : [];
+              const arrayLen = isArray ? (v as unknown[]).length : 0;
+
+              return (
+                <div key={k} className="border-l-2 border-border pl-3 py-1">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-muted-foreground text-xs uppercase tracking-wide">{inputLabel(k)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {isArray
+                        ? `${arrayLen} ${arrayLen === 1 ? 'registro' : 'registros'}`
+                        : isObjectOrArray
+                          ? `${entries.length} ${entries.length === 1 ? 'campo' : 'campos'}`
+                          : null}
+                    </span>
+                  </div>
+                  {/* Valor simple */}
+                  {!isObjectOrArray && (
+                    <p className="text-sm text-foreground font-mono">{String(v ?? '—')}</p>
+                  )}
+                  {/* Array de salarios: mostrar como tabla compacta año + salario */}
+                  {isArray && k === 'salaries' && arrayLen > 0 && (
+                    <table className="w-full text-xs mt-1 border border-border rounded">
+                      <thead className="bg-muted/50 text-muted-foreground">
+                        <tr>
+                          <th className="text-left px-2 py-1">{t('calculation.inputs.year')}</th>
+                          <th className="text-right px-2 py-1">{t('calculation.inputs.earned_salary')}</th>
+                          {(() => {
+                            const first = (v as Array<Record<string, unknown>>)[0] ?? {};
+                            return Object.keys(first).filter(kk => !['year', 'earned_salary', 'id', 'pension_case_id'].includes(kk)).map((kk) => (
+                              <th key={kk} className="text-left px-2 py-1">{kk}</th>
+                            ));
+                          })()}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(v as Array<Record<string, unknown>>).map((row, idx) => (
+                          <tr key={idx} className="border-t border-border">
+                            <td className="px-2 py-1 font-mono">{String(row.year ?? '—')}</td>
+                            <td className="px-2 py-1 text-right font-mono">{row.earned_salary != null ? formatCUP(Number(row.earned_salary)) : '—'}</td>
+                            {Object.keys(row).filter(kk => !['year', 'earned_salary', 'id', 'pension_case_id'].includes(kk)).map((kk) => (
+                              <td key={kk} className="px-2 py-1 font-mono">{String(row[kk] ?? '—')}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {/* Array genérico (no salaries): mostrar items como lista */}
+                  {isArray && k !== 'salaries' && arrayLen > 0 && (
+                    <ul className="text-xs mt-1 space-y-0.5 text-muted-foreground">
+                      {(v as unknown[]).slice(0, 5).map((item, idx) => (
+                        <li key={idx} className="font-mono">• {typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item)}</li>
+                      ))}
+                      {arrayLen > 5 && <li className="italic">…{arrayLen - 5} más</li>}
+                    </ul>
+                  )}
+                  {/* Objeto anidado (no array): mostrar claves como mini-tabla */}
+                  {!isArray && isObjectOrArray && entries.length > 0 && (
+                    <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                      {entries.map(([sk, sv]) => (
+                        <div key={sk} className="flex justify-between">
+                          <span className="text-muted-foreground font-mono">{sk}</span>
+                          <span className="text-foreground font-mono">{typeof sv === 'object' && sv !== null ? JSON.stringify(sv) : String(sv ?? '—')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Array vacío u objeto vacío */}
+                  {isObjectOrArray && entries.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic">—</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
