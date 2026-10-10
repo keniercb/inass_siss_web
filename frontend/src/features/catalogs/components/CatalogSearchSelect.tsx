@@ -78,9 +78,12 @@ export function CatalogSearchSelect({
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (search.length < 1) { setResults([]); setSearched(false); return; }
+    // Al hacer focus con search vacío, cargar los primeros 10 items sin filtro
+    const query = search.trim();
     const timer = setTimeout(async () => {
-      const r = await http.get<CatalogListResponse>(`/catalogs/${type}`, { params: { search: search.trim(), per_page: 10 } });
+      const r = await http.get<CatalogListResponse>(`/catalogs/${type}`, {
+        params: { per_page: 10, ...(query && { search: query }) },
+      });
       setResults(r.data.data ?? []);
       setSearched(true);
     }, 300);
