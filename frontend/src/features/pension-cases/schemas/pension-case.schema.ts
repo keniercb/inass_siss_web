@@ -32,6 +32,8 @@ export const createCaseSchema = z.object({
   collection_agency_type_id: z.number().int().positive('El tipo de agencia de cobro es obligatorio'),
   collection_agency_id: z.number().int().positive('La agencia de cobro es obligatoria'),
   bank_account: z.string().max(34).optional().nullable(),
+  // Task 52/S8.8: declaración de imputabilidad de salarios ausentes (null válido sin déficit)
+  missing_salaries_attributable: z.boolean().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
@@ -62,6 +64,8 @@ export const updateCaseSchema = z.object({
   collection_agency_type_id: z.number().int().positive().optional(),
   collection_agency_id: z.number().int().positive().optional(),
   bank_account: z.string().max(34).optional().nullable(),
+  // Task 52/S8.8: PATCH (null explícito limpia; la omisión no toca el valor almacenado)
+  missing_salaries_attributable: z.boolean().optional().nullable(),
 });
 export type UpdateCaseInput = z.infer<typeof updateCaseSchema>;
 

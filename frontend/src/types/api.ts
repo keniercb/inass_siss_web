@@ -430,7 +430,7 @@ export interface paths {
         put?: never;
         /**
          * Vista previa del cálculo (RF-CAL-006)
-         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía v1 (SPM×PCI + ATE×PIA×SPM topeada por SPM×PIL), junto con los parámetros del régimen usados y las advertencias (serie salarial incompleta respecto al N del gate, criterios de elegibilidad fallidos). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
+         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía de la VERSIÓN DOS (SPM×(PCI + ATE×PIA + Σ(applied_percent/100)) con tope final SPM×PIL — Task 53/S8.9: los conceptos de ingreso APLICABLES suman como incrementos, income_concept_terms[] con el porciento total), junto con los parámetros del régimen usados y las advertencias (serie salarial incompleta respecto al N del gate, criterios de elegibilidad fallidos, tope final que recorta — D-11 —, conceptos declarados no aplicables). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
          */
         post: operations["pensionCasesCalculationPreview"];
         delete?: never;
@@ -497,7 +497,7 @@ export interface paths {
         get: operations["pensionCasesShow"];
         /**
          * Edición del expediente (promovente inmutable)
-         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario y la fecha de solicitud — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Task 42: el grupo de DOMICILIO y COBRO del promovente — dirección actual, provincia y municipio de residencia, tipo de agencia de cobro, agencia de cobro y cuenta bancaria — SÍ es editable (decisión explícita del usuario: pueden modificarse) con probes espejo del alta y la exigencia condicional de la cuenta re-evaluada contra el estado RESULTANTE (cambiar el tipo de agencia de cobro a uno con forma de pago tarjeta magnetica exige la cuenta si acabó en null). Las advertencias de la serie salarial viajan junto a data.
+         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario, la fecha de solicitud y la declaración de imputabilidad de los salarios ausentes (Task 52/S8.8, D-3: missing_salaries_attributable, PATCH — null explícito la limpia) — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Task 42: el grupo de DOMICILIO y COBRO del promovente — dirección actual, provincia y municipio de residencia, tipo de agencia de cobro, agencia de cobro y cuenta bancaria — SÍ es editable (decisión explícita del usuario: pueden modificarse) con probes espejo del alta y la exigencia condicional de la cuenta re-evaluada contra el estado RESULTANTE (cambiar el tipo de agencia de cobro a uno con forma de pago tarjeta magnetica exige la cuenta si acabó en null). Las advertencias de la serie salarial viajan junto a data.
          */
         put: operations["pensionCasesUpdate"];
         post?: never;
@@ -666,7 +666,7 @@ export interface paths {
         put?: never;
         /**
          * Alta de un concepto de ingreso
-         * @description Declara el valor de un concepto de ingreso del expediente (regla de usuario 5) mientras el expediente está en submitted. El par concepto-expediente es único (422 semántico), el importe es decimal exacto no negativo (RN-005) y — desde la Task 42 (corrección de usuario) — el porciento a aplicar es OBLIGATORIO: decimal exacto en el rango 0-100 con dos decimales (422 si se omite, fuera de rango o con tercera decimal).
+         * @description Declara un concepto de ingreso del expediente (regla de usuario 5) mientras el expediente está en submitted. El par concepto-expediente es único (422 semántico) y — desde la Task 42 (corrección de usuario) — el porciento a aplicar es OBLIGATORIO: decimal exacto en el rango 0-100 con dos decimales (422 si se omite, fuera de rango o con tercera decimal). Desde la Task 54 (SGP-39, corrección de usuario) el importe NO existe en el wire: la declaración es SOLO el porciento y el motor v2 deriva el importe — un payload que aún envíe amount responde 422 (D-14 b/D-15 a).
          */
         post: operations["pensionCasesAddIncomeConceptRecord"];
         delete?: never;
@@ -1705,7 +1705,7 @@ export interface components {
         };
         /**
          * Vista previa del cálculo
-         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía v1, los parámetros del régimen usados y las advertencias.
+         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía de la VERSIÓN DOS (base del régimen + incrementos por conceptos de ingreso aplicables, tope final SPM×PIL — Task 53/S8.9), los parámetros del régimen usados y las advertencias.
          */
         CalculationPreview: {
             /**
@@ -1744,20 +1744,49 @@ export interface components {
                 truncated?: number;
             };
             /**
-             * @description SPM = Σ(selección de la estrategia)/(N propio × 12), Money half-even
+             * @description SPM = Σ(selección de la estrategia)/(N EFECTIVO × 12), Money half-even — los conceptos de ingreso JAMÁS participan del promedio (RF-CAL-005 v2)
              * @example 475.00
              */
             average_monthly_salary: string;
+            /**
+             * @description Task 52/S8.8, V-7: el N EFECTIVO divisor — R ≥ N ⇒ N; déficit no imputable ⇒ R; imputable ⇒ N con los ausentes a salario cero
+             * @example 5
+             */
+            average_years_used: number;
+            /**
+             * @description Task 52/S8.8, V-6: declaración de imputabilidad de los salarios ausentes — null sin déficit; obligatoria con déficit (422 si falta, D-4)
+             * @example null
+             */
+            missing_salaries_attributable: boolean | null;
             /**
              * @description ATE = max(0, AT truncado − min_work_years)
              * @example 0
              */
             excess_years: number;
             /**
-             * @description Cuantía v1 = SPM×PCI + ATE×PIA×SPM topeada por mínimo(Cuantía, SPM×PIL)
-             * @example 285.00
+             * @description Cuantía v2 = SPM×(PCI + ATE×PIA + Σ(applied_percent/100)) topeada por mínimo(Cuantía, SPM×PIL) — factor total compuesto con UN redondeo (D-13); SIN conceptos aplicables es IDÉNTICA a la v1 al centavo
+             * @example 332.50
              */
             amount: string;
+            /** @description Task 53/S8.9, V-11: los conceptos APLICABLES (applies_base_salary) que el motor consumió como incrementos — SIN término de dinero por concepto; lista vacía sin conceptos declarados (D-9: aporte 0.00) */
+            income_concept_terms: {
+                /**
+                 * Format: int64
+                 * @example 1
+                 */
+                income_concept_id?: number;
+                /** @example SALB */
+                code?: string;
+                /** @example Salario base */
+                name?: string;
+                /** @example 10.00 */
+                applied_percent?: string;
+            }[];
+            /**
+             * @description Σ de los applied_percent de los conceptos que participaron — NUNCA el factor: el factor total se compone entero en bcmath (D-13)
+             * @example 10.00
+             */
+            income_concept_percent: string;
             regime_parameters: {
                 /** @example 12 */
                 months_per_year?: number;
@@ -1774,7 +1803,7 @@ export interface components {
                 /** @example 55 */
                 min_age_women?: number;
                 /**
-                 * @description El GATE: exactamente N registros de salario
+                 * @description El TOPE del régimen (Task 52/S8.8, V-5): entrada a lo sumo N; la revisión admite series menores con la declaración de imputabilidad
                  * @example 5
                  */
                 required_salary_records?: number;
@@ -1837,6 +1866,16 @@ export interface components {
              * @example 5
              */
             average_years_count: number;
+            /**
+             * @description Task 52/S8.8, V-8/D-5: el N EFECTIVO divisor congelado (backfill = N — el gate exacto histórico hizo imposible el déficit)
+             * @example 5
+             */
+            average_years_effective: number;
+            /**
+             * @description Task 52/S8.8, V-8/D-5: la declaración de imputabilidad congelada con la resolución (null sin déficit)
+             * @example null
+             */
+            missing_salaries_attributable: boolean | null;
             /** @example 475.00 */
             average_monthly_salary: string;
             /** @example 0 */
@@ -1849,7 +1888,7 @@ export interface components {
             eligibility: Record<string, never>;
             /** @description Los parámetros del régimen CONGELADOS al aprobar — la mutación posterior del catálogo no reescribe la historia */
             regime_parameters: Record<string, never>;
-            /** @description Los ids y valores usados: registros de salario seleccionados, registros de servicio con sus meses, requested_at, nacimiento y sexo */
+            /** @description Los ids y valores usados: registros de salario seleccionados, registros de servicio con sus meses, requested_at, nacimiento y sexo, la declaración de imputabilidad (Task 52) y desde Task 53/S8.9 la lista income_concepts[] congelada — {income_concept_id, code, applied_percent} de la RISB exacta que el motor consumió como incrementos (D-10; desde Task 54/SGP-39 SIN amount: la declaración es solo el porciento — D-17): la re-ejecución histórica reproduce la cuantía exacta aunque el catálogo mute o desactive conceptos después */
             inputs: Record<string, never>;
             versions: {
                 /** @example 1 */
@@ -1871,7 +1910,7 @@ export interface components {
         };
         /**
          * Concepto de ingreso del expediente
-         * @description Valor declarado de un concepto de ingreso del expediente (regla de usuario 5): el par expediente-concepto es único, el valor es DECIMAL(12,2) no negativo (RN-005) y el porciento a aplicar (Task 42, corrección de usuario) es DECIMAL(5,2) en el rango 0-100 con dos decimales exactos.
+         * @description Declaración de un concepto de ingreso del expediente (regla de usuario 5): el par expediente-concepto es único y la declaración es SOLO el porciento a aplicar — DECIMAL(5,2) en el rango 0-100 con dos decimales exactos (Task 42). Desde Task 54 (SGP-39, corrección de usuario) el importe NO existe: el motor de la cuantía v2 lo deriva del porciento (Cuantía = SPM × (PCI + ATE×PIA + Σ pct/100)), así que el wire jamás lo captura ni lo devuelve.
          */
         IncomeConceptRecord: {
             /**
@@ -1892,12 +1931,7 @@ export interface components {
              */
             income_concept_id?: number;
             /**
-             * @description Importe exacto con dos decimales (RN-005)
-             * @example 150.00
-             */
-            amount?: string;
-            /**
-             * @description Porciento a aplicar (Task 42, corrección de usuario): Double como decimal exacto en el rango 0-100 con dos decimales — obligatorio en el alta
+             * @description Porciento a aplicar (Task 42, corrección de usuario): Double como decimal exacto en el rango 0-100 con dos decimales — la declaración completa del concepto desde Task 54 (SGP-39): el importe lo deriva el sistema
              * @example 100.00
              */
             applied_percent?: string;
@@ -2064,6 +2098,11 @@ export interface components {
              * @example 5000.00
              */
             last_salary?: string;
+            /**
+             * @description Task 52/S8.8, V-6: ¿los salarios ausentes son imputables al trabajador? — null válido sin déficit, obligatoria con déficit R < N de la estrategia (422 en revisión/vista previa, D-4); editable solo en submitted (D-3)
+             * @example null
+             */
+            missing_salaries_attributable?: boolean | null;
             /**
              * @description Pertenece al Ejército Rebelde (regla 4)
              * @example false
@@ -4476,6 +4515,22 @@ export interface operations {
                     };
                 };
             };
+            /** @description Task 52/S8.8, D-4: déficit salarial contra el N de la estrategia SIN declaración de imputabilidad — el divisor del SPM es indeterminado */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example The given data was invalid. */
+                        message?: string;
+                        errors?: {
+                            /** @example La serie salarial declarada tiene 3 de los 5 registros de la estrategia y el expediente no declara si los salarios ausentes son imputables al trabajador — el divisor del salario promedio es indeterminado. */
+                            missing_salaries_attributable?: string;
+                        };
+                    };
+                };
+            };
         };
     };
     pensionCasesCalculationShow: {
@@ -4603,6 +4658,11 @@ export interface operations {
                      */
                     rebel_army_member: boolean;
                     /**
+                     * @description Task 52/S8.8, V-6: ¿los salarios ausentes son imputables al trabajador? — opcional en el alta (null válido mientras no hay déficit, la omisión persiste null); obligatoria cuando R < N de la estrategia (422 en revisión/vista previa, D-4); editable después solo en submitted
+                     * @example null
+                     */
+                    missing_salaries_attributable?: boolean | null;
+                    /**
                      * Format: date
                      * @description Fecha de alta en el Ejército Rebelde: obligatoria si rebel_army_member=true, rechazada si false
                      * @example null
@@ -4720,14 +4780,12 @@ export interface operations {
                         /** @example 1 */
                         cycles_count?: number;
                     }[];
-                    /** @description Conceptos de ingreso declarados (regla 5, todo o nada): un valor por concepto */
+                    /** @description Conceptos de ingreso declarados (regla 5, todo o nada): un porciento por concepto — desde Task 54 (SGP-39) el importe NO viaja (422 si llega) */
                     income_concept_records?: {
                         /** @example 3 */
                         income_concept_id?: number;
-                        /** @example 150.00 */
-                        amount?: string;
                         /**
-                         * @description Porciento a aplicar (Task 42): OBLIGATORIO por fila — decimal exacto 0-100 con dos decimales (422 si se omite, fuera de rango o con tercera decimal)
+                         * @description Porciento a aplicar (Task 42): OBLIGATORIO por fila — decimal exacto 0-100 con dos decimales (422 si se omite, fuera de rango o con tercera decimal); desde Task 54 (SGP-39) es la declaración COMPLETA del concepto — amount NO aceptado (422)
                          * @example 100.00
                          */
                         applied_percent?: string;
@@ -4869,6 +4927,11 @@ export interface operations {
                      * @example 2026-09-30
                      */
                     requested_at?: string;
+                    /**
+                     * @description Task 52/S8.8, V-6, D-3: declaración de imputabilidad de los salarios ausentes — EDITABLE (semántica PATCH: null explícito la limpia, la omisión no toca el valor almacenado); obligatoria cuando R < N de la estrategia (422 en revisión/vista previa, D-4)
+                     * @example null
+                     */
+                    missing_salaries_attributable?: boolean | null;
                     /**
                      * @description Dirección actual del promovente (Task 42, EDITABLE): semántica PATCH
                      * @example Calle 23 #100, Vedado
@@ -5490,12 +5553,7 @@ export interface operations {
                      */
                     income_concept_id: number;
                     /**
-                     * @description Importe exacto con dos decimales (RN-005)
-                     * @example 150.00
-                     */
-                    amount: string;
-                    /**
-                     * @description Porciento a aplicar (Task 42, corrección de usuario): OBLIGATORIO — decimal exacto 0-100 con dos decimales
+                     * @description Porciento a aplicar (Task 42, corrección de usuario): OBLIGATORIO — decimal exacto 0-100 con dos decimales; desde Task 54 (SGP-39) es la declaración COMPLETA del concepto
                      * @example 50.25
                      */
                     applied_percent: string;

@@ -84,6 +84,12 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
   const [collectionAgencyId, setCollectionAgencyId] = useState(pensionCase?.collection_agency_id ?? 0);
   const [bankAccount, setBankAccount] = useState(pensionCase?.bank_account ?? '');
   const [requestedAt, setRequestedAt] = useState(pensionCase?.requested_at ?? '');
+  // Task 52/S8.8: declaración de imputabilidad (null sin déficit, true/false con déficit)
+  // Estado triestado: 'unset' (null), 'true' (imputable), 'false' (no imputable)
+  const [missingSalariesAttributable, setMissingSalariesAttributable] = useState<'unset' | 'true' | 'false'>(
+    pensionCase?.missing_salaries_attributable == null ? 'unset'
+      : pensionCase.missing_salaries_attributable ? 'true' : 'false'
+  );
 
   // Cargar provincias y municipios de residencia (cascading)
   const { data: provincesData } = useQuery({ queryKey: ['catalogs', 'provinces', 'all'], queryFn: async () => { const r = await http.get<{ data: { id: number; name: string }[] }>('/catalogs/provinces', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
@@ -119,6 +125,8 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
       collection_agency_type_id: collectionAgencyTypeId,
       collection_agency_id: collectionAgencyId,
       bank_account: bankAccount || null,
+      // Task 52/S8.8: solo se envía si el usuario lo declara explícitamente
+      ...(missingSalariesAttributable !== 'unset' ? { missing_salaries_attributable: missingSalariesAttributable === 'true' } : {}),
     };
     try {
       if (isEdit && pensionCase) {
@@ -132,6 +140,8 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           pension_regime_id: pensionRegimeId,
           last_salary: Number(lastSalary) || 0,
           requested_at: requestedAt || null,
+          // Task 52/S8.8: PATCH — enviamos siempre (null limpia la declaración previa)
+          missing_salaries_attributable: missingSalariesAttributable === 'unset' ? null : missingSalariesAttributable === 'true',
         };
         await updateMutation.mutateAsync({ id: pensionCase.id!, input: updateInput });
       } else {
@@ -278,6 +288,21 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           </div>
           <div><label className="block text-sm font-medium mb-1">{t('form.bank_account')}</label>
             <Input type="text" placeholder="01234567890123456789012345678" maxLength={34} value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} /></div>
+        </div>
+        {/* Task 52/S8.8: declaración de imputabilidad de salarios ausentes */}
+        <div className="p-3 rounded-md border border-border space-y-2">
+          <div><label className="block text-sm font-medium mb-1">{t('form.missing_salaries_attributable')}</label>
+            <select
+              className={cn('flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring')}
+              value={missingSalariesAttributable}
+              onChange={(e) => setMissingSalariesAttributable(e.target.value as 'unset' | 'true' | 'false')}
+            >
+              <option value="unset">{t('form.missing_salaries_attributable_unset')}</option>
+              <option value="true">{t('form.missing_salaries_attributable_true')}</option>
+              <option value="false">{t('form.missing_salaries_attributable_false')}</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">{t('form.missing_salaries_attributable_help')}</p>
+          </div>
         </div>
         {/* Ejército Rebelde + Internacionalista */}
         <div className="p-3 rounded-md border border-border space-y-3">
