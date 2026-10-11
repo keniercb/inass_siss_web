@@ -668,6 +668,11 @@ function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; o
                 } />
                 {/* Task 53/S8.9: porciento total de conceptos aplicables */}
                 <Field label={t('calculation.fields.income_concept_percent')} value={preview.income_concept_percent != null ? `${preview.income_concept_percent}%` : '—'} mono />
+                {/* Task 57-58/SGP-42-43: indicadores de la fórmula */}
+                {preview.internationalist_applied != null && <Field label={t('calculation.fields.internationalist_applied')} value={preview.internationalist_applied ? tc('booleans.yes') : tc('booleans.no')} />}
+                {preview.minimum_increment_applied != null && <Field label={t('calculation.fields.minimum_increment_applied')} value={preview.minimum_increment_applied ? tc('booleans.yes') : tc('booleans.no')} />}
+                {preview.capped_by_maximum != null && <Field label={t('calculation.fields.capped_by_maximum')} value={preview.capped_by_maximum ? tc('booleans.yes') : tc('booleans.no')} />}
+                {preview.above_maximum != null && <Field label={t('calculation.fields.above_maximum')} value={preview.above_maximum ? tc('booleans.yes') : tc('booleans.no')} />}
               </div>
             </div>
 

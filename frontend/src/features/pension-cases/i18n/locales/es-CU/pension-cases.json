@@ -278,7 +278,11 @@
       "average_monthly_salary": "SPM",
       "excess_years": "Años excedentes",
       "average_years_used": "N efectivo divisor",
-      "income_concept_percent": "Σ % conceptos"
+      "income_concept_percent": "Σ % conceptos",
+      "internationalist_applied": "Incremento internacionalista",
+      "minimum_increment_applied": "Incremento pensión mín.",
+      "capped_by_maximum": "Recortada por máximo",
+      "above_maximum": "Por encima del máximo"
     },
     "criteria": {
       "age": "Edad",

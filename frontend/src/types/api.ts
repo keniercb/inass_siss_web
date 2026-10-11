@@ -1827,10 +1827,15 @@ export interface components {
              */
             minimum_increment_applied: boolean;
             /**
-             * @description Task 57/SGP-42, D-30: si el TOPE FINAL ABSOLUTO PMax recortó la cuantía (el detalle de ambos números viaja en warnings)
+             * @description Task 58/SGP-43, D-37: si el recorte INTERIOR del bloque final aplicó — SOLO un IPmin que dispara por encima de PMax dentro de la zona del máximo (la advertencia muestra ambos números); una cuantía que ya superó el máximo NO se recorta
              * @example false
              */
             capped_by_maximum: boolean;
+            /**
+             * @description Task 58/SGP-43, D-39: true cuando PMax > 0 y la cuantía quedó POR ENCIMA del máximo SIN recorte (la advertencia informa el par cuantía/máximo); false en la igualdad exacta
+             * @example false
+             */
+            above_maximum: boolean;
             regime_parameters: {
                 /** @example 12 */
                 months_per_year?: number;

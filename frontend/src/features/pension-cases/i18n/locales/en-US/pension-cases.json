@@ -278,7 +278,11 @@
       "average_monthly_salary": "AMS",
       "excess_years": "Excess years",
       "average_years_used": "Effective N divisor",
-      "income_concept_percent": "Σ % concepts"
+      "income_concept_percent": "Σ % concepts",
+      "internationalist_applied": "Internationalist increment applied",
+      "minimum_increment_applied": "Min. pension increment applied",
+      "capped_by_maximum": "Capped by maximum",
+      "above_maximum": "Above maximum"
     },
     "criteria": {
       "age": "Age",
