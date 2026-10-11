@@ -621,6 +621,13 @@ export const pensionCasesHandlers = [
       })),
       // Task 53/S8.9: porciento total (Σ)
       income_concept_percent: (c.income_concept_records ?? []).reduce((acc, icr) => acc + Number(icr.applied_percent ?? 0), 0).toFixed(2),
+      // Task 57-58/SGP-42-43: indicadores de la fórmula v3
+      combat_percent: null,
+      combat_before_threshold: null,
+      internationalist_applied: false,
+      minimum_increment_applied: false,
+      capped_by_maximum: false,
+      above_maximum: false,
       warnings,
     } as unknown as CalculationPreview;
     return HttpResponse.json({ data: preview });
