@@ -1,8 +1,8 @@
 {
   "list": {
     "title": "Configuración general",
-    "description": "2026 doctrine versions of pension calculation parameters",
-    "new": "Publish new version",
+    "description": "Versions of pension calculation parameters",
+    "new": "Publicar nueva versión",
     "empty": "No hay versiones registradas",
     "cannot_delete_in_effect": "Versión activa",
     "columns": {
@@ -14,46 +14,46 @@
       "minimum_pension": "PMin",
       "maximum_pension": "PMax",
       "minimum_pension_increment": "IPmin",
-      "status": "Status"
+      "status": "Estado"
     },
     "status": {
-      "current": "Active",
-      "past": "Historical"
+      "current": "Activa",
+      "past": "Histórica"
     }
   },
   "current": {
-    "title": "Active doctrine",
-    "description": "These 2026 doctrine parameters are used for all new calculations. Each persisted calculation freezes the version used."
+    "title": "Active configuration",
+    "description": "These parameters are used for all new calculations. Each persisted calculation freezes the version used."
   },
   "create": {
-    "title": "New doctrine version",
+    "title": "New configuration version",
     "description": "Publish a new version of the general configuration. The previous version is automatically deactivated.",
-    "success": "Version published successfully",
-    "error": "An error occurred while publishing the version"
+    "success": "Versión publicada correctamente",
+    "error": "Ocurrió un error al publicar la versión"
   },
   "delete": {
-    "title": "Delete inactive version",
+    "title": "Eliminar versión inactiva",
     "description": "Confirmar eliminación de la versión inactiva",
-    "confirm": "This action is irreversible. Only inactive versions can be deleted.",
-    "confirm_button": "Delete",
-    "success": "Version deleted successfully",
-    "error": "An error occurred while deleting the version",
-    "in_effect": "Cannot delete the active version"
+    "confirm": "Esta acción es irreversible. Solo se pueden eliminar versiones inactivas.",
+    "confirm_button": "Eliminar",
+    "success": "Versión eliminada correctamente",
+    "error": "Ocurrió un error al eliminar la versión",
+    "in_effect": "No se puede eliminar la versión activa"
   },
   "form": {
-    "combatant_threshold_date": "Combatant threshold date (FUC)",
-    "combatant_threshold_date_help": "Date separating combatants before (PAU) from after (PPU). Typically 1959-01-01.",
-    "pre_threshold_percent": "Pre-threshold percent (PAU)",
-    "pre_threshold_percent_help": "Fraction [0–1] applied to combatants with income before FUC",
-    "post_threshold_percent": "Post-threshold percent (PPU)",
-    "post_threshold_percent_help": "Fraction [0–1] applied to combatants with income on or after FUC",
-    "internationalist_increment": "Internationalist increment (II)",
-    "internationalist_increment_help": "Absolute amount added to the amount when the applicant is an internationalist",
-    "minimum_pension": "Minimum pension (PMin)",
-    "minimum_pension_help": "Minimum amount of the pension. If below, the IPmin increment is applied",
-    "maximum_pension": "Maximum pension (PMax)",
-    "maximum_pension_help": "Absolute cap of the pension. Must be ≥ minimum pension",
-    "minimum_pension_increment": "Minimum pension increment (IPmin)",
-    "minimum_pension_increment_help": "Absolute amount added when the pension falls below PMin"
+    "combatant_threshold_date": "Fecha umbral de combatientes (FUC)",
+    "combatant_threshold_date_help": "Fecha que separa combatientes anteriores (PAU) de posteriores (PPU). Típicamente 1959-01-01.",
+    "pre_threshold_percent": "Porciento anterior al umbral (PAU)",
+    "pre_threshold_percent_help": "Fracción [0–1] aplicada a combatientes con ingreso anterior a FUC",
+    "post_threshold_percent": "Porciento posterior al umbral (PPU)",
+    "post_threshold_percent_help": "Fracción [0–1] aplicada a combatientes con ingreso en o posterior a FUC",
+    "internationalist_increment": "Incremento a internacionalista (II)",
+    "internationalist_increment_help": "Monto absoluto añadido a la cuantía cuando el promovente es internacionalista",
+    "minimum_pension": "Pensión mínima (PMin)",
+    "minimum_pension_help": "Monto mínimo de la cuantía. Si la cuantía queda por debajo, se aplica el incremento IPmin",
+    "maximum_pension": "Pensión máxima (PMax)",
+    "maximum_pension_help": "Tope absoluto de la cuantía. Debe ser ≥ pensión mínima",
+    "minimum_pension_increment": "Incremento de pensión mínima (IPmin)",
+    "minimum_pension_increment_help": "Monto absoluto añadido cuando la cuantía queda bajo PMin"
   }
 }
