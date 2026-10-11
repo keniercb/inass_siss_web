@@ -7,13 +7,13 @@
     "cannot_delete_in_effect": "Versión activa",
     "columns": {
       "effective_from": "Activada el",
-      "combatant_threshold_date": "FUC",
-      "pre_threshold_percent": "PAU",
-      "post_threshold_percent": "PPU",
-      "internationalist_increment": "II",
-      "minimum_pension": "PMin",
-      "maximum_pension": "PMax",
-      "minimum_pension_increment": "IPmin",
+      "combatant_threshold_date": "Fecha incorp. ER",
+      "pre_threshold_percent": "% Antes",
+      "post_threshold_percent": "% Después",
+      "internationalist_increment": "Inc. intl.",
+      "minimum_pension": "Pensión mín.",
+      "maximum_pension": "Pensión máx.",
+      "minimum_pension_increment": "Inc. pensión mín.",
       "status": "Estado"
     },
     "status": {
@@ -41,19 +41,19 @@
     "in_effect": "No se puede eliminar la versión activa"
   },
   "form": {
-    "combatant_threshold_date": "Fecha umbral de combatientes (FUC)",
-    "combatant_threshold_date_help": "Fecha que separa combatientes anteriores (PAU) de posteriores (PPU). Típicamente 1959-01-01.",
-    "pre_threshold_percent": "Porciento anterior al umbral (PAU)",
-    "pre_threshold_percent_help": "Fracción [0–1] aplicada a combatientes con ingreso anterior a FUC",
-    "post_threshold_percent": "Porciento posterior al umbral (PPU)",
-    "post_threshold_percent_help": "Fracción [0–1] aplicada a combatientes con ingreso en o posterior a FUC",
-    "internationalist_increment": "Incremento a internacionalista (II)",
-    "internationalist_increment_help": "Monto absoluto añadido a la cuantía cuando el promovente es internacionalista",
-    "minimum_pension": "Pensión mínima (PMin)",
-    "minimum_pension_help": "Monto mínimo de la cuantía. Si la cuantía queda por debajo, se aplica el incremento IPmin",
-    "maximum_pension": "Pensión máxima (PMax)",
-    "maximum_pension_help": "Tope absoluto de la cuantía. Debe ser ≥ pensión mínima",
-    "minimum_pension_increment": "Incremento de pensión mínima (IPmin)",
-    "minimum_pension_increment_help": "Monto absoluto añadido cuando la cuantía queda bajo PMin"
+    "combatant_threshold_date": "Fecha de incorporación al Ejército Rebelde",
+    "combatant_threshold_date_help": "Fecha que separa a los combatientes incorporados antes de los incorporados después. Típicamente 1959-01-01.",
+    "pre_threshold_percent": "Porciento anterior",
+    "pre_threshold_percent_help": "Fracción entre 0 y 1 aplicada a combatientes con ingreso anterior a la fecha de incorporación",
+    "post_threshold_percent": "Porciento posterior",
+    "post_threshold_percent_help": "Fracción entre 0 y 1 aplicada a combatientes con ingreso en o posterior a la fecha de incorporación",
+    "internationalist_increment": "Incremento por internacionalista",
+    "internationalist_increment_help": "Monto absoluto añadido a la cuantía cuando el promovente cumplió misión internacionalista",
+    "minimum_pension": "Pensión mínima",
+    "minimum_pension_help": "Monto mínimo de la cuantía. Si queda por debajo, se aplica el incremento a la pensión mínima",
+    "maximum_pension": "Pensión máxima",
+    "maximum_pension_help": "Tope absoluto de la cuantía. Debe ser mayor o igual que la pensión mínima",
+    "minimum_pension_increment": "Incremento a la pensión mínima",
+    "minimum_pension_increment_help": "Monto absoluto añadido cuando la cuantía queda por debajo de la pensión mínima"
   }
 }

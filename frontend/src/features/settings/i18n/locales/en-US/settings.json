@@ -1,24 +1,24 @@
 {
   "list": {
-    "title": "Configuración general",
+    "title": "General configuration",
     "description": "Versions of pension calculation parameters",
-    "new": "Publicar nueva versión",
-    "empty": "No hay versiones registradas",
-    "cannot_delete_in_effect": "Versión activa",
+    "new": "Publish new version",
+    "empty": "No versions registered",
+    "cannot_delete_in_effect": "Active version",
     "columns": {
-      "effective_from": "Activada el",
-      "combatant_threshold_date": "FUC",
-      "pre_threshold_percent": "PAU",
-      "post_threshold_percent": "PPU",
-      "internationalist_increment": "II",
-      "minimum_pension": "PMin",
-      "maximum_pension": "PMax",
-      "minimum_pension_increment": "IPmin",
-      "status": "Estado"
+      "effective_from": "Activated on",
+      "combatant_threshold_date": "RA join date",
+      "pre_threshold_percent": "% Before",
+      "post_threshold_percent": "% After",
+      "internationalist_increment": "Intl. inc.",
+      "minimum_pension": "Min. pension",
+      "maximum_pension": "Max. pension",
+      "minimum_pension_increment": "Min. pension inc.",
+      "status": "Status"
     },
     "status": {
-      "current": "Activa",
-      "past": "Histórica"
+      "current": "Active",
+      "past": "Historical"
     }
   },
   "current": {
@@ -28,32 +28,32 @@
   "create": {
     "title": "New configuration version",
     "description": "Publish a new version of the general configuration. The previous version is automatically deactivated.",
-    "success": "Versión publicada correctamente",
-    "error": "Ocurrió un error al publicar la versión"
+    "success": "Version published successfully",
+    "error": "An error occurred while publishing the version"
   },
   "delete": {
-    "title": "Eliminar versión inactiva",
-    "description": "Confirmar eliminación de la versión inactiva",
-    "confirm": "Esta acción es irreversible. Solo se pueden eliminar versiones inactivas.",
-    "confirm_button": "Eliminar",
-    "success": "Versión eliminada correctamente",
-    "error": "Ocurrió un error al eliminar la versión",
-    "in_effect": "No se puede eliminar la versión activa"
+    "title": "Delete inactive version",
+    "description": "Confirm deletion of the inactive version",
+    "confirm": "This action is irreversible. Only inactive versions can be deleted.",
+    "confirm_button": "Delete",
+    "success": "Version deleted successfully",
+    "error": "An error occurred while deleting the version",
+    "in_effect": "Cannot delete the active version"
   },
   "form": {
-    "combatant_threshold_date": "Fecha umbral de combatientes (FUC)",
-    "combatant_threshold_date_help": "Fecha que separa combatientes anteriores (PAU) de posteriores (PPU). Típicamente 1959-01-01.",
-    "pre_threshold_percent": "Porciento anterior al umbral (PAU)",
-    "pre_threshold_percent_help": "Fracción [0–1] aplicada a combatientes con ingreso anterior a FUC",
-    "post_threshold_percent": "Porciento posterior al umbral (PPU)",
-    "post_threshold_percent_help": "Fracción [0–1] aplicada a combatientes con ingreso en o posterior a FUC",
-    "internationalist_increment": "Incremento a internacionalista (II)",
-    "internationalist_increment_help": "Monto absoluto añadido a la cuantía cuando el promovente es internacionalista",
-    "minimum_pension": "Pensión mínima (PMin)",
-    "minimum_pension_help": "Monto mínimo de la cuantía. Si la cuantía queda por debajo, se aplica el incremento IPmin",
-    "maximum_pension": "Pensión máxima (PMax)",
-    "maximum_pension_help": "Tope absoluto de la cuantía. Debe ser ≥ pensión mínima",
-    "minimum_pension_increment": "Incremento de pensión mínima (IPmin)",
-    "minimum_pension_increment_help": "Monto absoluto añadido cuando la cuantía queda bajo PMin"
+    "combatant_threshold_date": "Rebel Army join date",
+    "combatant_threshold_date_help": "Date separating combatants who joined before from those who joined after. Typically 1959-01-01.",
+    "pre_threshold_percent": "Percent before",
+    "pre_threshold_percent_help": "Fraction between 0 and 1 applied to combatants with income before the join date",
+    "post_threshold_percent": "Percent after",
+    "post_threshold_percent_help": "Fraction between 0 and 1 applied to combatants with income on or after the join date",
+    "internationalist_increment": "Internationalist increment",
+    "internationalist_increment_help": "Absolute amount added to the pension when the applicant fulfilled internationalist mission",
+    "minimum_pension": "Minimum pension",
+    "minimum_pension_help": "Minimum pension amount. If below, the minimum pension increment is applied",
+    "maximum_pension": "Maximum pension",
+    "maximum_pension_help": "Absolute cap of the pension. Must be greater than or equal to the minimum pension",
+    "minimum_pension_increment": "Minimum pension increment",
+    "minimum_pension_increment_help": "Absolute amount added when the pension falls below the minimum"
   }
 }
