@@ -1,7 +1,7 @@
 {
   "list": {
     "title": "Configuración general",
-    "description": "Versiones de doctrina 2026 de parámetros de cálculo de pensiones",
+    "description": "Versiones de parámetros de cálculo de pensiones",
     "new": "Publicar nueva versión",
     "empty": "No hay versiones registradas",
     "cannot_delete_in_effect": "Versión activa",
@@ -22,11 +22,11 @@
     }
   },
   "current": {
-    "title": "Doctrina activa",
-    "description": "Estos parámetros de doctrina 2026 se usan para todos los cálculos nuevos. Cada cálculo persistido congela la versión usada."
+    "title": "Configuración activa",
+    "description": "Estos parámetros se usan para todos los cálculos nuevos. Cada cálculo persistido congela la versión usada."
   },
   "create": {
-    "title": "Nueva versión de doctrina",
+    "title": "Nueva versión de configuración",
     "description": "Publica una nueva versión de la configuración general. La versión anterior se desactiva automáticamente.",
     "success": "Versión publicada correctamente",
     "error": "Ocurrió un error al publicar la versión"

@@ -10,12 +10,12 @@ export type GeneralSettingVersion = Required<components['schemas']['GeneralSetti
 // effective_from NO se envía: lo sella el servidor al publicar.
 export const createSettingSchema = z.object({
   combatant_threshold_date: z.string().min(1, 'La fecha umbral es obligatoria'),
-  pre_threshold_percent: z.number().min(0, 'Debe ser ≥ 0').max(1, 'Debe ser ≤ 1'),
-  post_threshold_percent: z.number().min(0, 'Debe ser ≥ 0').max(1, 'Debe ser ≤ 1'),
-  internationalist_increment: z.number().min(0, 'Debe ser ≥ 0'),
-  minimum_pension: z.number().min(0, 'Debe ser ≥ 0'),
-  maximum_pension: z.number().min(0, 'Debe ser ≥ 0'),
-  minimum_pension_increment: z.number().min(0, 'Debe ser ≥ 0'),
+  pre_threshold_percent: z.coerce.number().min(0, 'Debe ser ≥ 0').max(1, 'Debe ser ≤ 1'),
+  post_threshold_percent: z.coerce.number().min(0, 'Debe ser ≥ 0').max(1, 'Debe ser ≤ 1'),
+  internationalist_increment: z.coerce.number().min(0, 'Debe ser ≥ 0'),
+  minimum_pension: z.coerce.number().min(0, 'Debe ser ≥ 0'),
+  maximum_pension: z.coerce.number().min(0, 'Debe ser ≥ 0'),
+  minimum_pension_increment: z.coerce.number().min(0, 'Debe ser ≥ 0'),
 });
 
 // Refinamiento: maximum_pension >= minimum_pension
