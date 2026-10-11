@@ -430,7 +430,7 @@ export interface paths {
         put?: never;
         /**
          * Vista previa del cálculo (RF-CAL-006)
-         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía de la VERSIÓN DOS (SPM×(PCI + ATE×PIA + Σ(applied_percent/100)) con tope final SPM×PIL — Task 53/S8.9: los conceptos de ingreso APLICABLES suman como incrementos, income_concept_terms[] con el porciento total), junto con los parámetros del régimen usados y las advertencias (serie salarial incompleta respecto al N del gate, criterios de elegibilidad fallidos, tope final que recorta — D-11 —, conceptos declarados no aplicables). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
+         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía de la VERSIÓN TRES (Task 57/SGP-42: F1 = SPM×(PCI + ATE×PIA + Σ aplicables + combatiente PAU/PPU por umbral), instantánea con los conceptos NO aplicables (RINSB) sobre CuantíaTmp, tope SPM×PIL, incremento internacionalista II, mínimo IPmin y tope final PMax — ADR-41), junto con los parámetros del régimen, el bloque general_settings de la doctrina ACTIVA usada y las advertencias (serie salarial incompleta, criterios de elegibilidad fallidos, tope del régimen o tope final que recortan — D-11 —, incremento de la pensión mínima). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
          */
         post: operations["pensionCasesCalculationPreview"];
         delete?: never;
@@ -1123,14 +1123,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Listado paginado de las versiones de configuración
-         * @description Lista las vigencias de la configuración general de la más reciente a la más antigua con su effective_to derivado (RF-CAT-005, RN-007).
+         * Historial paginado de las versiones de configuración
+         * @description Lista el historial append-only de la configuración general, de la más reciente a la más antigua. Cada versión lleva su bit `active` (exactamente una lo tiene en true) y su rango de vigencia almacenado: effective_from (sello de activación) y deactivated_at (baja). (RF-CAT-005, Task 55/S9.1).
          */
         get: operations["generalSettingsIndex"];
         put?: never;
         /**
-         * Crear una nueva vigencia de la configuración
-         * @description Crea una versión nueva e inmutable de los parámetros de cálculo con su fecha de entrada en vigor (RF-CAT-005). La fecha no puede coincidir con una vigencia existente (RN-007, sin solapamientos) y el por ciento máximo no puede ser menor que el base. No existe endpoint de edición: la corrección crea una versión nueva.
+         * Publicar una nueva versión de la configuración
+         * @description Publica la nueva configuración de doctrina 2026 (Task 55/S9.1): crea la versión y la ACTIVA, desactivando la anterior en la misma transacción (regla de única activa garantizada en base de datos). El sello de activación effective_from lo sella el reloj del servidor — NO se acepta del cliente. Los siete campos son obligatorios; la pensión máxima nunca es menor que la mínima. Los seis parámetros de sprints anteriores (min_work_years, min_age_men, min_age_women, base_calc_percent, max_calc_percent, annual_increase_percent) y effective_from fueron RETIRADOS: todo payload que los traiga responde 422 explícito (doctrina anti-descarte-silencioso).
          */
         post: operations["generalSettingsStore"];
         delete?: never;
@@ -1147,8 +1147,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Resolver la configuración vigente
-         * @description Acción de dominio RN-007: devuelve la versión con la mayor effective_from menor o igual a la fecha (hoy por el puerto Clock, o la indicada en `at`). 404 cuando ninguna versión está aún en vigor. Los cálculos de la Fase 3 congelarán la versión resuelta.
+         * La configuración activa
+         * @description Devuelve la ÚNICA configuración activa (regla de RF-CAT-005, Task 55/S9.1): un hecho almacenado, no una resolución temporal. 404 cuando ninguna versión está activa. El parámetro `at` de la v1 fue RETIRADO y responde 422 explícito si llega (anti-descarte-silencioso).
          */
         get: operations["generalSettingsCurrent"];
         put?: never;
@@ -1168,14 +1168,14 @@ export interface paths {
         };
         /**
          * Detalle de una versión
-         * @description Devuelve una vigencia con su effective_to derivado. Las versiones históricas siempre se muestran (RF-CAT-005: la historia es reproducible).
+         * @description Devuelve una versión del historial append-only con su rango de vigencia almacenado (effective_from / deactivated_at). Las versiones históricas siempre se muestran (la historia es reproducible).
          */
         get: operations["generalSettingsShow"];
         put?: never;
         post?: never;
         /**
-         * Eliminar una vigencia no efectiva
-         * @description Elimina una versión solo cuando todavía no ha entrado en vigor (effective_from en el futuro). Las versiones ya en vigor quedan protegidas para la reproducibilidad histórica de los cálculos (RN-007): responden 409. La FK de pension_cases.calculation_setting_id (Fase 3) reforzará esta regla en BD.
+         * Eliminar una versión inactiva
+         * @description Elimina SOLO versiones inactivas del historial (limpieza manual). La versión ACTIVA responde 409: publicar una versión nueva es la única vía de cambio (inmutabilidad, RN-010).
          */
         delete: operations["generalSettingsDestroy"];
         options?: never;
@@ -1705,7 +1705,7 @@ export interface components {
         };
         /**
          * Vista previa del cálculo
-         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía de la VERSIÓN DOS (base del régimen + incrementos por conceptos de ingreso aplicables, tope final SPM×PIL — Task 53/S8.9), los parámetros del régimen usados y las advertencias.
+         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía de la VERSIÓN TRES (Task 57/SGP-42: base del régimen + combatiente por umbral + conceptos aplicables + conceptos NO aplicables sobre la instantánea + tope del régimen + internacionalista + mínimo + tope final absoluto), los parámetros del régimen usados, la doctrina de la configuración ACTIVA usada (general_settings) y las advertencias.
          */
         CalculationPreview: {
             /**
@@ -1764,7 +1764,7 @@ export interface components {
              */
             excess_years: number;
             /**
-             * @description Cuantía v2 = SPM×(PCI + ATE×PIA + Σ(applied_percent/100)) topeada por mínimo(Cuantía, SPM×PIL) — factor total compuesto con UN redondeo (D-13); SIN conceptos aplicables es IDÉNTICA a la v1 al centavo
+             * @description Cuantía v3: SPM×F1 (PCI + ATE×PIA + Σ aplicables + combatiente) + instantánea×Σ NO aplicables, topeada por SPM×PIL, luego II/IPmin absolutos y el tope final PMax — cada bloque UN redondeo half-even (D-13/D-27)
              * @example 332.50
              */
             amount: string;
@@ -1783,10 +1783,54 @@ export interface components {
                 applied_percent?: string;
             }[];
             /**
-             * @description Σ de los applied_percent de los conceptos que participaron — NUNCA el factor: el factor total se compone entero en bcmath (D-13)
+             * @description Σ de los applied_percent de los conceptos APLICABLES que participaron — NUNCA el factor: el factor total se compone entero en bcmath (D-13)
              * @example 10.00
              */
             income_concept_percent: string;
+            /** @description Task 57/SGP-42, D-32: los conceptos NO aplicables (RINSB) que el motor consumió como incrementos SOBRE LA INSTANTÁNEA CuantíaTmp — SIN término de dinero por concepto (Σ compuesta, UN redondeo, D-27) */
+            non_salary_base_concept_terms: {
+                /**
+                 * Format: int64
+                 * @example 2
+                 */
+                income_concept_id?: number;
+                /** @example PGR */
+                code?: string;
+                /** @example Pagos por resultados */
+                name?: string;
+                /** @example 20.00 */
+                applied_percent?: string;
+            }[];
+            /**
+             * @description Task 57/SGP-42: Σ de los applied_percent NO aplicables — participan sobre la instantánea, jamás sobre el SPM
+             * @example 20.00
+             */
+            non_salary_base_concept_percent: string;
+            /**
+             * @description Task 57/SGP-42, D-26/D-29: el porciento combatiente aplicado (fracción [0,1] — PAU o PPU según el umbral); null cuando el promovente no es miembro
+             * @example 0.1
+             */
+            combat_percent: string | null;
+            /**
+             * @description La rama del umbral: true = ingreso ESTRICTAMENTE anterior a FUC (PAU); false = en la fecha o posterior (PPU); null sin bloque
+             * @example true
+             */
+            combat_before_threshold: boolean | null;
+            /**
+             * @description Task 57/SGP-42, D-31: si el incremento internacionalista II (absoluto de la configuración activa) se aplicó — puede superar el tope del régimen
+             * @example false
+             */
+            internationalist_applied: boolean;
+            /**
+             * @description Task 57/SGP-42, D-31: si la cuantía quedó bajo PMin y se aplicó el incremento IPmin
+             * @example false
+             */
+            minimum_increment_applied: boolean;
+            /**
+             * @description Task 57/SGP-42, D-30: si el TOPE FINAL ABSOLUTO PMax recortó la cuantía (el detalle de ambos números viaja en warnings)
+             * @example false
+             */
+            capped_by_maximum: boolean;
             regime_parameters: {
                 /** @example 12 */
                 months_per_year?: number;
@@ -1817,6 +1861,50 @@ export interface components {
                  * @enum {string}
                  */
                 average_strategy?: "best_n" | "last_n" | "all";
+            };
+            /** @description Task 57/SGP-42: la doctrina de la configuración ACTIVA que el motor usó — paralelo de regime_parameters (D-35) */
+            general_settings: {
+                /**
+                 * Format: int64
+                 * @description La versión ACTIVA de la configuración general que el motor usó
+                 * @example 3
+                 */
+                id?: number;
+                /**
+                 * @description FUC — el umbral de combatientes de la doctrina vigente
+                 * @example 1959-01-01
+                 */
+                combatant_threshold_date?: string;
+                /**
+                 * @description PAU — porciento ANTERIOR al umbral (fracción)
+                 * @example 0.1
+                 */
+                pre_threshold_percent?: string;
+                /**
+                 * @description PPU — porciento POSTERIOR al umbral (fracción)
+                 * @example 0.05
+                 */
+                post_threshold_percent?: string;
+                /**
+                 * @description II — incremento a internacionalista (monto absoluto)
+                 * @example 200.00
+                 */
+                internationalist_increment?: string;
+                /**
+                 * @description PMin — pensión mínima (0.00: el mínimo jamás dispara)
+                 * @example 2472.00
+                 */
+                minimum_pension?: string;
+                /**
+                 * @description PMax — pensión máxima (0.00: SIN tope final, D-30 (b))
+                 * @example 4000.00
+                 */
+                maximum_pension?: string;
+                /**
+                 * @description IPmin — incremento de la pensión mínima
+                 * @example 1528.00
+                 */
+                minimum_pension_increment?: string;
             };
             /** @example [] */
             warnings: string[];
@@ -1888,7 +1976,7 @@ export interface components {
             eligibility: Record<string, never>;
             /** @description Los parámetros del régimen CONGELADOS al aprobar — la mutación posterior del catálogo no reescribe la historia */
             regime_parameters: Record<string, never>;
-            /** @description Los ids y valores usados: registros de salario seleccionados, registros de servicio con sus meses, requested_at, nacimiento y sexo, la declaración de imputabilidad (Task 52) y desde Task 53/S8.9 la lista income_concepts[] congelada — {income_concept_id, code, applied_percent} de la RISB exacta que el motor consumió como incrementos (D-10; desde Task 54/SGP-39 SIN amount: la declaración es solo el porciento — D-17): la re-ejecución histórica reproduce la cuantía exacta aunque el catálogo mute o desactive conceptos después */
+            /** @description Los ids y valores usados: registros de salario seleccionados, registros de servicio con sus meses, requested_at, nacimiento y sexo, la declaración de imputabilidad (Task 52) y desde Task 53/S8.9 la lista income_concepts[] congelada — {income_concept_id, code, applied_percent} de la RISB exacta que el motor consumió como incrementos (D-10; desde Task 54/SGP-39 SIN amount: la declaración es solo el porciento — D-17): la re-ejecución histórica reproduce la cuantía exacta aunque el catálogo mute o desactive conceptos después. Desde Task 57/SGP-42 congela ADEMÁS las banderas rebel_army_member/rebel_army_join_date/internationalist, la lista non_salary_base_income_concepts[] (la RINSB exacta que participó sobre la instantánea, D-32/D-33) y el bloque general_settings (id + los siete valores de doctrina usados — la re-ejecución no depende de la fila viva; los snapshots PREVIOS sin las claves re-ejecutan exacto: claves ausentes ⇒ banderas falsas + RINSB vacía + doctrina NEUTRA ⇒ v2 al centavo). */
             inputs: Record<string, never>;
             versions: {
                 /** @example 1 */
@@ -2615,56 +2703,73 @@ export interface components {
         };
         /**
          * Versión de configuración general
-         * @description Parámetros de cálculo de una vigencia (RF-CAT-005, RN-007). Las versiones son inmutables: la corrección crea una nueva vigencia. effective_to es derivado (día anterior a la siguiente vigencia; null en la más reciente) y nunca se almacena.
+         * @description Los siete campos de doctrina 2026 de una versión de la configuración general (RF-CAT-005, Task 55/S9.1). Las versiones son append-only: publicar una nueva desactiva la anterior en la misma transacción. La vigencia es un hecho almacenado — effective_from (sello del Clock) y deactivated_at (baja de la versión) — y solo UNA versión está activa a la vez (garantizado en base de datos). Los montos se sirven como Double y se almacenan DECIMAL(12,2) exacto (RN-005).
          */
         GeneralSettingVersion: {
             /**
              * Format: int64
              * @example 3
              */
-            id?: number;
-            /**
-             * @description Años mínimos de trabajo
-             * @example 30
-             */
-            min_work_years?: number;
-            /**
-             * @description Edad mínima hombres
-             * @example 60
-             */
-            min_age_men?: number;
-            /**
-             * @description Edad mínima mujeres
-             * @example 55
-             */
-            min_age_women?: number;
-            /**
-             * @description Por ciento de cálculo base
-             * @example 50
-             */
-            base_calc_percent?: number;
-            /**
-             * @description Por ciento máximo (mayor o igual que base)
-             * @example 90
-             */
-            max_calc_percent?: number;
-            /**
-             * @description Incremento anual por excedencia
-             * @example 1
-             */
-            annual_increase_percent?: number;
+            id: number;
             /**
              * Format: date
-             * @description Entrada en vigor (única por fecha, RN-007)
-             * @example 2026-06-01
+             * @description Fecha umbral para combatientes
+             * @example 1959-01-01
+             */
+            combatant_threshold_date: string;
+            /**
+             * Format: double
+             * @description Porciento aplicable ANTES del umbral (fracción entre 0 y 1)
+             * @example 0.5
+             */
+            pre_threshold_percent: number;
+            /**
+             * Format: double
+             * @description Porciento aplicable DESPUÉS del umbral (fracción entre 0 y 1)
+             * @example 0.3
+             */
+            post_threshold_percent: number;
+            /**
+             * Format: double
+             * @description Incremento a internacionalista (monto absoluto de dinero)
+             * @example 150
+             */
+            internationalist_increment: number;
+            /**
+             * Format: double
+             * @description Pensión mínima (monto)
+             * @example 200
+             */
+            minimum_pension: number;
+            /**
+             * Format: double
+             * @description Pensión máxima (monto, mayor o igual que la mínima)
+             * @example 2500
+             */
+            maximum_pension: number;
+            /**
+             * Format: double
+             * @description Incremento de la pensión mínima (monto absoluto)
+             * @example 50
+             */
+            minimum_pension_increment: number;
+            /**
+             * @description Única versión activa (regla de configuración general)
+             * @example true
+             */
+            active: boolean;
+            /**
+             * Format: date
+             * @description Sello de activación sellado por el reloj del servidor al publicar la versión
+             * @example 2026-10-11
              */
             effective_from?: string;
             /**
-             * Format: date
-             * @description Derivado: día anterior a la siguiente vigencia; null en la vigencia más reciente
+             * Format: date-time
+             * @description Baja de la versión (cuando una nueva fue publicada); null en la activa
              * @example null
              */
-            effective_to?: string | null;
+            deactivated_at?: string | null;
             /**
              * Format: int64
              * @description Usuario autor de la versión (ADR-14)
@@ -4515,7 +4620,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Task 52/S8.8, D-4: déficit salarial contra el N de la estrategia SIN declaración de imputabilidad — el divisor del SPM es indeterminado */
+            /** @description Task 52/S8.8, D-4: déficit salarial contra el N de la estrategia SIN declaración de imputabilidad — el divisor del SPM es indeterminado; Task 57/SGP-42, D-30 (a): SIN configuración general activa — jamás números sin doctrina */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4527,6 +4632,8 @@ export interface operations {
                         errors?: {
                             /** @example La serie salarial declarada tiene 3 de los 5 registros de la estrategia y el expediente no declara si los salarios ausentes son imputables al trabajador — el divisor del salario promedio es indeterminado. */
                             missing_salaries_attributable?: string;
+                            /** @example No existe configuración general activa — el cálculo no puede ejecutarse sin la doctrina vigente (publique una versión y reintente). */
+                            general_settings?: string;
                         };
                     };
                 };
@@ -6977,28 +7084,53 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @example 30 */
-                    min_work_years: number;
-                    /** @example 60 */
-                    min_age_men: number;
-                    /** @example 55 */
-                    min_age_women: number;
-                    /** @example 50 */
-                    base_calc_percent: number;
-                    /** @example 90 */
-                    max_calc_percent: number;
-                    /** @example 1 */
-                    annual_increase_percent: number;
                     /**
                      * Format: date
-                     * @example 2027-01-01
+                     * @description Fecha umbral para combatientes
+                     * @example 1959-01-01
                      */
-                    effective_from: string;
+                    combatant_threshold_date: string;
+                    /**
+                     * Format: double
+                     * @description Porciento aplicable antes del umbral (entre 0 y 1)
+                     * @example 0.5
+                     */
+                    pre_threshold_percent: number;
+                    /**
+                     * Format: double
+                     * @description Porciento aplicable después del umbral (entre 0 y 1)
+                     * @example 0.3
+                     */
+                    post_threshold_percent: number;
+                    /**
+                     * Format: double
+                     * @description Incremento a internacionalista (monto absoluto)
+                     * @example 150
+                     */
+                    internationalist_increment: number;
+                    /**
+                     * Format: double
+                     * @description Pensión mínima
+                     * @example 200
+                     */
+                    minimum_pension: number;
+                    /**
+                     * Format: double
+                     * @description Pensión máxima (mayor o igual que la mínima)
+                     * @example 2500
+                     */
+                    maximum_pension: number;
+                    /**
+                     * Format: double
+                     * @description Incremento de la pensión mínima (monto absoluto)
+                     * @example 50
+                     */
+                    minimum_pension_increment: number;
                 };
             };
         };
         responses: {
-            /** @description Vigencia creada */
+            /** @description Versión publicada y activa */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -7015,17 +7147,14 @@ export interface operations {
     };
     generalSettingsCurrent: {
         parameters: {
-            query?: {
-                /** @description Fecha de resolución opcional (Y-m-d) */
-                at?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Versión en vigor a la fecha */
+            /** @description La versión activa */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7037,14 +7166,14 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
-            /** @description Ninguna versión en vigor a la fecha */
+            /** @description No existe ninguna configuración activa */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        /** @example No general settings are in effect at the given date. */
+                        /** @example No active general settings exist. */
                         message?: string;
                     };
                 };
@@ -7100,14 +7229,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Vigencia futura eliminada */
+            /** @description Versión inactiva eliminada */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        /** @example Future settings version deleted. */
+                        /** @example Inactive settings version deleted. */
                         message?: string;
                     };
                 };
@@ -7125,14 +7254,14 @@ export interface operations {
                     };
                 };
             };
-            /** @description La versión ya está en vigor y no puede eliminarse */
+            /** @description La versión es la activa y no puede eliminarse */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        /** @example The version effective from 2026-06-01 is already in effect and cannot be deleted. */
+                        /** @example The active configuration cannot be deleted. Publish a new version instead. */
                         message?: string;
                     };
                 };
