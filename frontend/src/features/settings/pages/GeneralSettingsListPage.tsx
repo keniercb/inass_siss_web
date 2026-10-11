@@ -20,8 +20,6 @@ export function GeneralSettingsListPage() {
   const { data, isLoading, isError } = useGeneralSettings({ page, per_page: 15 });
   const deleteMutation = useDeleteSetting();
 
-  const today = new Date().toISOString().split('T')[0] ?? '';
-
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -53,9 +51,12 @@ export function GeneralSettingsListPage() {
           <thead>
             <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
               <th className="text-left px-4 py-3 font-medium">{t('list.columns.effective_from')}</th>
-              <th className="text-left px-4 py-3 font-medium">{t('list.columns.min_work_years')}</th>
-              <th className="text-left px-4 py-3 font-medium">{t('list.columns.min_age')}</th>
-              <th className="text-left px-4 py-3 font-medium">{t('list.columns.percents')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('list.columns.combatant_threshold_date')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('list.columns.pre_threshold_percent')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('list.columns.post_threshold_percent')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('list.columns.internationalist_increment')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('list.columns.minimum_pension')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('list.columns.maximum_pension')}</th>
               <th className="text-left px-4 py-3 font-medium">{t('list.columns.status')}</th>
               {can('settings.manage') && (
                 <th className="text-right px-4 py-3 font-medium">{tc('table.actions')}</th>
@@ -65,56 +66,44 @@ export function GeneralSettingsListPage() {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                   {tc('status.loading')}…
                 </td>
               </tr>
             ) : isError ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-destructive">
+                <td colSpan={9} className="px-4 py-8 text-center text-destructive">
                   {tc('errors.server')}
                 </td>
               </tr>
             ) : data?.data.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                   {t('list.empty')}
                 </td>
               </tr>
             ) : (
               data?.data.map((version) => {
-                const isCurrent = version.effective_from <= today;
-                const isFuture = version.effective_from > today;
+                const isActive = version.active === true;
                 return (
                   <tr key={version.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-mono">{formatEffectiveDate(version.effective_from)}</span>
+                        <span className="font-mono">{version.effective_from ? formatEffectiveDate(version.effective_from) : '—'}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">{version.min_work_years}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{version.combatant_threshold_date ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{version.pre_threshold_percent != null ? `${(Number(version.pre_threshold_percent) * 100).toFixed(0)}%` : '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{version.post_threshold_percent != null ? `${(Number(version.post_threshold_percent) * 100).toFixed(0)}%` : '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{version.internationalist_increment != null ? Number(version.internationalist_increment).toFixed(0) : '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{version.minimum_pension != null ? Number(version.minimum_pension).toFixed(0) : '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{version.maximum_pension != null ? Number(version.maximum_pension).toFixed(0) : '—'}</td>
                     <td className="px-4 py-3">
-                      <span className="text-xs">{t('list.columns.men')}: {version.min_age_men}</span>
-                      <span className="text-xs ml-3">{t('list.columns.women')}: {version.min_age_women}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs">Base: {version.base_calc_percent}%</span>
-                      <span className="text-xs ml-2">Max: {version.max_calc_percent}%</span>
-                      <span className="text-xs ml-2 text-muted-foreground">
-                        Inc: {version.annual_increase_percent}%
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {isCurrent ? (
+                      {isActive ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                           <CheckCircle className="w-3 h-3" />
                           {t('list.status.current')}
-                        </span>
-                      ) : isFuture ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                          <Calendar className="w-3 h-3" />
-                          {t('list.status.future')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
@@ -124,9 +113,9 @@ export function GeneralSettingsListPage() {
                     </td>
                     {can('settings.manage') && (
                       <td className="px-4 py-3 text-right">
-                        {isFuture ? (
+                        {!isActive ? (
                           <button
-                            onClick={() => setDeleteId(version.id)}
+                            onClick={() => setDeleteId(version.id!)}
                             className="p-1.5 rounded hover:bg-destructive/10 text-destructive"
                             title={t('delete.title')}
                           >

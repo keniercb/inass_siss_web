@@ -1,68 +1,59 @@
 import { http, HttpResponse } from 'msw';
 import type { components } from '@/types/api';
 
-type GeneralSettingVersion = Required<components['schemas']['GeneralSettingVersion']>;
+type GeneralSettingVersion = components['schemas']['GeneralSettingVersion'];
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
-// Versión vigente por defecto (2026-01-01)
+// Task 55/S9.1: doctrina 2026 — 7 campos nuevos
+// Seeds: 2 versiones históricas + 1 activa
 const seedVersions: GeneralSettingVersion[] = [
   {
     id: 1,
-    min_work_years: 15,
-    min_age_men: 65,
-    min_age_women: 60,
-    base_calc_percent: 50,
-    max_calc_percent: 90,
-    annual_increase_percent: 1,
+    combatant_threshold_date: '1959-01-01',
+    pre_threshold_percent: 0.5,
+    post_threshold_percent: 0.3,
+    internationalist_increment: 100,
+    minimum_pension: 200,
+    maximum_pension: 2000,
+    minimum_pension_increment: 50,
+    active: false,
     effective_from: '2024-01-01',
-    effective_to: '2025-12-31',
+    deactivated_at: '2026-01-01T00:00:00Z',
     created_by: 1,
-    created_at: '2024-01-01T00:00:00Z',
+    created_at: '2023-12-15T00:00:00Z',
   },
   {
     id: 2,
-    min_work_years: 15,
-    min_age_men: 65,
-    min_age_women: 60,
-    base_calc_percent: 50,
-    max_calc_percent: 90,
-    annual_increase_percent: 2,
+    combatant_threshold_date: '1959-01-01',
+    pre_threshold_percent: 0.5,
+    post_threshold_percent: 0.3,
+    internationalist_increment: 150,
+    minimum_pension: 200,
+    maximum_pension: 2500,
+    minimum_pension_increment: 50,
+    active: true,
     effective_from: '2026-01-01',
-    effective_to: null, // vigente actual
+    deactivated_at: null,
     created_by: 1,
     created_at: '2025-12-15T00:00:00Z',
-  },
-  {
-    id: 3,
-    min_work_years: 15,
-    min_age_men: 65,
-    min_age_women: 60,
-    base_calc_percent: 55,
-    max_calc_percent: 95,
-    annual_increase_percent: 3,
-    effective_from: '2027-01-01',
-    effective_to: null, // futura
-    created_by: 1,
-    created_at: '2026-09-15T00:00:00Z',
   },
 ];
 
 const versions = new Map<number, GeneralSettingVersion>(
   seedVersions.map((v) => [v.id, v]),
 );
-let nextId = 4;
+let nextId = 3;
 
 export const settingsHandlers = [
-  // GET /general-settings — listado paginado
+  // GET /general-settings — historial append-only (más reciente primero)
   http.get(`${API_BASE}/general-settings`, ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') ?? '1', 10);
     const perPage = parseInt(url.searchParams.get('per_page') ?? '15', 10);
 
-    // Ordenar por effective_from DESC (más reciente primero)
     const items = Array.from(versions.values()).sort((a, b) =>
-      b.effective_from.localeCompare(a.effective_from),
+      (b.effective_from ?? '').localeCompare(a.effective_from ?? ''),
     );
     const total = items.length;
     const start = (page - 1) * perPage;
@@ -79,27 +70,16 @@ export const settingsHandlers = [
     });
   }),
 
-  // GET /general-settings/current — vigente actual
-  http.get(`${API_BASE}/general-settings/current`, ({ request }) => {
-    const url = new URL(request.url);
-    const at = url.searchParams.get('at'); // optional date
-
-    const today = at ?? new Date().toISOString().slice(0, 10);
-    // Encontrar la versión con effective_from <= today (más reciente)
-    const allVersions = Array.from(versions.values());
-    const applicable = allVersions
-      .filter((v) => v.effective_from <= today)
-      .sort((a, b) => b.effective_from.localeCompare(a.effective_from));
-
-    if (applicable.length === 0) {
-      return HttpResponse.json({ message: 'No effective configuration for this date.' }, { status: 404 });
+  // GET /general-settings/current — la única activa
+  http.get(`${API_BASE}/general-settings/current`, () => {
+    const active = Array.from(versions.values()).find((v) => v.active);
+    if (!active) {
+      return HttpResponse.json({ message: 'No active configuration.' }, { status: 404 });
     }
-
-    const current = applicable[0];
-    return HttpResponse.json({ data: current });
+    return HttpResponse.json({ data: active });
   }),
 
-  // GET /general-settings/{id} — detalle
+  // GET /general-settings/{id} — detalle de una versión
   http.get(`${API_BASE}/general-settings/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const version = versions.get(id);
@@ -109,57 +89,61 @@ export const settingsHandlers = [
     return HttpResponse.json({ data: version });
   }),
 
-  // POST /general-settings — crear nueva vigencia
+  // POST /general-settings — publicar nueva versión (desactiva la anterior)
   http.post(`${API_BASE}/general-settings`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
 
-    // Validar campos requeridos
-    const required = ['min_work_years', 'min_age_men', 'min_age_women', 'base_calc_percent', 'max_calc_percent', 'annual_increase_percent', 'effective_from'];
+    // Task 55/S9.1: anti-descarte-silencioso — los 6 campos viejos → 422
+    const deprecatedFields = ['min_work_years', 'min_age_men', 'min_age_women', 'base_calc_percent', 'max_calc_percent', 'annual_increase_percent', 'effective_from'];
     const errors: Record<string, string[]> = {};
+    for (const f of deprecatedFields) {
+      if (body[f] !== undefined) {
+        errors[f] = [`The ${f} field is deprecated and no longer accepted.`];
+      }
+    }
+
+    // Validar 7 campos requeridos nuevos
+    const required = ['combatant_threshold_date', 'pre_threshold_percent', 'post_threshold_percent', 'internationalist_increment', 'minimum_pension', 'maximum_pension', 'minimum_pension_increment'];
     for (const f of required) {
       if (body[f] === undefined || body[f] === null || body[f] === '') {
         errors[f] = [`The ${f} field is required.`];
       }
     }
 
-    // Validar max >= base
-    if (
-      typeof body.base_calc_percent === 'number' &&
-      typeof body.max_calc_percent === 'number' &&
-      body.max_calc_percent < body.base_calc_percent
-    ) {
-      errors.max_calc_percent = ['The max calc percent must be greater than or equal to the base calc percent.'];
+    // Validar maximum_pension >= minimum_pension
+    if (typeof body.minimum_pension === 'number' && typeof body.maximum_pension === 'number' && body.maximum_pension < body.minimum_pension) {
+      errors.maximum_pension = ['The maximum pension must be greater than or equal to the minimum pension.'];
     }
 
     if (Object.keys(errors).length > 0) {
-      return HttpResponse.json(
-        { message: 'Validation error.', errors },
-        { status: 422 },
-      );
+      return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
     }
 
-    // Validar unicidad de effective_from
-    if (Array.from(versions.values()).some((v) => v.effective_from === body.effective_from)) {
-      return HttpResponse.json(
-        {
-          message: 'A version with that effective date already exists.',
-          errors: { effective_from: ['A version with that effective date already exists.'] },
-        },
-        { status: 409 },
-      );
+    // Desactivar la versión activa actual
+    const currentActive = Array.from(versions.values()).find((v) => v.active);
+    if (currentActive) {
+      versions.set(currentActive.id!, {
+        ...currentActive,
+        active: false,
+        deactivated_at: new Date().toISOString(),
+      });
     }
 
+    // Crear nueva versión activa — effective_from sellado por el servidor
     const id = nextId++;
+    const now = new Date().toISOString().slice(0, 10);
     const version: GeneralSettingVersion = {
       id,
-      min_work_years: body.min_work_years as number,
-      min_age_men: body.min_age_men as number,
-      min_age_women: body.min_age_women as number,
-      base_calc_percent: body.base_calc_percent as number,
-      max_calc_percent: body.max_calc_percent as number,
-      annual_increase_percent: body.annual_increase_percent as number,
-      effective_from: body.effective_from as string,
-      effective_to: null,
+      combatant_threshold_date: body.combatant_threshold_date as string,
+      pre_threshold_percent: body.pre_threshold_percent as number,
+      post_threshold_percent: body.post_threshold_percent as number,
+      internationalist_increment: body.internationalist_increment as number,
+      minimum_pension: body.minimum_pension as number,
+      maximum_pension: body.maximum_pension as number,
+      minimum_pension_increment: body.minimum_pension_increment as number,
+      active: true,
+      effective_from: now,
+      deactivated_at: null,
       created_by: 1,
       created_at: new Date().toISOString(),
     };
@@ -167,7 +151,7 @@ export const settingsHandlers = [
     return HttpResponse.json({ data: version }, { status: 201 });
   }),
 
-  // DELETE /general-settings/{id} — eliminar vigencia
+  // DELETE /general-settings/{id} — solo inactivas
   http.delete(`${API_BASE}/general-settings/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const version = versions.get(id);
@@ -175,11 +159,9 @@ export const settingsHandlers = [
       return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
     }
 
-    // Si la vigencia ya está en vigor, no se puede eliminar (409)
-    const today = new Date().toISOString().slice(0, 10);
-    if (version.effective_from <= today) {
+    if (version.active) {
       return HttpResponse.json(
-        { message: 'The version is already in effect and cannot be deleted.' },
+        { message: 'The version is active and cannot be deleted. Publish a new version to change it.' },
         { status: 409 },
       );
     }
