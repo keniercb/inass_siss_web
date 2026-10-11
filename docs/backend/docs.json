@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.15.0"
+        "version": "1.16.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -8817,6 +8817,7 @@
                     "internationalist_applied",
                     "minimum_increment_applied",
                     "capped_by_maximum",
+                    "above_maximum",
                     "regime_parameters",
                     "general_settings",
                     "warnings"
@@ -8991,7 +8992,12 @@
                         "example": false
                     },
                     "capped_by_maximum": {
-                        "description": "Task 57/SGP-42, D-30: si el TOPE FINAL ABSOLUTO PMax recortó la cuantía (el detalle de ambos números viaja en warnings)",
+                        "description": "Task 58/SGP-43, D-37: si el recorte INTERIOR del bloque final aplicó — SOLO un IPmin que dispara por encima de PMax dentro de la zona del máximo (la advertencia muestra ambos números); una cuantía que ya superó el máximo NO se recorta",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "above_maximum": {
+                        "description": "Task 58/SGP-43, D-39: true cuando PMax > 0 y la cuantía quedó POR ENCIMA del máximo SIN recorte (la advertencia informa el par cuantía/máximo); false en la igualdad exacta",
                         "type": "boolean",
                         "example": false
                     },
