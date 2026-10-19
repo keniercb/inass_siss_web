@@ -44,9 +44,9 @@
     },
     "tabs_empty": {
       "history": "No history",
-      "history_description": "State transitions will appear here (FE-S6).",
+      "history_description": "State transitions will appear here when the case moves through the state machine.",
       "calculation": "No calculation",
-      "calculation_description": "The calculation simulator will be available (FE-S7)."
+      "calculation_description": "The pension calculation will be shown here once approved. Use the Calculate pension button for a preview while the case is in Submitted or Under review."
     },
     "fields": {
       "number": "Number",
@@ -309,7 +309,7 @@
   },
   "calculation_preview": {
     "title": "Calculation preview",
-    "button": "Preview",
+    "button": "Calculate pension",
     "help": "Runs the calculation engine without persisting. Available only in Submitted or Under review state.",
     "run": "Run simulation",
     "run_again": "Re-run",

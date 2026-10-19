@@ -74,5 +74,10 @@
     "es-CU": "Español (Cuba)",
     "es-ES": "Español (España)",
     "en-US": "English (US)"
+  },
+  "module_placeholder": {
+    "coming_soon": "Coming soon",
+    "sprint_message": "This module will be implemented in sprint {{sprint}}.",
+    "pending_backend": "Pending publication of the corresponding backend endpoint."
   }
 }

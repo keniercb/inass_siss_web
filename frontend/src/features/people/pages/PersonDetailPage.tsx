@@ -139,6 +139,7 @@ export function PersonDetailPage() {
           title={t('detail.tabs_empty.cases')}
           description={t('detail.tabs_empty.cases_description')}
           sprint="FE-S5"
+          t={t}
         />
       )}
 
@@ -148,6 +149,7 @@ export function PersonDetailPage() {
           title={t('detail.tabs_empty.pensioner')}
           description={t('detail.tabs_empty.pensioner_description')}
           sprint="FE-S9"
+          t={t}
         />
       )}
 
@@ -157,6 +159,7 @@ export function PersonDetailPage() {
           title={t('detail.tabs_empty.audit')}
           description={t('detail.tabs_empty.audit_description')}
           sprint="FE-S12"
+          t={t}
         />
       )}
 
@@ -226,11 +229,12 @@ function Field({ label, value, hint, mono, fullWidth }: { label: string; value: 
   );
 }
 
-function EmptyTabContent({ icon: Icon, title, description, sprint }: {
+function EmptyTabContent({ icon: Icon, title, description, sprint, t }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
   sprint: string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[30vh] text-center">
@@ -240,7 +244,7 @@ function EmptyTabContent({ icon: Icon, title, description, sprint }: {
       <h2 className="text-lg font-medium text-foreground mb-1">{title}</h2>
       <p className="text-sm text-muted-foreground mb-1 max-w-md">{description}</p>
       <p className="text-xs text-muted-foreground/70">
-        Implementación prevista para el sprint <span className="font-medium text-primary">{sprint}</span>
+        {t('detail.sprint_planned', { sprint })}
       </p>
     </div>
   );

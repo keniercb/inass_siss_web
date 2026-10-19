@@ -116,7 +116,8 @@
       "deceased_yes": "Sí",
       "deceased_no": "No",
       "death_date": "Fecha de fallecimiento"
-    }
+    },
+    "sprint_planned": "Implementación prevista para el sprint {{sprint}}"
   },
   "search": {
     "not_found": "No se encontró persona con CI {{ci}}. Puede registrarla ahora mismo.",

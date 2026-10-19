@@ -4,6 +4,7 @@ import { FolderKanban } from 'lucide-react';
 /**
  * Placeholder para módulos no implementados aún.
  * Muestra mensaje "Próximamente" con el nombre del módulo.
+ * Textos via i18n common:module_placeholder.* (3 locales).
  */
 export function ModulePlaceholder({
   title,
@@ -14,7 +15,7 @@ export function ModulePlaceholder({
   description: string;
   sprint: string;
 }) {
-  void useTranslation('common');
+  const { t: tc } = useTranslation('common');
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -28,14 +29,13 @@ export function ModulePlaceholder({
           <FolderKanban className="w-10 h-10 text-muted-foreground" />
         </div>
         <h2 className="text-lg font-medium text-foreground mb-1">
-          Próximamente
+          {tc('module_placeholder.coming_soon')}
         </h2>
         <p className="text-sm text-muted-foreground mb-1 max-w-md">
-          Este módulo será implementado en el sprint{' '}
-          <span className="font-medium text-primary">{sprint}</span>.
+          {tc('module_placeholder.sprint_message', { sprint })}
         </p>
         <p className="text-xs text-muted-foreground/70">
-          Pendiente de publicación del endpoint backend correspondiente.
+          {tc('module_placeholder.pending_backend')}
         </p>
       </div>
     </div>

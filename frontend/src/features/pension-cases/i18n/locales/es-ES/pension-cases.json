@@ -44,9 +44,9 @@
     },
     "tabs_empty": {
       "history": "Sin historial",
-      "history_description": "Las transiciones de estado aparecerán aquí (FE-S6).",
+      "history_description": "Las transiciones de estado aparecerán aquí cuando el expediente se mueva por la máquina de estados.",
       "calculation": "Sin cálculo",
-      "calculation_description": "El simulador de cálculo estará disponible (FE-S7)."
+      "calculation_description": "El cálculo del expediente se mostrará aquí una vez aprobado. Use el botón Calcular pensión para ver una vista previa mientras el expediente esté en Solicitud o Revisión."
     },
     "fields": {
       "number": "Número",
@@ -227,7 +227,7 @@
     "not_submitted": "Solo se pueden eliminar expedientes en estado Solicitud"
   },
   "transition": {
-    "button": "Transitar estado",
+    "button": "Cambiar estado",
     "title": "Transición de estado",
     "current": "Estado actual",
     "select_target": "Estado destino",
@@ -309,7 +309,7 @@
   },
   "calculation_preview": {
     "title": "Vista previa del cálculo",
-    "button": "Vista previa",
+    "button": "Calcular pensión",
     "help": "Ejecuta el motor de cálculo sin persistir. Disponible solo en estado Solicitud o Revisión.",
     "run": "Ejecutar simulación",
     "run_again": "Re-ejecutar",
