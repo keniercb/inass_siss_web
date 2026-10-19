@@ -89,15 +89,15 @@ export function DashboardPage() {
         <div className="space-y-3 text-sm text-muted-foreground">
           <p>
             <span className="font-medium text-foreground">Frontend:</span>{' '}
-            v1.0.0 (FE-S0 Setup) — listo para implementar módulos.
+            Sistema de Gestión de Pensionados — operativo.
           </p>
           <p>
-            <span className="font-medium text-foreground">Backend:</span>{' '}
-            En construcción. Endpoints disponibles: Auth, Catalogs, Settings.
+            <span className="font-medium text-foreground">Módulos disponibles:</span>{' '}
+            Autenticación, Catálogos, Personas, Entidades, Oficinas, Agencias, Expedientes, Pensionados, Base legal, Configuración general.
           </p>
           <p>
-            <span className="font-medium text-foreground">Próximo sprint:</span>{' '}
-            FE-S1 — Layout + Login + RBAC con roles del backend real.
+            <span className="font-medium text-foreground">Próximos módulos:</span>{' '}
+            Pagos, Reportes, Auditoría.
           </p>
         </div>
       </div>

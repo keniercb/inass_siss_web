@@ -116,7 +116,8 @@
       "deceased_yes": "Yes",
       "deceased_no": "No",
       "death_date": "Death date"
-    }
+    },
+    "sprint_planned": "Implementation planned for sprint {{sprint}}"
   },
   "search": {
     "not_found": "No person found with ID {{ci}}. You can register it now.",
