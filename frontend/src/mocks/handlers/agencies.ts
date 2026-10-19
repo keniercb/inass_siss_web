@@ -146,14 +146,14 @@ export const agenciesHandlers = [
     const body = (await request.json()) as Record<string, unknown>;
 
     const errors: Record<string, string[]> = {};
-    if (!body.code) errors.code = ['The code field is required.'];
-    if (!body.name) errors.name = ['The name field is required.'];
-    if (!body.province_id) errors.province_id = ['The province id field is required.'];
-    if (!body.municipality_id) errors.municipality_id = ['The municipality id field is required.'];
-    if (!body.agency_type_id) errors.agency_type_id = ['The agency type id field is required.'];
+    if (!body.code) errors.code = ['El código es obligatorio.'];
+    if (!body.name) errors.name = ['El nombre es obligatorio.'];
+    if (!body.province_id) errors.province_id = ['La provincia es obligatoria.'];
+    if (!body.municipality_id) errors.municipality_id = ['El municipio es obligatorio.'];
+    if (!body.agency_type_id) errors.agency_type_id = ['El tipo de agencia es obligatorio.'];
 
     if (Object.keys(errors).length > 0) {
-      return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+      return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
     }
 
     // Validar coherencia geográfica RN-04: municipio debe pertenecer a provincia
@@ -165,7 +165,7 @@ export const agenciesHandlers = [
     // Unicidad de code
     if (Array.from(agencies.values()).some((a) => a.code === body.code)) {
       return HttpResponse.json(
-        { message: 'The code has already been taken.', errors: { code: ['The code has already been taken.'] } },
+        { message: 'El código ya está en uso.', errors: { code: ['El código ya está en uso.'] } },
         { status: 422 },
       );
     }
@@ -199,7 +199,7 @@ export const agenciesHandlers = [
   http.get(`${API_BASE}/agencies/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const agency = agencies.get(id);
-    if (!agency) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!agency) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     return HttpResponse.json({ data: withRelations(agency) });
   }),
 
@@ -207,12 +207,12 @@ export const agenciesHandlers = [
   http.patch(`${API_BASE}/agencies/:id`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10);
     const agency = agencies.get(id);
-    if (!agency) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!agency) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
 
     if (body.code !== undefined && body.code !== agency.code) {
       return HttpResponse.json(
-        { message: 'The code field cannot be modified after creation.', errors: { code: ['The code field cannot be modified after creation.'] } },
+        { message: 'El código no se puede modificar después de la creación.', errors: { code: ['El código no se puede modificar después de la creación.'] } },
         { status: 422 },
       );
     }
@@ -234,11 +234,11 @@ export const agenciesHandlers = [
   http.delete(`${API_BASE}/agencies/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const agency = agencies.get(id);
-    if (!agency) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
-    if (agency.deactivated_at) return HttpResponse.json({ message: 'Already deactivated.' }, { status: 409 });
+    if (!agency) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    if (agency.deactivated_at) return HttpResponse.json({ message: 'Ya desactivado.' }, { status: 409 });
     if (id <= 6) {
       return HttpResponse.json(
-        { message: 'Cannot deactivate: there are bank controls referencing this agency.' },
+        { message: 'No se puede desactivar: hay controles bancarios que referencian esta agencia.' },
         { status: 409 },
       );
     }

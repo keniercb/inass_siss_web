@@ -123,18 +123,18 @@ export const pensionCasesHandlers = [
   http.post(`${API_BASE}/pension-cases`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     const errors: Record<string, string[]> = {};
-    if (!body.applicant_person_id) errors.applicant_person_id = ['The applicant is required.'];
-    if (!body.employer_entity_id) errors.employer_entity_id = ['The employer entity is required.'];
-    if (!body.position_id) errors.position_id = ['The position is required.'];
-    if (!body.occupational_category_id) errors.occupational_category_id = ['The occupational category is required.'];
-    if (!body.educational_level_id) errors.educational_level_id = ['The educational level is required.'];
-    if (!body.scientific_category_id) errors.scientific_category_id = ['The scientific category is required.'];
-    if (!body.pension_type_id) errors.pension_type_id = ['The pension type is required.'];
-    if (!body.pension_regime_id) errors.pension_regime_id = ['The pension regime is required.'];
-    if (body.last_salary === undefined || body.last_salary === null || body.last_salary === '') errors.last_salary = ['The last salary is required.'];
+    if (!body.applicant_person_id) errors.applicant_person_id = ['El promovente es obligatorio.'];
+    if (!body.employer_entity_id) errors.employer_entity_id = ['El centro de trabajo es obligatorio.'];
+    if (!body.position_id) errors.position_id = ['El cargo es obligatorio.'];
+    if (!body.occupational_category_id) errors.occupational_category_id = ['La categoría ocupacional es obligatoria.'];
+    if (!body.educational_level_id) errors.educational_level_id = ['El nivel educacional es obligatorio.'];
+    if (!body.scientific_category_id) errors.scientific_category_id = ['La categoría científica es obligatoria.'];
+    if (!body.pension_type_id) errors.pension_type_id = ['El tipo de pensión es obligatorio.'];
+    if (!body.pension_regime_id) errors.pension_regime_id = ['El régimen de pensión es obligatorio.'];
+    if (body.last_salary === undefined || body.last_salary === null || body.last_salary === '') errors.last_salary = ['El último salario es obligatorio.'];
     // rebel_army_member + rebel_army_join_date conditional
-    if (body.rebel_army_member === true && !body.rebel_army_join_date) errors.rebel_army_join_date = ['The Rebel Army join date is required when rebel_army_member is true.'];
-    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+    if (body.rebel_army_member === true && !body.rebel_army_join_date) errors.rebel_army_join_date = ['La fecha de incorporación al Ejército Rebelde es obligatoria cuando pertenece al mismo.'];
+    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
 
     const id = nextCaseId++;
     const newCase: PensionCase = baseCase({
@@ -168,7 +168,7 @@ export const pensionCasesHandlers = [
   http.get(`${API_BASE}/pension-cases/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const c = cases.get(id);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     return HttpResponse.json({ data: c });
   }),
 
@@ -176,16 +176,16 @@ export const pensionCasesHandlers = [
   http.put(`${API_BASE}/pension-cases/:id`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10);
     const c = cases.get(id);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     if (c.status !== 'submitted') return HttpResponse.json({ message: 'Case not in submitted state.', status: c.status }, { status: 409 });
     const body = (await request.json()) as Record<string, unknown>;
     // Rechazar campos PROHIBIDOS
     const prohibited = ['applicant_person_id', 'filed_by_person_id', 'rebel_army_member', 'rebel_army_join_date', 'internationalist', 'phone', 'popular_council', 'termination_date', 'office_id', 'number', 'status'];
     const errors: Record<string, string[]> = {};
     prohibited.forEach((field) => {
-      if (body[field] !== undefined) errors[field] = [`The ${field} field is prohibited.`];
+      if (body[field] !== undefined) errors[field] = [`El campo ${field} está prohibido.`];
     });
-    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
     const updated: PensionCase = {
       ...c,
       employer_entity_id: (body.employer_entity_id as number) ?? c.employer_entity_id,
@@ -206,7 +206,7 @@ export const pensionCasesHandlers = [
   http.delete(`${API_BASE}/pension-cases/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const c = cases.get(id);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     if (c.status !== 'submitted') return HttpResponse.json({ message: 'Case not in submitted state.', status: c.status }, { status: 409 });
     cases.delete(id);
     return HttpResponse.json({ message: 'Case deleted.' });
@@ -216,7 +216,7 @@ export const pensionCasesHandlers = [
   http.post(`${API_BASE}/pension-cases/:id/salary-records`, async ({ request, params }) => {
     const caseId = parseInt(params.id as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const id = nextSalaryId++;
     const record = { id, pension_case_id: caseId, year: body.year, earned_salary: String(body.earned_salary) } as unknown as SalaryRecord;
@@ -230,17 +230,17 @@ export const pensionCasesHandlers = [
     const caseId = parseInt(params.id as string, 10);
     const recordId = parseInt(params.record as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     c.salary_records = (c.salary_records ?? []).filter((r) => r.id !== recordId);
     cases.set(caseId, c);
-    return HttpResponse.json({ message: 'Deleted.' });
+    return HttpResponse.json({ message: 'Eliminado.' });
   }),
 
   // POST /pension-cases/{id}/service-records
   http.post(`${API_BASE}/pension-cases/:id/service-records`, async ({ request, params }) => {
     const caseId = parseInt(params.id as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const id = nextServiceId++;
     // Task 48 / SGP-38: worked_months y worked_years son DERIVADOS —
@@ -261,17 +261,17 @@ export const pensionCasesHandlers = [
     const caseId = parseInt(params.id as string, 10);
     const recordId = parseInt(params.record as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     c.service_records = (c.service_records ?? []).filter((r) => r.id !== recordId);
     cases.set(caseId, c);
-    return HttpResponse.json({ message: 'Deleted.' });
+    return HttpResponse.json({ message: 'Eliminado.' });
   }),
 
   // POST /pension-cases/{id}/work-cycles
   http.post(`${API_BASE}/pension-cases/:id/work-cycles`, async ({ request, params }) => {
     const caseId = parseInt(params.id as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const id = nextCycleId++;
     const record = { id, pension_case_id: caseId, planned_days: body.planned_days, actual_days: body.actual_days, cycles_count: body.cycles_count } as WorkCycle;
@@ -285,26 +285,26 @@ export const pensionCasesHandlers = [
     const caseId = parseInt(params.id as string, 10);
     const recordId = parseInt(params.record as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     c.work_cycles = (c.work_cycles ?? []).filter((r) => r.id !== recordId);
     cases.set(caseId, c);
-    return HttpResponse.json({ message: 'Deleted.' });
+    return HttpResponse.json({ message: 'Eliminado.' });
   }),
 
   // POST /pension-cases/{id}/income-concept-records
   http.post(`${API_BASE}/pension-cases/:id/income-concept-records`, async ({ request, params }) => {
     const caseId = parseInt(params.id as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const errors: Record<string, string[]> = {};
-    if (!body.income_concept_id) errors.income_concept_id = ['The income concept is required.'];
-    if (body.applied_percent === undefined || body.applied_percent === null || body.applied_percent === '') errors.applied_percent = ['The applied percent is required.'];
+    if (!body.income_concept_id) errors.income_concept_id = ['El concepto de ingreso es obligatorio.'];
+    if (body.applied_percent === undefined || body.applied_percent === null || body.applied_percent === '') errors.applied_percent = ['El porciento aplicado es obligatorio.'];
     // Task 54/SGP-39: amount NO se acepta en el wire (422 si llega, D-14 b/D-15 a)
     if (body.amount !== undefined && body.amount !== null) {
-      errors.amount = ['The amount field is not accepted in the wire: the v2 engine derives it from the applied percent.'];
+      errors.amount = ['El campo importe no se acepta: el motor v2 lo deriva del porciento aplicado.'];
     }
-    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
     const id = nextIncomeId++;
     // El amount lo deriva el motor v2 — aquí simulamos con un valor fijo para que la proyección tenga dato
     const derivedAmount = String((Number(body.applied_percent) / 100) * 1000);
@@ -319,17 +319,17 @@ export const pensionCasesHandlers = [
     const caseId = parseInt(params.id as string, 10);
     const recordId = parseInt(params.record as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     c.income_concept_records = (c.income_concept_records ?? []).filter((r) => r.id !== recordId);
     cases.set(caseId, c);
-    return HttpResponse.json({ message: 'Deleted.' });
+    return HttpResponse.json({ message: 'Eliminado.' });
   }),
 
   // GET /pension-cases/{id}/transitions — historial append-only (S6, RF-EXP-009)
   http.get(`${API_BASE}/pension-cases/:id/transitions`, ({ params }) => {
     const caseId = parseInt(params.id as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const rows = caseHistory.get(caseId) ?? [];
     // Orden cronológico (más antigua primero), ya están sembradas así
     return HttpResponse.json({ data: rows });
@@ -339,7 +339,7 @@ export const pensionCasesHandlers = [
   http.post(`${API_BASE}/pension-cases/:id/transitions`, async ({ request, params }) => {
     const caseId = parseInt(params.id as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
 
     const body = (await request.json()) as {
       to?: string;
@@ -350,7 +350,7 @@ export const pensionCasesHandlers = [
 
     // 1. Validación del cuerpo
     if (!body.to || !['submitted', 'under_review', 'approved', 'rejected'].includes(body.to)) {
-      return HttpResponse.json({ message: 'Validation error.', errors: { to: ['The to field is required and must be a valid status.'] } }, { status: 422 });
+      return HttpResponse.json({ message: 'Error de validación.', errors: { to: ['El campo to es obligatorio y debe ser un estado válido.'] } }, { status: 422 });
     }
 
     const fromStatus = c.status ?? 'submitted';
@@ -360,7 +360,7 @@ export const pensionCasesHandlers = [
     const legal = LEGAL_TRANSITIONS[fromStatus]?.includes(toStatus) ?? false;
     if (!legal) {
       return HttpResponse.json({
-        message: 'Transition not allowed by the matrix (sección 2.4).',
+        message: 'Transición no permitida por la matriz (sección 2.4).',
         status: fromStatus,
         attempted_to: toStatus,
         case_id: caseId,
@@ -376,29 +376,29 @@ export const pensionCasesHandlers = [
     const noteRequired = ['approved', 'rejected'].includes(toStatus) || ['approved', 'rejected'].includes(fromStatus);
     if (noteRequired) {
       if (!note || note.length < 10) {
-        errors.note = ['The note is required and must be at least 10 characters.'];
+        errors.note = ['La nota es obligatoria y debe tener al menos 10 caracteres.'];
       }
     }
 
     // Base legal obligatoria en aprobación
     if (toStatus === 'approved') {
       if (!body.legal_basis_id) {
-        errors.legal_basis_id = ['The legal basis is required for approval.'];
+        errors.legal_basis_id = ['La base legal es obligatoria para la aprobación.'];
       }
       // Simulamos: legal_basis_id 1 = vigente, 2 = derogada, 3 = futura
       if (body.legal_basis_id === 3) {
-        errors.legal_basis_id = ['A future legal basis cannot be used.'];
+        errors.legal_basis_id = ['No se puede usar una base legal futura.'];
       }
       if (body.legal_basis_id === 2 && !body.force) {
-        errors.legal_basis_id = ['The legal basis is derogated. Only an Administrator can force it.'];
+        errors.legal_basis_id = ['La base legal está derogada. Solo un Administrador puede forzarla.'];
       }
     } else {
       // Base legal prohibida en otras transiciones
       if (body.legal_basis_id) {
-        errors.legal_basis_id = ['The legal basis is forbidden in this transition.'];
+        errors.legal_basis_id = ['La base legal está prohibida en esta transición.'];
       }
       if (body.force) {
-        errors.force = ['The force flag is forbidden in this transition.'];
+        errors.force = ['El indicador de forzado está prohibido en esta transición.'];
       }
     }
 
@@ -411,7 +411,7 @@ export const pensionCasesHandlers = [
 
     if (Object.keys(errors).length > 0 || missing.length > 0) {
       const payload: Record<string, unknown> = {
-        message: 'Transition requirements not met.',
+        message: 'No se cumplen los requisitos de la transición.',
         status: fromStatus,
         attempted_to: toStatus,
         case_id: caseId,
@@ -470,7 +470,7 @@ export const pensionCasesHandlers = [
   http.get(`${API_BASE}/pension-cases/:id/calculation`, ({ params }) => {
     const caseId = parseInt(params.id as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     // Snapshot solo existe si el caso fue aprobado alguna vez
     if (c.status !== 'approved') {
       return HttpResponse.json({ data: null });
@@ -496,7 +496,7 @@ export const pensionCasesHandlers = [
       average_monthly_salary: c.last_salary ?? '0.00',
       excess_years: Math.max(0, Math.floor(((c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0)) / 12) - 25),
       amount: c.computed_amount ?? '0.00',
-      eligibility: { eligible: true, criteria: [{ criterion: 'age', passes: true, explanation: 'Cumple edad mínima.' }, { criterion: 'work_years', passes: true, explanation: 'Cumple años mínimos.' }] },
+      eligibility: { eligible: true, criteria: [{ criterion: 'age', passes: true, explanation: 'Cumple la edad mínima requerida.' }, { criterion: 'work_years', passes: true, explanation: 'Cumple los años mínimos requeridos.' }] },
       regime_parameters: {
         months_per_year: 12,
         base_calc_percent: '0.5',
@@ -539,12 +539,12 @@ export const pensionCasesHandlers = [
   http.post(`${API_BASE}/pension-cases/:id/calculation-preview`, ({ params }) => {
     const caseId = parseInt(params.id as string, 10);
     const c = cases.get(caseId);
-    if (!c) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
 
     // Solo disponible en submitted/under_review
     if (c.status !== 'submitted' && c.status !== 'under_review') {
       return HttpResponse.json({
-        message: 'Calculation preview only available for submitted or under_review cases.',
+        message: 'La vista previa solo está disponible para expedientes en Solicitud o Revisión.',
       }, { status: 409 });
     }
 
@@ -553,9 +553,9 @@ export const pensionCasesHandlers = [
     const serviceMonths = (c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0);
     const warnings: string[] = [];
 
-    // Warnings: serie salarial incompleta respecto al gate (5)
+    // Warnings: serie salarial incompleta respecto al umbral del régimen (5)
     if (salaryCount < 5) {
-      warnings.push(`Serie salarial incompleta: ${salaryCount}/5 registros requeridos por el gate del régimen.`);
+      warnings.push(`Serie salarial incompleta: ${salaryCount}/5 registros requeridos por el umbral del régimen.`);
     }
     // AT truncado vs min_work_years (25)
     const atTruncated = Math.floor(serviceMonths / 12);
@@ -567,11 +567,11 @@ export const pensionCasesHandlers = [
       warnings.push('Sin registros de servicio declarados.');
     }
 
-    // Elegibilidad: edad y años (no podemos verificar edad sin birth_date en este mock)
-    // Siempre elegible en este mock básico
+    // Elegibilidad: edad y años (no podemos verificar edad sin fecha de nacimiento en este simulador)
+    // Siempre elegible en este simulador básico
     const eligible = warnings.length === 0;
 
-    // SPM = último salario (mock simplificado; en el real es estrategia+divisor)
+    // SPM = último salario (simulador simplificado; en el real es estrategia+divisor)
     const spm = c.last_salary ?? '0.00';
     // Cuantía v1 = SPM × 0.5 (PCI del General) + ATE × 0.01 × SPM, topeado por SPM × 0.9
     const ate = Math.max(0, atTruncated - 25);
@@ -584,8 +584,8 @@ export const pensionCasesHandlers = [
       eligibility: {
         eligible,
         criteria: [
-          { criterion: 'age', passes: true, explanation: 'Cálculo mock: edad no verificable sin birth_date.' },
-          { criterion: 'work_years', passes: atTruncated >= 25, explanation: atTruncated >= 25 ? `Cumple ${atTruncated} años ≥ 25.` : `Solo ${atTruncated} años < 25 mínimos.` },
+          { criterion: 'age', passes: true, explanation: 'No se puede verificar la edad sin fecha de nacimiento en este simulador.' },
+          { criterion: 'work_years', passes: atTruncated >= 25, explanation: atTruncated >= 25 ? `Cumple ${atTruncated} años, mayor o igual que el mínimo de 25.` : `Solo ${atTruncated} años, menor que el mínimo de 25.` },
         ],
       },
       service_years: {

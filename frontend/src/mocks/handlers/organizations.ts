@@ -49,14 +49,14 @@ export const organizationsHandlers = [
     entities.set(id, entity);
     return HttpResponse.json({ data: entity }, { status: 201 });
   }),
-  http.get(`${API_BASE}/entities/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const e = entities.get(id); if (!e) return HttpResponse.json({ message: 'Not found.' }, { status: 404 }); return HttpResponse.json({ data: e }); }),
+  http.get(`${API_BASE}/entities/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const e = entities.get(id); if (!e) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 }); return HttpResponse.json({ data: e }); }),
   http.patch(`${API_BASE}/entities/:id`, async ({ request, params }) => {
-    const id = parseInt(params.id as string, 10); const e = entities.get(id); if (!e) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    const id = parseInt(params.id as string, 10); const e = entities.get(id); if (!e) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
-    if (body.code !== undefined && body.code !== e.code) return HttpResponse.json({ message: 'Code cannot be modified.', errors: { code: ['Code cannot be modified.'] } }, { status: 422 });
+    if (body.code !== undefined && body.code !== e.code) return HttpResponse.json({ message: 'El código no se puede modificar.', errors: { code: ['El código no se puede modificar.'] } }, { status: 422 });
     const updated: Entity = { ...e, ...body, updated_at: new Date().toISOString() } as Entity; entities.set(id, updated); return HttpResponse.json({ data: updated });
   }),
-  http.delete(`${API_BASE}/entities/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const e = entities.get(id); if (!e) return HttpResponse.json({ message: 'Not found.' }, { status: 404 }); if (id <= 3) return HttpResponse.json({ message: 'Has references.' }, { status: 409 }); e.deactivated_at = new Date().toISOString(); return HttpResponse.json({ message: 'Deactivated.' }); }),
+  http.delete(`${API_BASE}/entities/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const e = entities.get(id); if (!e) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 }); if (id <= 3) return HttpResponse.json({ message: 'Has references.' }, { status: 409 }); e.deactivated_at = new Date().toISOString(); return HttpResponse.json({ message: 'Deactivated.' }); }),
 
   // Entity signatures
   http.get(`${API_BASE}/entities/:id/signatures`, ({ params }) => {
@@ -75,7 +75,7 @@ export const organizationsHandlers = [
   http.delete(`${API_BASE}/entities/:id/signatures/:sigId`, ({ params }) => {
     const sigId = parseInt(params.sigId as string, 10);
     signatures.delete(sigId);
-    return HttpResponse.json({ message: 'Deleted.' });
+    return HttpResponse.json({ message: 'Eliminado.' });
   }),
 
   // Offices
@@ -97,11 +97,11 @@ export const organizationsHandlers = [
     return HttpResponse.json({ data: office }, { status: 201 });
   }),
   http.patch(`${API_BASE}/offices/:id`, async ({ request, params }) => {
-    const id = parseInt(params.id as string, 10); const o = offices.get(id); if (!o) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    const id = parseInt(params.id as string, 10); const o = offices.get(id); if (!o) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const updated: Office = { ...o, ...body, updated_at: new Date().toISOString() } as Office; offices.set(id, updated); return HttpResponse.json({ data: updated });
   }),
-  http.delete(`${API_BASE}/offices/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const o = offices.get(id); if (!o) return HttpResponse.json({ message: 'Not found.' }, { status: 404 }); if (id <= 3) return HttpResponse.json({ message: 'Has references.' }, { status: 409 }); o.deactivated_at = new Date().toISOString(); return HttpResponse.json({ message: 'Deactivated.' }); }),
+  http.delete(`${API_BASE}/offices/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const o = offices.get(id); if (!o) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 }); if (id <= 3) return HttpResponse.json({ message: 'Has references.' }, { status: 409 }); o.deactivated_at = new Date().toISOString(); return HttpResponse.json({ message: 'Deactivated.' }); }),
 
   // GET /authorized-signatures — listado top-level filtrable (alineado con docs.json)
   // Params soportados: entity_id, person_id, position_id, status, page, per_page
@@ -142,10 +142,10 @@ export const organizationsHandlers = [
   http.post(`${API_BASE}/authorized-signatures`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     const errors: Record<string, string[]> = {};
-    if (!body.entity_id) errors.entity_id = ['The entity is required.'];
-    if (!body.person_id) errors.person_id = ['The person is required.'];
-    if (!body.position_id) errors.position_id = ['The position is required.'];
-    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+    if (!body.entity_id) errors.entity_id = ['La entidad es obligatoria.'];
+    if (!body.person_id) errors.person_id = ['La persona es obligatoria.'];
+    if (!body.position_id) errors.position_id = ['El cargo es obligatorio.'];
+    if (Object.keys(errors).length > 0) return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
 
     // Validar unicidad de la terna entity+person+position
     const exists = Array.from(signatures.values()).some((s) =>
@@ -153,7 +153,7 @@ export const organizationsHandlers = [
       s.person_id === (body.person_id as number) &&
       s.position_id === (body.position_id as number),
     );
-    if (exists) return HttpResponse.json({ message: 'The signature already exists.' }, { status: 409 });
+    if (exists) return HttpResponse.json({ message: 'La firma ya existe.' }, { status: 409 });
 
     const id = nextSigId++;
     const sig: AuthorizedSignature & { entity_id: number } = {
@@ -175,7 +175,7 @@ export const organizationsHandlers = [
   // DELETE /authorized-signatures/{id} — revocación de una firma (top-level)
   http.delete(`${API_BASE}/authorized-signatures/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
-    if (!signatures.has(id)) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!signatures.has(id)) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     signatures.delete(id);
     return HttpResponse.json({ message: 'Revoked.' });
   }),
@@ -184,7 +184,7 @@ export const organizationsHandlers = [
   http.patch(`${API_BASE}/authorized-signatures/:id`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10);
     const sig = signatures.get(id);
-    if (!sig) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!sig) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const updated = {
       ...sig,
@@ -229,11 +229,11 @@ export const legalBasisHandlers = [
     legalBases.set(id, lb);
     return HttpResponse.json({ data: lb }, { status: 201 });
   }),
-  http.get(`${API_BASE}/legal-bases/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const lb = legalBases.get(id); if (!lb) return HttpResponse.json({ message: 'Not found.' }, { status: 404 }); return HttpResponse.json({ data: lb }); }),
+  http.get(`${API_BASE}/legal-bases/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const lb = legalBases.get(id); if (!lb) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 }); return HttpResponse.json({ data: lb }); }),
   http.patch(`${API_BASE}/legal-bases/:id`, async ({ request, params }) => {
-    const id = parseInt(params.id as string, 10); const lb = legalBases.get(id); if (!lb) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    const id = parseInt(params.id as string, 10); const lb = legalBases.get(id); if (!lb) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const updated: LegalBasis = { ...lb, ...body, updated_at: new Date().toISOString() } as LegalBasis; legalBases.set(id, updated); return HttpResponse.json({ data: updated });
   }),
-  http.delete(`${API_BASE}/legal-bases/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const lb = legalBases.get(id); if (!lb) return HttpResponse.json({ message: 'Not found.' }, { status: 404 }); lb.deactivated_at = new Date().toISOString(); return HttpResponse.json({ message: 'Deactivated.' }); }),
+  http.delete(`${API_BASE}/legal-bases/:id`, ({ params }) => { const id = parseInt(params.id as string, 10); const lb = legalBases.get(id); if (!lb) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 }); lb.deactivated_at = new Date().toISOString(); return HttpResponse.json({ message: 'Deactivated.' }); }),
 ];

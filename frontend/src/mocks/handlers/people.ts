@@ -175,21 +175,21 @@ export const peopleHandlers = [
     // Validar CI: solo formato (11 dígitos). El backend real valida fecha + verificador.
     if (!body.identity_number || !CI_REGEX.test(body.identity_number as string)) {
       return HttpResponse.json(
-        { message: 'Validation error.', errors: { identity_number: ['El CI debe tener 11 dígitos numéricos'] } },
+        { message: 'Error de validación.', errors: { identity_number: ['El CI debe tener 11 dígitos numéricos'] } },
         { status: 422 },
       );
     }
 
     // Validar campos requeridos
     const errors: Record<string, string[]> = {};
-    if (!body.first_name) errors.first_name = ['The first name field is required.'];
-    if (!body.first_surname) errors.first_surname = ['The first surname field is required.'];
-    if (!body.sex) errors.sex = ['The sex field is required.'];
-    if (!body.birth_date) errors.birth_date = ['The birth date field is required.'];
-    if (!body.address) errors.address = ['The address field is required.'];
+    if (!body.first_name) errors.first_name = ['El primer nombre es obligatorio.'];
+    if (!body.first_surname) errors.first_surname = ['El primer apellido es obligatorio.'];
+    if (!body.sex) errors.sex = ['El sexo es obligatorio.'];
+    if (!body.birth_date) errors.birth_date = ['La fecha de nacimiento es obligatoria.'];
+    if (!body.address) errors.address = ['La dirección es obligatoria.'];
 
     if (Object.keys(errors).length > 0) {
-      return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+      return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
     }
 
     // Unicidad del CI
@@ -226,7 +226,7 @@ export const peopleHandlers = [
   http.get(`${API_BASE}/people/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const person = persons.get(id);
-    if (!person) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!person) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     return HttpResponse.json({ data: person });
   }),
 
@@ -234,14 +234,14 @@ export const peopleHandlers = [
   http.patch(`${API_BASE}/people/:id`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10);
     const person = persons.get(id);
-    if (!person) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!person) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
 
     const body = (await request.json()) as Record<string, unknown>;
 
     // Validar CI inmutable
     if (body.identity_number !== undefined && body.identity_number !== person.identity_number) {
       return HttpResponse.json(
-        { message: 'The identity number cannot be modified after creation.', errors: { identity_number: ['The identity number cannot be modified after creation.'] } },
+        { message: 'El carné de identidad no se puede modificar después de la creación.', errors: { identity_number: ['El carné de identidad no se puede modificar después de la creación.'] } },
         { status: 422 },
       );
     }
@@ -255,10 +255,10 @@ export const peopleHandlers = [
   http.delete(`${API_BASE}/people/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const person = persons.get(id);
-    if (!person) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!person) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     if (id <= 10) {
       return HttpResponse.json(
-        { message: 'Cannot deactivate: there are records referencing this person.' },
+        { message: 'No se puede desactivar: hay registros que referencian a esta persona.' },
         { status: 409 },
       );
     }
@@ -269,7 +269,7 @@ export const peopleHandlers = [
   http.post(`${API_BASE}/people/:id/death`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10);
     const person = persons.get(id);
-    if (!person) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!person) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
 
     if (person.deceased) {
       return HttpResponse.json({ message: 'Person is already deceased.' }, { status: 409 });
@@ -278,7 +278,7 @@ export const peopleHandlers = [
     const body = (await request.json()) as Record<string, unknown>;
     if (!body.death_date) {
       return HttpResponse.json(
-        { message: 'Validation error.', errors: { death_date: ['The death date field is required.'] } },
+        { message: 'Error de validación.', errors: { death_date: ['La fecha de fallecimiento es obligatoria.'] } },
         { status: 422 },
       );
     }
@@ -286,7 +286,7 @@ export const peopleHandlers = [
     // Validar death_date > birth_date
     if (new Date(body.death_date as string) < new Date(person.birth_date!)) {
       return HttpResponse.json(
-        { message: 'Death date must be after birth date.', errors: { death_date: ['Death date must be after birth date.'] } },
+        { message: 'La fecha de fallecimiento debe ser posterior a la de nacimiento.', errors: { death_date: ['La fecha de fallecimiento debe ser posterior a la de nacimiento.'] } },
         { status: 422 },
       );
     }

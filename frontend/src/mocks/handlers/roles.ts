@@ -85,7 +85,7 @@ export const rolesHandlers = [
     // Validar nombre (slug, no reservado)
     const reservedNames = ['admin', 'director', 'specialist', 'operator', 'auditor'];
     if (!body.name || reservedNames.includes(body.name as string)) {
-      return HttpResponse.json({ message: 'The name is reserved or invalid.', errors: { name: ['The name is reserved for institutional roles or invalid.'] } }, { status: 422 });
+      return HttpResponse.json({ message: 'El nombre está reservado o es inválido.', errors: { name: ['El nombre está reservado para roles institucionales o es inválido.'] } }, { status: 422 });
     }
     if (Array.from(roles.values()).some((r) => r.name === body.name)) {
       return HttpResponse.json({ message: 'A role with that name already exists.' }, { status: 409 });
@@ -98,14 +98,14 @@ export const rolesHandlers = [
   // GET /roles/{id}
   http.get(`${API_BASE}/roles/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10); const r = roles.get(id);
-    if (!r) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!r) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     return HttpResponse.json({ data: r });
   }),
   // PATCH /roles/{id} — editar (solo personalizados)
   http.patch(`${API_BASE}/roles/:id`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10); const r = roles.get(id);
-    if (!r) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
-    if (r.is_system) return HttpResponse.json({ message: 'System roles cannot be modified.' }, { status: 403 });
+    if (!r) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    if (r.is_system) return HttpResponse.json({ message: 'Los roles del sistema no se pueden modificar.' }, { status: 403 });
     const body = (await request.json()) as Record<string, unknown>;
     const updated: Role = { ...r, description: (body.description as string) ?? r.description, permissions: (body.permissions as string[]) ?? r.permissions };
     roles.set(id, updated);
@@ -114,9 +114,9 @@ export const rolesHandlers = [
   // DELETE /roles/{id} — eliminar (solo personalizados)
   http.delete(`${API_BASE}/roles/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10); const r = roles.get(id);
-    if (!r) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
-    if (r.is_system) return HttpResponse.json({ message: 'System roles cannot be deleted.' }, { status: 403 });
-    if ((r.users_count ?? 0) > 0) return HttpResponse.json({ message: 'Cannot delete: there are users with this role.' }, { status: 409 });
+    if (!r) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    if (r.is_system) return HttpResponse.json({ message: 'Los roles del sistema no se pueden eliminar.' }, { status: 403 });
+    if ((r.users_count ?? 0) > 0) return HttpResponse.json({ message: 'No se puede eliminar: hay usuarios con este rol.' }, { status: 409 });
     roles.delete(id);
     return HttpResponse.json({ message: 'Role deleted.' });
   }),

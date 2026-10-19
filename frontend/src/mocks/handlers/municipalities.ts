@@ -137,13 +137,13 @@ export const municipalitiesHandlers = [
 
     // Validar campos requeridos
     const errors: Record<string, string[]> = {};
-    if (!body.code) errors.code = ['The code field is required.'];
-    if (!body.name) errors.name = ['The name field is required.'];
+    if (!body.code) errors.code = ['El código es obligatorio.'];
+    if (!body.name) errors.name = ['El nombre es obligatorio.'];
     // province_id puede ser null (Isla de la Juventud) o un número
-    if (body.province_id === undefined) errors.province_id = ['The province id field is required.'];
+    if (body.province_id === undefined) errors.province_id = ['La provincia es obligatoria.'];
 
     if (Object.keys(errors).length > 0) {
-      return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+      return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
     }
 
     // Validar unicidad (province_id, code)
@@ -185,7 +185,7 @@ export const municipalitiesHandlers = [
     const id = parseInt(params.id as string, 10);
     const muni = municipios.get(id);
     if (!muni) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
     return HttpResponse.json({ data: withProvince(muni) });
   }),
@@ -195,7 +195,7 @@ export const municipalitiesHandlers = [
     const id = parseInt(params.id as string, 10);
     const muni = municipios.get(id);
     if (!muni) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
     const body = (await request.json()) as Record<string, unknown>;
 
@@ -203,8 +203,8 @@ export const municipalitiesHandlers = [
     if (body.code !== undefined && body.code !== muni.code) {
       return HttpResponse.json(
         {
-          message: 'The code field cannot be modified after creation.',
-          errors: { code: ['The code field cannot be modified after creation.'] },
+          message: 'El código no se puede modificar después de la creación.',
+          errors: { code: ['El código no se puede modificar después de la creación.'] },
         },
         { status: 422 },
       );
@@ -233,15 +233,15 @@ export const municipalitiesHandlers = [
     const id = parseInt(params.id as string, 10);
     const muni = municipios.get(id);
     if (!muni) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
     if (muni.deactivated_at) {
-      return HttpResponse.json({ message: 'Already deactivated.' }, { status: 409 });
+      return HttpResponse.json({ message: 'Ya desactivado.' }, { status: 409 });
     }
     // Simular referencias activas (los municipios del seed tienen referencias)
     if (id <= 15) {
       return HttpResponse.json(
-        { message: 'Cannot deactivate: there are agencies referencing this municipality.' },
+        { message: 'No se puede desactivar: hay agencias que referencian este municipio.' },
         { status: 409 },
       );
     }
