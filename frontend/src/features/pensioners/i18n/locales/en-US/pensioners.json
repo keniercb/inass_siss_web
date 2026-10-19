@@ -56,5 +56,30 @@
       "bank_controls": "Bank controls"
     },
     "bank_controls_empty": "No bank controls assigned (available from Sprint 10)"
+  },
+  "status_change": {
+    "button": "Change status",
+    "title": "Change pension status",
+    "status_label": "Target status",
+    "reason_label": "Reason",
+    "reason_hint": "min 10 characters",
+    "reason_placeholder": "Reason for the change…",
+    "reason_too_short": "The reason must be at least 10 characters",
+    "confirm": "Confirm change",
+    "success": "Status changed successfully",
+    "error": "Could not change the status"
+  },
+  "bank_control": {
+    "button": "Bank control",
+    "title": "Bank control of the payment",
+    "agency_label": "Collection agency",
+    "account_label": "Bank account",
+    "account_hint": "10-34 alphanumeric characters",
+    "success": "Bank control updated successfully",
+    "error": "Could not update the bank control",
+    "number": "Control number",
+    "electronic_payroll": "Electronic payroll",
+    "yes": "Yes",
+    "no": "No"
   }
 }

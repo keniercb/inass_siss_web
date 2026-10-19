@@ -735,6 +735,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pensioners/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ciclo de vida de la pensión: suspensión, reanudación o extinción
+         * @description La superficie de ESCRITURA del operador (RF-PEN-003, Task 61/SGP-46, D-53..D-58): mueve el estado de la pensión con un motivo OBLIGATORIO (min:10). La matriz del operador (9 celdas): active→suspended/terminated, suspended→active/terminated (reanudación), terminated→NADA (el operador JAMÁS revive — doctrina D-42 (b) de ADR-42; la re-aprobación administrativa del expediente de origen es la única excepción auditada) y mismo estado→422 (una transición debe MOVER). Invariantes: `amount` solo se mueve con la re-aprobación del expediente y `origin_case` JAMÁS se toca (el espejo es unidireccional caso→pensionado — el expediente queda approved mientras la pensión se suspende: S10 pagará por pensioner.status). El 200 devuelve la FICHA COMPLETA (shape idéntico a GET /{id}: la última fila de status_history ES la evidencia de la transición, con motivo, actor y momento); el intento rechazado por la matriz queda en la bitácora tras el rollback (visible al auditor, jamás en status_history).
+         */
+        patch: operations["pensionersUpdateStatus"];
+        trace?: never;
+    };
+    "/api/v1/pensioners/{id}/bank-control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Control bancario del cobro: asignación o actualización
+         * @description La superficie anidada del control bancario (Task 63/SGP-48, RF-PAG-001/RF-PAG-002, D-60..D-64, tres correcciones de usuario 2026-10-20): el control es LA información de dónde se acredita el dinero del pensionado, relación 1 a 1 SIN endpoints independientes — parte del ciclo de vida del pensionado. UPSERT: la PRIMERA llamada crea el control (emite el número GLOBAL del scope bank_control, ADR-17/RN-009, estable de por vida) y las siguientes ACTUALIZAN EN SITIO la misma fila (agencia de cobro, cuenta y marcador derivado juntos — jamás desactiva+crea con número nuevo, la bala original de RF-PAG-002 quedó anulada por corrección de usuario). El marcador `electronic_payroll` JAMÁS viaja en el body: deriva de la forma de pago del tipo de la agencia (agency_types.payment_form = 'nomina electronica') y se recalcula en cada escritura (D-64) — cambiar la agencia es cómo se mueve el marcador. Cuenta: 10-34 caracteres alfanuméricos (la regla fina por agencia queda pendiente de especificación bancaria). 422 para un pensionado terminated (un extinto no cobra; active/suspended actualizan sin fricción), agencia inexistente o cuenta fuera de formato — el intento rechazado queda en la bitácora tras el rollback, visible al auditor. 200 = ficha completa (shape de GET /{id}): la proyección bank_control ES la evidencia. El número también viaja en cada fila del listado.
+         */
+        put: operations["pensionersUpdateBankControl"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/people": {
         parameters: {
             query?: never;
@@ -798,7 +838,7 @@ export interface paths {
         put?: never;
         /**
          * Registro de fallecimiento
-         * @description Fija (o corrige) la fecha de fallecimiento (RF-PER-003): estrictamente posterior al nacimiento, nunca futura, datable y auditada con valores previos. Persona fallecida queda marcada como deceased en búsquedas y bloques para nuevos trámites.
+         * @description Fija (o corrige) la fecha de fallecimiento (RF-PER-003): estrictamente posterior al nacimiento, nunca futura, datable y auditada con valores previos. Persona fallecida queda marcada como deceased en búsquedas y bloquea para nuevos trámites. Desde S9.3 (Task 61/SGP-46, D-56 (a)): cuando la persona tiene un pensionado VIVO (active o suspended), el 200 gana el advisory pensioner_advisory {pensioner_id, status, message} que orienta la baja de la pensión vía PATCH /pensioners/{id}/status — SUGIERE, jamás ejecuta: la terminación sigue siendo decisión del director con motivo (RF-PEN-003); sin pensionado vivo el campo no viaja.
          */
         post: operations["peopleRegisterDeath"];
         delete?: never;
@@ -2484,7 +2524,7 @@ export interface components {
         };
         /**
          * Pensionado
-         * @description Pensionado (RF-PEN-001/RF-PEN-002): la fila nace de la aprobación del expediente con la cuantía congelada EXACTA y espeja su ciclo administrativo. La persona viaja como proyección COMPLETA, tipo y régimen como {id, code, name} y el expediente de origen como referencia mínima {id, number, status}. La ficha añade status_history (la línea de tiempo derivada de la bitácora, ADR-42) y bank_controls ([] hasta el Sprint 10, RF-PAG-002); las filas del listado viajan sin ambos.
+         * @description Pensionado (RF-PEN-001/RF-PEN-002): la fila nace de la aprobación del expediente con la cuantía congelada EXACTA y espeja su ciclo administrativo. La persona viaja como proyección COMPLETA, tipo y régimen como {id, code, name} y el expediente de origen como referencia mínima {id, number, status}. La ficha añade status_history (la línea de tiempo derivada de la bitácora, ADR-42); bank_control viaja en TODO GET del pensionado — proyección mínima en las filas (el número GLOBAL siempre legible, corrección de usuario de Task 63) y completa en la ficha (RF-PAG-002).
          */
         Pensioner: {
             /**
@@ -2503,9 +2543,12 @@ export interface components {
              *     The ficha EXCLUSIVE evidence rides only when the detail timeline
              *     is attached (constructor argument): `status_history` — the
              *     bitácora-derived timeline (ADR-42, one row per status change plus
-             *     the birth) — and `bank_controls: []`, the RF contract travelling
-             *     empty until Sprint 10 provisions it (RF-PAG-002, dependency
-             *     registered).
+             *     the birth) — while `bank_control` travels EVERYWHERE (Task 63,
+             *     the user correction: the GLOBAL number must be readable from the
+             *     pensioner GETs): the MINIMAL projection {id, number, agency,
+             *     electronic_payroll} on listing rows, the full projection (+
+             *     account and write timestamps) on the ficha shapes, null while
+             *     the nested PUT has not provisioned the control (RF-PAG-002).
              * @example 1
              */
             id?: number;
@@ -2576,8 +2619,47 @@ export interface components {
             } | null;
             /** @description FICHA: línea de tiempo de estados derivada de la bitácora (ADR-42) — el nacimiento más una fila por cambio de estado; ausente en las filas del listado */
             status_history?: components["schemas"]["PensionerStatusHistory"][];
-            /** @description FICHA: controles bancarios del cobro (RF-PAG-002) — viaja VACÍO hasta el Sprint 10, cuando el módulo Payments asigne controles; ausente en las filas del listado */
-            bank_controls?: Record<string, never>[];
+            /** @description EL control bancario del cobro (RF-PAG-001/002, Task 63/SGP-48): relación 1:1 — número GLOBAL del scope bank_control (ADR-17), agencia {id, code, name} y marcador derivado del tipo de la agencia (electronic_payroll, D-64). Proyección mínima en las filas del listado; la ficha añade account, created_at y updated_at. null mientras PUT /pensioners/{id}/bank-control no haya provisto el control. */
+            bank_control?: {
+                /**
+                 * Format: int64
+                 * @example 1
+                 */
+                id?: number;
+                /**
+                 * Format: int64
+                 * @description Número de control GLOBAL del sistema — emitido UNA vez al crear (secuencia bank_control, RN-009) y estable de por vida
+                 * @example 1
+                 */
+                number?: number;
+                /** @description Agencia de cobro del catálogo */
+                agency?: {
+                    /** Format: int64 */
+                    id?: number;
+                    code?: string;
+                    name?: string;
+                };
+                /**
+                 * @description Marcador de nómina electrónica — DERIVADO de la forma de pago del tipo de la agencia en cada escritura (D-64), jamás declarado por el operador
+                 * @example false
+                 */
+                electronic_payroll?: boolean;
+                /**
+                 * @description FICHA: cuenta bancaria (10-34 alfanumérica)
+                 * @example 02000012345678901234
+                 */
+                account?: string;
+                /**
+                 * Format: date-time
+                 * @description FICHA: momento de la creación del control
+                 */
+                created_at?: string;
+                /**
+                 * Format: date-time
+                 * @description FICHA: última actualización en sitio (agencia/cuenta/marcador)
+                 */
+                updated_at?: string;
+            } | null;
             /**
              * Format: date-time
              * @description Momento del alta (la aprobación del expediente de origen)
@@ -6013,6 +6095,160 @@ export interface operations {
             };
         };
     };
+    pensionersUpdateStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Estado destino (enum normativo) y motivo obligatorio de la transición */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @example suspended
+                     * @enum {string}
+                     */
+                    status: "active" | "suspended" | "terminated";
+                    /** @example Suspensión por período de estancia en el exterior (resolución 123/2026) */
+                    status_reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Ficha completa del pensionado con la transición aplicada (shape de GET /{id}) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Pensioner"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description El rol no porta pensioners.manage (admin + director, D-57) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** @example pensioners.manage */
+                        required_permission?: string;
+                    };
+                };
+            };
+            /** @description Pensionado inexistente o desactivado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Fuera de la matriz del operador (mensaje + pensioner_id + status + attempted_status) o motivo corto/ausente (errors.status_reason) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Pensioner 1 is terminated: the operator move to active is outside the lifecycle matrix. */
+                        message?: string;
+                        /** @example 1 */
+                        pensioner_id?: number;
+                        /** @example terminated */
+                        status?: string;
+                        /** @example active */
+                        attempted_status?: string;
+                    };
+                };
+            };
+        };
+    };
+    pensionersUpdateBankControl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** @description Agencia de cobro y cuenta bancaria — el marcador deriva del tipo de la agencia, jamás se declara */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: int64
+                     * @description Id de la agencia de cobro del catálogo (RF-CAT-003)
+                     * @example 1
+                     */
+                    agency_id: number;
+                    /**
+                     * @description Cuenta bancaria: 10-34 caracteres alfanuméricos (regla fina por agencia pendiente de especificación bancaria)
+                     * @example 02000012345678901234
+                     */
+                    account: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Ficha completa del pensionado con el control aplicado (shape de GET /{id}) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Pensioner"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description El rol no porta pensioners.manage (admin + director, espejo D-57) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** @example pensioners.manage */
+                        required_permission?: string;
+                    };
+                };
+            };
+            /** @description Pensionado inexistente o desactivado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pensionado terminated (un extinto no cobra), agencia inexistente o cuenta fuera del formato (el intento queda en bitácora) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Pensioner 1: the bank control assignment was rejected (the pensioner is terminated and collects nothing). */
+                        message?: string;
+                        /** @example 1 */
+                        pensioner_id?: number;
+                        /** @example the pensioner is terminated and collects nothing */
+                        reason?: string;
+                    };
+                };
+            };
+        };
+    };
     peopleIndex: {
         parameters: {
             query?: {
@@ -6285,7 +6521,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Fallecimiento registrado (o corregido) */
+            /** @description Fallecimiento registrado (o corregido) — con el advisory de pensión viva cuando aplica (S9.3) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6293,6 +6529,17 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["Person"];
+                        /** @description Presente SOLO cuando la persona tiene un pensionado VIVO: orienta la baja vía PATCH /pensioners/{id}/status (D-56 (a)) */
+                        pensioner_advisory?: {
+                            /** @example 7 */
+                            pensioner_id?: number;
+                            /**
+                             * @example active
+                             * @enum {string}
+                             */
+                            status?: "active" | "suspended";
+                            message?: string;
+                        } | null;
                     };
                 };
             };

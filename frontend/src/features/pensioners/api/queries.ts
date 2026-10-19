@@ -1,6 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
+import { useToast } from '@/components/ui/Toast';
 import type { components } from '@/types/api';
+import type { AxiosError } from 'axios';
 
 type Pensioner = components['schemas']['Pensioner'];
 
@@ -38,5 +41,49 @@ export function usePensioner(id?: number | string) {
     },
     enabled: !!id,
     staleTime: 60_000,
+  });
+}
+
+/** PATCH /pensioners/{id}/status — suspender, reanudar o extinguir (Task 61/SGP-46) */
+export function useUpdatePensionerStatus(id: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pensioners');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (input: { status: string; status_reason: string }) => {
+      const r = await http.patch<{ data: Pensioner }>(`/pensioners/${id}/status`, input);
+      return r.data.data;
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(['pensioners', 'detail', id], data);
+      qc.invalidateQueries({ queryKey: ['pensioners', 'list'] });
+      toast.success(t('status_change.success'));
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ message?: string }>;
+      toast.error(ae.response?.data?.message ?? t('status_change.error'));
+    },
+  });
+}
+
+/** PUT /pensioners/{id}/bank-control — asignar o actualizar control bancario (Task 63/SGP-48) */
+export function useUpdateBankControl(id: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pensioners');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (input: { agency_id: number; account: string }) => {
+      const r = await http.put<{ data: Pensioner }>(`/pensioners/${id}/bank-control`, input);
+      return r.data.data;
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(['pensioners', 'detail', id], data);
+      qc.invalidateQueries({ queryKey: ['pensioners', 'list'] });
+      toast.success(t('bank_control.success'));
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ message?: string }>;
+      toast.error(ae.response?.data?.message ?? t('bank_control.error'));
+    },
   });
 }
