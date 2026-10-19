@@ -178,7 +178,7 @@ export const catalogsHandlers = [
     const store = catalogStore[type];
     if (!store) {
       return HttpResponse.json(
-        { message: `Unknown catalog type: ${type}` },
+        { message: `Tipo de catálogo desconocido: ${type}` },
         { status: 404 },
       );
     }
@@ -228,7 +228,7 @@ export const catalogsHandlers = [
     const type = params.type as string;
     const store = catalogStore[type];
     if (!store) {
-      return HttpResponse.json({ message: `Unknown catalog type: ${type}` }, { status: 404 });
+      return HttpResponse.json({ message: `Tipo de catálogo desconocido: ${type}` }, { status: 404 });
     }
 
     const body = (await request.json()) as Record<string, unknown>;
@@ -236,7 +236,7 @@ export const catalogsHandlers = [
     // Validar campos requeridos
     if (!body.name) {
       return HttpResponse.json(
-        { message: 'The name field is required.', errors: { name: ['The name field is required.'] } },
+        { message: 'El nombre es obligatorio.', errors: { name: ['El nombre es obligatorio.'] } },
         { status: 422 },
       );
     }
@@ -245,8 +245,8 @@ export const catalogsHandlers = [
     if (body.code && Array.from(store.values()).some((i) => i.code === body.code)) {
       return HttpResponse.json(
         {
-          message: 'The code has already been taken.',
-          errors: { code: ['The code has already been taken.'] },
+          message: 'El código ya está en uso.',
+          errors: { code: ['El código ya está en uso.'] },
         },
         { status: 422 },
       );
@@ -286,11 +286,11 @@ export const catalogsHandlers = [
     const id = parseInt(params.id as string, 10);
     const store = catalogStore[type];
     if (!store) {
-      return HttpResponse.json({ message: `Unknown catalog type: ${type}` }, { status: 404 });
+      return HttpResponse.json({ message: `Tipo de catálogo desconocido: ${type}` }, { status: 404 });
     }
     const item = store.get(id);
     if (!item) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
     return HttpResponse.json({ data: item });
   }),
@@ -301,11 +301,11 @@ export const catalogsHandlers = [
     const id = parseInt(params.id as string, 10);
     const store = catalogStore[type];
     if (!store) {
-      return HttpResponse.json({ message: `Unknown catalog type: ${type}` }, { status: 404 });
+      return HttpResponse.json({ message: `Tipo de catálogo desconocido: ${type}` }, { status: 404 });
     }
     const item = store.get(id);
     if (!item) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
     const body = (await request.json()) as Record<string, unknown>;
 
@@ -313,8 +313,8 @@ export const catalogsHandlers = [
     if (body.code !== undefined && body.code !== item.code) {
       return HttpResponse.json(
         {
-          message: 'The code field cannot be modified after creation.',
-          errors: { code: ['The code field cannot be modified after creation.'] },
+          message: 'El código no se puede modificar después de la creación.',
+          errors: { code: ['El código no se puede modificar después de la creación.'] },
         },
         { status: 422 },
       );
@@ -348,19 +348,19 @@ export const catalogsHandlers = [
     const id = parseInt(params.id as string, 10);
     const store = catalogStore[type];
     if (!store) {
-      return HttpResponse.json({ message: `Unknown catalog type: ${type}` }, { status: 404 });
+      return HttpResponse.json({ message: `Tipo de catálogo desconocido: ${type}` }, { status: 404 });
     }
     const item = store.get(id);
     if (!item) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
     if (item.deactivated_at) {
-      return HttpResponse.json({ message: 'Already deactivated.' }, { status: 409 });
+      return HttpResponse.json({ message: 'Ya desactivado.' }, { status: 409 });
     }
     // Simular referencias activas (en real, el backend valida FK)
     if (id <= 10) {
       return HttpResponse.json(
-        { message: 'Cannot deactivate: there are entities referencing this entry.' },
+        { message: 'No se puede desactivar: hay entidades que referencian esta entrada.' },
         { status: 409 },
       );
     }
@@ -375,11 +375,11 @@ export const catalogsHandlers = [
     const id = parseInt(params.id as string, 10);
     const store = catalogStore[type];
     if (!store) {
-      return HttpResponse.json({ message: `Unknown catalog type: ${type}` }, { status: 404 });
+      return HttpResponse.json({ message: `Tipo de catálogo desconocido: ${type}` }, { status: 404 });
     }
     const item = store.get(id);
     if (!item) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
     item.deactivated_at = null;
     store.set(id, item);

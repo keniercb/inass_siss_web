@@ -85,7 +85,7 @@ export const pensionersHandlers = [
   http.get(`${API_BASE}/pensioners/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     const pensioner = pensioners.get(id);
-    if (!pensioner) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!pensioner) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     return HttpResponse.json({ data: pensioner });
   }),
 ];

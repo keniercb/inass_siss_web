@@ -74,7 +74,7 @@ export const settingsHandlers = [
   http.get(`${API_BASE}/general-settings/current`, () => {
     const active = Array.from(versions.values()).find((v) => v.active);
     if (!active) {
-      return HttpResponse.json({ message: 'No active configuration.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No hay configuración activa.' }, { status: 404 });
     }
     return HttpResponse.json({ data: active });
   }),
@@ -84,7 +84,7 @@ export const settingsHandlers = [
     const id = parseInt(params.id as string, 10);
     const version = versions.get(id);
     if (!version) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
     return HttpResponse.json({ data: version });
   }),
@@ -98,7 +98,7 @@ export const settingsHandlers = [
     const errors: Record<string, string[]> = {};
     for (const f of deprecatedFields) {
       if (body[f] !== undefined) {
-        errors[f] = [`The ${f} field is deprecated and no longer accepted.`];
+        errors[f] = [`El campo ${f} está deprecado y no se acepta.`];
       }
     }
 
@@ -106,17 +106,17 @@ export const settingsHandlers = [
     const required = ['combatant_threshold_date', 'pre_threshold_percent', 'post_threshold_percent', 'internationalist_increment', 'minimum_pension', 'maximum_pension', 'minimum_pension_increment'];
     for (const f of required) {
       if (body[f] === undefined || body[f] === null || body[f] === '') {
-        errors[f] = [`The ${f} field is required.`];
+        errors[f] = [`El campo ${f} es obligatorio.`];
       }
     }
 
     // Validar maximum_pension >= minimum_pension
     if (typeof body.minimum_pension === 'number' && typeof body.maximum_pension === 'number' && body.maximum_pension < body.minimum_pension) {
-      errors.maximum_pension = ['The maximum pension must be greater than or equal to the minimum pension.'];
+      errors.maximum_pension = ['La pensión máxima debe ser mayor o igual que la pensión mínima.'];
     }
 
     if (Object.keys(errors).length > 0) {
-      return HttpResponse.json({ message: 'Validation error.', errors }, { status: 422 });
+      return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
     }
 
     // Desactivar la versión activa actual
@@ -156,17 +156,17 @@ export const settingsHandlers = [
     const id = parseInt(params.id as string, 10);
     const version = versions.get(id);
     if (!version) {
-      return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     }
 
     if (version.active) {
       return HttpResponse.json(
-        { message: 'The version is active and cannot be deleted. Publish a new version to change it.' },
+        { message: 'La versión está activa y no se puede eliminar. Publique una nueva versión para cambiarla.' },
         { status: 409 },
       );
     }
 
     versions.delete(id);
-    return HttpResponse.json({ message: 'Version deleted.' });
+    return HttpResponse.json({ message: 'Versión eliminada.' });
   }),
 ];

@@ -47,10 +47,10 @@ export const authHandlers = [
     if (!body.email || !body.password) {
       return HttpResponse.json(
         {
-          message: 'The email field is required. (and 1 more error)',
+          message: 'El email es obligatorio. (y 1 error más)',
           errors: {
-            email: body.email ? [] : ['The email field is required.'],
-            password: body.password ? [] : ['The password field is required.'],
+            email: body.email ? [] : ['El email es obligatorio.'],
+            password: body.password ? [] : ['La contraseña es obligatoria.'],
           },
         },
         { status: 422 },
@@ -62,8 +62,8 @@ export const authHandlers = [
     if (!emailRegex.test(body.email)) {
       return HttpResponse.json(
         {
-          message: 'The email field must be a valid email address.',
-          errors: { email: ['The email field must be a valid email address.'] },
+          message: 'El email debe ser una dirección válida.',
+          errors: { email: ['El email debe ser una dirección válida.'] },
         },
         { status: 422 },
       );
@@ -84,7 +84,7 @@ export const authHandlers = [
         );
       }
       return HttpResponse.json(
-        { message: 'Invalid credentials.' },
+        { message: 'Credenciales inválidas.' },
         { status: 401 },
       );
     }

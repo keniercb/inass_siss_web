@@ -46,7 +46,7 @@ export const usersHandlers = [
   http.post(`${API_BASE}/users`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     if (!body.name || !body.email || !body.password) {
-      return HttpResponse.json({ message: 'Validation error.', errors: { name: !body.name ? ['The name field is required.'] : [], email: !body.email ? ['The email field is required.'] : [], password: !body.password ? ['The password field is required.'] : [] } }, { status: 422 });
+      return HttpResponse.json({ message: 'Error de validación.', errors: { name: !body.name ? ['El nombre es obligatorio.'] : [], email: !body.email ? ['El email es obligatorio.'] : [], password: !body.password ? ['La contraseña es obligatoria.'] : [] } }, { status: 422 });
     }
     if (Array.from(users.values()).some((u) => u.email === body.email)) {
       return HttpResponse.json({ message: 'A user with that email already exists.' }, { status: 409 });
@@ -59,13 +59,13 @@ export const usersHandlers = [
   // GET /users/{id}
   http.get(`${API_BASE}/users/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10); const u = users.get(id);
-    if (!u) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!u) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     return HttpResponse.json({ data: u });
   }),
   // PATCH /users/{id}
   http.patch(`${API_BASE}/users/:id`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10); const u = users.get(id);
-    if (!u) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!u) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     const updated: User = { ...u, name: body.name as string ?? u.name, roles: body.roles as string[] ?? u.roles, permissions: [] };
     users.set(id, updated);
@@ -74,31 +74,31 @@ export const usersHandlers = [
   // DELETE /users/{id}
   http.delete(`${API_BASE}/users/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10); const u = users.get(id);
-    if (!u) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!u) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     u.status = 'inactive';
     return HttpResponse.json({ message: 'Deactivated.' });
   }),
   // POST /users/{id}/restore
   http.post(`${API_BASE}/users/:id/restore`, ({ params }) => {
     const id = parseInt(params.id as string, 10); const u = users.get(id);
-    if (!u) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!u) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     u.status = 'active';
     return HttpResponse.json({ data: u });
   }),
   // POST /users/{id}/unlock
   http.post(`${API_BASE}/users/:id/unlock`, ({ params }) => {
     const id = parseInt(params.id as string, 10); const u = users.get(id);
-    if (!u) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!u) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     u.locked = false; u.locked_until = null; u.failed_login_attempts = 0;
     return HttpResponse.json({ data: u });
   }),
   // PATCH /users/{id}/password
   http.patch(`${API_BASE}/users/:id/password`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10); const u = users.get(id);
-    if (!u) return HttpResponse.json({ message: 'Not found.' }, { status: 404 });
+    if (!u) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     const body = (await request.json()) as Record<string, unknown>;
     if (!body.password || (body.password as string).length < 8) {
-      return HttpResponse.json({ message: 'Validation error.', errors: { password: ['The password must be at least 8 characters.'] } }, { status: 422 });
+      return HttpResponse.json({ message: 'Error de validación.', errors: { password: ['La contraseña debe tener al menos 8 caracteres.'] } }, { status: 422 });
     }
     return HttpResponse.json({ message: 'Password reset.' });
   }),
