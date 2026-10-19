@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.17.0"
+        "version": "1.19.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -5492,6 +5492,258 @@
                 ]
             }
         },
+        "/api/v1/pensioners/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Pensionados"
+                ],
+                "summary": "Ciclo de vida de la pensión: suspensión, reanudación o extinción",
+                "description": "La superficie de ESCRITURA del operador (RF-PEN-003, Task 61/SGP-46, D-53..D-58): mueve el estado de la pensión con un motivo OBLIGATORIO (min:10). La matriz del operador (9 celdas): active→suspended/terminated, suspended→active/terminated (reanudación), terminated→NADA (el operador JAMÁS revive — doctrina D-42 (b) de ADR-42; la re-aprobación administrativa del expediente de origen es la única excepción auditada) y mismo estado→422 (una transición debe MOVER). Invariantes: `amount` solo se mueve con la re-aprobación del expediente y `origin_case` JAMÁS se toca (el espejo es unidireccional caso→pensionado — el expediente queda approved mientras la pensión se suspende: S10 pagará por pensioner.status). El 200 devuelve la FICHA COMPLETA (shape idéntico a GET /{id}: la última fila de status_history ES la evidencia de la transición, con motivo, actor y momento); el intento rechazado por la matriz queda en la bitácora tras el rollback (visible al auditor, jamás en status_history).",
+                "operationId": "pensionersUpdateStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Estado destino (enum normativo) y motivo obligatorio de la transición",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status",
+                                    "status_reason"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "suspended",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "terminated"
+                                        ]
+                                    },
+                                    "status_reason": {
+                                        "type": "string",
+                                        "example": "Suspensión por período de estancia en el exterior (resolución 123/2026)"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ficha completa del pensionado con la transición aplicada (shape de GET /{id})",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Pensioner"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "El rol no porta pensioners.manage (admin + director, D-57)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "required_permission": {
+                                            "type": "string",
+                                            "example": "pensioners.manage"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pensionado inexistente o desactivado"
+                    },
+                    "422": {
+                        "description": "Fuera de la matriz del operador (mensaje + pensioner_id + status + attempted_status) o motivo corto/ausente (errors.status_reason)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pensioner 1 is terminated: the operator move to active is outside the lifecycle matrix."
+                                        },
+                                        "pensioner_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "terminated"
+                                        },
+                                        "attempted_status": {
+                                            "type": "string",
+                                            "example": "active"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pensioners/{id}/bank-control": {
+            "put": {
+                "tags": [
+                    "Pensionados"
+                ],
+                "summary": "Control bancario del cobro: asignación o actualización",
+                "description": "La superficie anidada del control bancario (Task 63/SGP-48, RF-PAG-001/RF-PAG-002, D-60..D-64, tres correcciones de usuario 2026-10-20): el control es LA información de dónde se acredita el dinero del pensionado, relación 1 a 1 SIN endpoints independientes — parte del ciclo de vida del pensionado. UPSERT: la PRIMERA llamada crea el control (emite el número GLOBAL del scope bank_control, ADR-17/RN-009, estable de por vida) y las siguientes ACTUALIZAN EN SITIO la misma fila (agencia de cobro, cuenta y marcador derivado juntos — jamás desactiva+crea con número nuevo, la bala original de RF-PAG-002 quedó anulada por corrección de usuario). El marcador `electronic_payroll` JAMÁS viaja en el body: deriva de la forma de pago del tipo de la agencia (agency_types.payment_form = 'nomina electronica') y se recalcula en cada escritura (D-64) — cambiar la agencia es cómo se mueve el marcador. Cuenta: 10-34 caracteres alfanuméricos (la regla fina por agencia queda pendiente de especificación bancaria). 422 para un pensionado terminated (un extinto no cobra; active/suspended actualizan sin fricción), agencia inexistente o cuenta fuera de formato — el intento rechazado queda en la bitácora tras el rollback, visible al auditor. 200 = ficha completa (shape de GET /{id}): la proyección bank_control ES la evidencia. El número también viaja en cada fila del listado.",
+                "operationId": "pensionersUpdateBankControl",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Agencia de cobro y cuenta bancaria — el marcador deriva del tipo de la agencia, jamás se declara",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "agency_id",
+                                    "account"
+                                ],
+                                "properties": {
+                                    "agency_id": {
+                                        "description": "Id de la agencia de cobro del catálogo (RF-CAT-003)",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 1
+                                    },
+                                    "account": {
+                                        "description": "Cuenta bancaria: 10-34 caracteres alfanuméricos (regla fina por agencia pendiente de especificación bancaria)",
+                                        "type": "string",
+                                        "example": "02000012345678901234"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ficha completa del pensionado con el control aplicado (shape de GET /{id})",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Pensioner"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "El rol no porta pensioners.manage (admin + director, espejo D-57)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "required_permission": {
+                                            "type": "string",
+                                            "example": "pensioners.manage"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pensionado inexistente o desactivado"
+                    },
+                    "422": {
+                        "description": "Pensionado terminated (un extinto no cobra), agencia inexistente o cuenta fuera del formato (el intento queda en bitácora)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pensioner 1: the bank control assignment was rejected (the pensioner is terminated and collects nothing)."
+                                        },
+                                        "pensioner_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "reason": {
+                                            "type": "string",
+                                            "example": "the pensioner is terminated and collects nothing"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/people": {
             "get": {
                 "tags": [
@@ -6034,7 +6286,7 @@
                     "Personas"
                 ],
                 "summary": "Registro de fallecimiento",
-                "description": "Fija (o corrige) la fecha de fallecimiento (RF-PER-003): estrictamente posterior al nacimiento, nunca futura, datable y auditada con valores previos. Persona fallecida queda marcada como deceased en búsquedas y bloques para nuevos trámites.",
+                "description": "Fija (o corrige) la fecha de fallecimiento (RF-PER-003): estrictamente posterior al nacimiento, nunca futura, datable y auditada con valores previos. Persona fallecida queda marcada como deceased en búsquedas y bloquea para nuevos trámites. Desde S9.3 (Task 61/SGP-46, D-56 (a)): cuando la persona tiene un pensionado VIVO (active o suspended), el 200 gana el advisory pensioner_advisory {pensioner_id, status, message} que orienta la baja de la pensión vía PATCH /pensioners/{id}/status — SUGIERE, jamás ejecuta: la terminación sigue siendo decisión del director con motivo (RF-PEN-003); sin pensionado vivo el campo no viaja.",
                 "operationId": "peopleRegisterDeath",
                 "parameters": [
                     {
@@ -6069,7 +6321,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Fallecimiento registrado (o corregido)",
+                        "description": "Fallecimiento registrado (o corregido) — con el advisory de pensión viva cuando aplica (S9.3)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6079,6 +6331,28 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/components/schemas/Person"
+                                        },
+                                        "pensioner_advisory": {
+                                            "description": "Presente SOLO cuando la persona tiene un pensionado VIVO: orienta la baja vía PATCH /pensioners/{id}/status (D-56 (a))",
+                                            "properties": {
+                                                "pensioner_id": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active",
+                                                    "enum": [
+                                                        "active",
+                                                        "suspended"
+                                                    ]
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
                                         }
                                     },
                                     "type": "object"
@@ -9964,10 +10238,10 @@
             },
             "Pensioner": {
                 "title": "Pensionado",
-                "description": "Pensionado (RF-PEN-001/RF-PEN-002): la fila nace de la aprobación del expediente con la cuantía congelada EXACTA y espeja su ciclo administrativo. La persona viaja como proyección COMPLETA, tipo y régimen como {id, code, name} y el expediente de origen como referencia mínima {id, number, status}. La ficha añade status_history (la línea de tiempo derivada de la bitácora, ADR-42) y bank_controls ([] hasta el Sprint 10, RF-PAG-002); las filas del listado viajan sin ambos.",
+                "description": "Pensionado (RF-PEN-001/RF-PEN-002): la fila nace de la aprobación del expediente con la cuantía congelada EXACTA y espeja su ciclo administrativo. La persona viaja como proyección COMPLETA, tipo y régimen como {id, code, name} y el expediente de origen como referencia mínima {id, number, status}. La ficha añade status_history (la línea de tiempo derivada de la bitácora, ADR-42); bank_control viaja en TODO GET del pensionado — proyección mínima en las filas (el número GLOBAL siempre legible, corrección de usuario de Task 63) y completa en la ficha (RF-PAG-002).",
                 "properties": {
                     "id": {
-                        "description": "Pensioner projection (Task 60/SGP-45, S9.2/RF-PEN-002, D-48/D-49).\n\nThe listing row and the ficha share this shape: the born row with\nits inherited cuantía, the status of the normative catalog and the\nprojections the consultation eager-loads — the FULL person (user\nrule 3, PersonResource reused so the projection never drifts from\nthe people surface), the type/regime catalogs as {id, code, name}\nand the origin case as the minimal {id, number, status} reference\n(the client with cases.view follows to the full case; the ficha\nnever drags the case subrecords).\n\nThe ficha EXCLUSIVE evidence rides only when the detail timeline\nis attached (constructor argument): `status_history` — the\nbitácora-derived timeline (ADR-42, one row per status change plus\nthe birth) — and `bank_controls: []`, the RF contract travelling\nempty until Sprint 10 provisions it (RF-PAG-002, dependency\nregistered).",
+                        "description": "Pensioner projection (Task 60/SGP-45, S9.2/RF-PEN-002, D-48/D-49).\n\nThe listing row and the ficha share this shape: the born row with\nits inherited cuantía, the status of the normative catalog and the\nprojections the consultation eager-loads — the FULL person (user\nrule 3, PersonResource reused so the projection never drifts from\nthe people surface), the type/regime catalogs as {id, code, name}\nand the origin case as the minimal {id, number, status} reference\n(the client with cases.view follows to the full case; the ficha\nnever drags the case subrecords).\n\nThe ficha EXCLUSIVE evidence rides only when the detail timeline\nis attached (constructor argument): `status_history` — the\nbitácora-derived timeline (ADR-42, one row per status change plus\nthe birth) — while `bank_control` travels EVERYWHERE (Task 63,\nthe user correction: the GLOBAL number must be readable from the\npensioner GETs): the MINIMAL projection {id, number, agency,\nelectronic_payroll} on listing rows, the full projection (+\naccount and write timestamps) on the ficha shapes, null while\nthe nested PUT has not provisioned the control (RF-PAG-002).",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -10090,12 +10364,59 @@
                             "$ref": "#/components/schemas/PensionerStatusHistory"
                         }
                     },
-                    "bank_controls": {
-                        "description": "FICHA: controles bancarios del cobro (RF-PAG-002) — viaja VACÍO hasta el Sprint 10, cuando el módulo Payments asigne controles; ausente en las filas del listado",
-                        "type": "array",
-                        "items": {
-                            "type": "object"
-                        }
+                    "bank_control": {
+                        "description": "EL control bancario del cobro (RF-PAG-001/002, Task 63/SGP-48): relación 1:1 — número GLOBAL del scope bank_control (ADR-17), agencia {id, code, name} y marcador derivado del tipo de la agencia (electronic_payroll, D-64). Proyección mínima en las filas del listado; la ficha añade account, created_at y updated_at. null mientras PUT /pensioners/{id}/bank-control no haya provisto el control.",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "number": {
+                                "description": "Número de control GLOBAL del sistema — emitido UNA vez al crear (secuencia bank_control, RN-009) y estable de por vida",
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "agency": {
+                                "description": "Agencia de cobro del catálogo",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "electronic_payroll": {
+                                "description": "Marcador de nómina electrónica — DERIVADO de la forma de pago del tipo de la agencia en cada escritura (D-64), jamás declarado por el operador",
+                                "type": "boolean",
+                                "example": false
+                            },
+                            "account": {
+                                "description": "FICHA: cuenta bancaria (10-34 alfanumérica)",
+                                "type": "string",
+                                "example": "02000012345678901234"
+                            },
+                            "created_at": {
+                                "description": "FICHA: momento de la creación del control",
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "updated_at": {
+                                "description": "FICHA: última actualización en sitio (agencia/cuenta/marcador)",
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
                     },
                     "created_at": {
                         "description": "Momento del alta (la aprobación del expediente de origen)",
@@ -10742,7 +11063,7 @@
         },
         {
             "name": "Pensionados",
-            "description": "Pensionados: consulta de solo lectura — directorio filtrable y ficha con la línea de estados derivada de la bitácora (RF-PEN-002, Task 60/SGP-45, S9.2); el alta nace de la aprobación (Task 59/SGP-44) y el ciclo de vida del operador llega con S9.3"
+            "description": "Pensionados: consulta (directorio filtrable y ficha con la línea de estados derivada de la bitácora — Task 60/SGP-45, S9.2), ciclo de vida del operador — PATCH /status: suspensión, reanudación y extinción con motivo obligatorio (Task 61/SGP-46, S9.3) — y el control bancario del cobro 1:1 anidado — PUT /bank-control: upsert en sitio con número global estable y marcador derivado del tipo de agencia (Task 63/SGP-48, S10.2/S10.3); el alta nace de la aprobación (Task 59/SGP-44)"
         }
     ]
 }
