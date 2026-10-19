@@ -1,0 +1,60 @@
+{
+  "list": {
+    "title": "Pensionados",
+    "description": "Directorio de pensionados",
+    "empty": "No hay pensionados para los filtros seleccionados",
+    "search_placeholder": "Buscar por CI o nombre…",
+    "filter": {
+      "all": "Todos",
+      "active": "Activos",
+      "suspended": "Suspendidos",
+      "terminated": "Terminados"
+    },
+    "columns": {
+      "person": "Persona",
+      "amount": "Cuantía",
+      "type": "Tipo",
+      "regime": "Régimen",
+      "status": "Estado",
+      "origin_case": "Expediente",
+      "created_at": "Alta"
+    },
+    "status": {
+      "active": "Activo",
+      "suspended": "Suspendido",
+      "terminated": "Terminado"
+    }
+  },
+  "detail": {
+    "back_to_list": "Volver al listado",
+    "not_found": "Pensionado no encontrado",
+    "tabs": {
+      "summary": "Resumen",
+      "history": "Historial"
+    },
+    "fields": {
+      "amount": "Cuantía",
+      "status": "Estado",
+      "status_reason": "Motivo del último cambio",
+      "pension_type": "Tipo de pensión",
+      "pension_regime": "Régimen de pensión",
+      "origin_case": "Expediente de origen",
+      "created_at": "Fecha de alta",
+      "updated_at": "Última actualización",
+      "person": "Persona pensionada",
+      "identity_number": "Carné de identidad",
+      "full_name": "Nombre completo",
+      "sex": "Sexo",
+      "birth_date": "Fecha de nacimiento",
+      "address": "Dirección",
+      "deceased": "Fallecido"
+    },
+    "section": {
+      "person_data": "Datos de la persona",
+      "pension_data": "Datos de la pensión",
+      "status_history": "Línea de tiempo de estados",
+      "bank_controls": "Controles bancarios"
+    },
+    "bank_controls_empty": "Sin controles bancarios asignados (disponible a partir del Sprint 10)"
+  }
+}

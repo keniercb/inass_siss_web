@@ -83,6 +83,12 @@ export const sidebarConfig: SidebarItem[] = [
     permiso: 'cases.view',
   },
   {
+    label: 'Pensionados',
+    path: '/pensionados',
+    icon: Users,
+    permiso: 'pensioners.view',
+  },
+  {
     label: 'Base legal',
     path: '/bases-legales',
     icon: Scale,

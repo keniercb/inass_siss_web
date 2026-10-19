@@ -1,0 +1,60 @@
+{
+  "list": {
+    "title": "Pensioners",
+    "description": "Pensioners directory",
+    "empty": "No pensioners match the selected filters",
+    "search_placeholder": "Search by ID or name…",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "suspended": "Suspended",
+      "terminated": "Terminated"
+    },
+    "columns": {
+      "person": "Person",
+      "amount": "Amount",
+      "type": "Type",
+      "regime": "Regime",
+      "status": "Status",
+      "origin_case": "Case",
+      "created_at": "Created"
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended",
+      "terminated": "Terminated"
+    }
+  },
+  "detail": {
+    "back_to_list": "Back to list",
+    "not_found": "Pensioner not found",
+    "tabs": {
+      "summary": "Summary",
+      "history": "History"
+    },
+    "fields": {
+      "amount": "Amount",
+      "status": "Status",
+      "status_reason": "Last change reason",
+      "pension_type": "Pension type",
+      "pension_regime": "Pension regime",
+      "origin_case": "Origin case",
+      "created_at": "Created at",
+      "updated_at": "Last updated",
+      "person": "Pensioner person",
+      "identity_number": "ID number",
+      "full_name": "Full name",
+      "sex": "Sex",
+      "birth_date": "Birth date",
+      "address": "Address",
+      "deceased": "Deceased"
+    },
+    "section": {
+      "person_data": "Person data",
+      "pension_data": "Pension data",
+      "status_history": "Status timeline",
+      "bank_controls": "Bank controls"
+    },
+    "bank_controls_empty": "No bank controls assigned (available from Sprint 10)"
+  }
+}
