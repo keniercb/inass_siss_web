@@ -23,7 +23,7 @@ const pensioners = new Map<number, Pensioner>([
     status_history: [
       { from_status: null, to_status: 'active', status_reason: 'Aprobado conforme ley 105', changed_by: { id: 2, name: 'Director' }, changed_at: '2026-09-20T10:00:00Z' } as never,
     ],
-    bank_controls: [],
+    bank_control: null,
     created_at: '2026-09-20T10:00:00Z',
     updated_at: '2026-09-20T10:00:00Z',
   } as Pensioner],
@@ -44,7 +44,7 @@ const pensioners = new Map<number, Pensioner>([
       { from_status: null, to_status: 'active', status_reason: 'Aprobado', changed_by: { id: 2, name: 'Director' }, changed_at: '2026-08-15T12:00:00Z' } as never,
       { from_status: 'active', to_status: 'suspended', status_reason: 'Suspendido por verificación documental', changed_by: { id: 1, name: 'SGP Demo Admin' }, changed_at: '2026-09-01T09:00:00Z' } as never,
     ],
-    bank_controls: [],
+    bank_control: null,
     created_at: '2026-08-15T12:00:00Z',
     updated_at: '2026-09-01T09:00:00Z',
   } as Pensioner],
@@ -66,8 +66,8 @@ export const pensionersHandlers = [
     if (pensionTypeId) items = items.filter((p) => String(p.pension_type_id) === pensionTypeId);
     if (pensionRegimeId) items = items.filter((p) => String(p.pension_regime_id) === pensionRegimeId);
 
-    // Sin status_history ni bank_controls en las filas del listado
-    items = items.map(({ status_history, bank_controls, ...row }) => row as Pensioner);
+    // Sin status_history ni bank_control en las filas del listado
+    items = items.map(({ status_history, bank_control, ...row }) => row as Pensioner);
 
     items.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
 
@@ -87,5 +87,102 @@ export const pensionersHandlers = [
     const pensioner = pensioners.get(id);
     if (!pensioner) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
     return HttpResponse.json({ data: pensioner });
+  }),
+
+  // PATCH /pensioners/{id}/status — suspender, reanudar o extinguir (Task 61/SGP-46)
+  http.patch(`${API_BASE}/pensioners/:id/status`, async ({ request, params }) => {
+    const id = parseInt(params.id as string, 10);
+    const p = pensioners.get(id);
+    if (!p) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+
+    const body = (await request.json()) as { status?: string; status_reason?: string };
+    const errors: Record<string, string[]> = {};
+
+    if (!body.status) errors.status = ['El estado es obligatorio.'];
+    if (!body.status_reason || body.status_reason.length < 10) {
+      errors.status_reason = ['El motivo es obligatorio y debe tener al menos 10 caracteres.'];
+    }
+
+    // Matriz del operador: active→{suspended,terminated}, suspended→{active,terminated}, terminated→NADA
+    const currentStatus = p.status ?? 'active';
+    const matrix: Record<string, string[]> = {
+      active: ['suspended', 'terminated'],
+      suspended: ['active', 'terminated'],
+      terminated: [],
+    };
+    const allowed = matrix[currentStatus] ?? [];
+    if (body.status && !allowed.includes(body.status)) {
+      if (currentStatus === body.status) {
+        errors.status = ['La transición debe cambiar el estado actual.'];
+      } else {
+        return HttpResponse.json({
+          message: `El pensionado ${id} está ${currentStatus}: la transición a ${body.status} está fuera de la matriz del operador.`,
+          pensioner_id: id,
+          status: currentStatus,
+          attempted_status: body.status,
+        }, { status: 422 });
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
+    }
+
+    // Aplicar transición
+    const updated: Pensioner = {
+      ...p,
+      status: body.status as Pensioner['status'],
+      status_reason: body.status_reason,
+      status_history: [
+        ...(p.status_history ?? []),
+        { from_status: currentStatus, to_status: body.status as never, status_reason: body.status_reason, changed_by: { id: 1, name: 'SGP Demo Admin' }, changed_at: new Date().toISOString() } as never,
+      ],
+      updated_at: new Date().toISOString(),
+    };
+    pensioners.set(id, updated);
+    return HttpResponse.json({ data: updated });
+  }),
+
+  // PUT /pensioners/{id}/bank-control — asignar o actualizar (Task 63/SGP-48)
+  http.put(`${API_BASE}/pensioners/:id/bank-control`, async ({ request, params }) => {
+    const id = parseInt(params.id as string, 10);
+    const p = pensioners.get(id);
+    if (!p) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+
+    // 422 si terminated (no cobra)
+    if (p.status === 'terminated') {
+      return HttpResponse.json({ message: 'Un pensionado extinguido no puede tener control bancario.' }, { status: 422 });
+    }
+
+    const body = (await request.json()) as { agency_id?: number; account?: string };
+    const errors: Record<string, string[]> = {};
+    if (!body.agency_id) errors.agency_id = ['La agencia de cobro es obligatoria.'];
+    if (!body.account || body.account.length < 10 || body.account.length > 34) {
+      errors.account = ['La cuenta bancaria es obligatoria y debe tener entre 10 y 34 caracteres.'];
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return HttpResponse.json({ message: 'Error de validación.', errors }, { status: 422 });
+    }
+
+    // Upsert: si ya tiene bank_control, actualiza en sitio (mismo número); si no, crea con número nuevo
+    const existing = p.bank_control as { id?: number; number?: number; agency?: object; account?: string; electronic_payroll?: boolean; created_at?: string; updated_at?: string } | null | undefined;
+    const bankControl = {
+      id: existing?.id ?? id,
+      number: existing?.number ?? id, // número global simulado = id del pensionado
+      agency: { id: body.agency_id, code: 'BPA01', name: 'BPA Agencia 1' },
+      account: body.account,
+      electronic_payroll: body.agency_id === 2, // simulación: agencia 2 = nómina electrónica
+      created_at: existing?.created_at ?? new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const updated: Pensioner = {
+      ...p,
+      bank_control: bankControl as never,
+      updated_at: new Date().toISOString(),
+    };
+    pensioners.set(id, updated);
+    return HttpResponse.json({ data: updated });
   }),
 ];
