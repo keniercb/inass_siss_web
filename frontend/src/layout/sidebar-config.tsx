@@ -5,7 +5,6 @@ import {
   Building2,
   FolderKanban,
   Scale,
-  Wallet,
   Landmark,
   BarChart3,
   ShieldCheck,
@@ -93,12 +92,6 @@ export const sidebarConfig: SidebarItem[] = [
     path: '/bases-legales',
     icon: Scale,
     permiso: 'legalbases.view',
-  },
-  {
-    label: 'Pensionados',
-    path: '/pensionados',
-    icon: Wallet,
-    permiso: 'pensioners.view',
   },
   {
     label: 'Pagos',
