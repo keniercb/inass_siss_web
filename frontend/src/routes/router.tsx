@@ -21,6 +21,8 @@ import { UsersListPage } from '@/features/users/pages/UsersListPage';
 import { RolesListPage } from '@/features/roles/pages/RolesListPage';
 import { PensionCasesListPage } from '@/features/pension-cases/pages/PensionCasesListPage';
 import { PensionCaseDetailPage } from '@/features/pension-cases/pages/PensionCaseDetailPage';
+import { PensionersListPage } from '@/features/pensioners/pages/PensionersListPage';
+import { PensionerDetailPage } from '@/features/pensioners/pages/PensionerDetailPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -164,6 +166,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute permiso="cases.view">
             <PensionCaseDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'pensionados',
+        element: (
+          <ProtectedRoute permiso="pensioners.view">
+            <PensionersListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'pensionados/:id',
+        element: (
+          <ProtectedRoute permiso="pensioners.view">
+            <PensionerDetailPage />
           </ProtectedRoute>
         ),
       },

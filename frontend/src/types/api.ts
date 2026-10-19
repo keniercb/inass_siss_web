@@ -695,6 +695,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pensioners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado de pensionados
+         * @description Directorio de pensionados (RF-PEN-002, Task 60/SGP-45): filtrable por estado (enum normativo active/suspended/terminated), tipo y régimen de pensión — ids sin sonda: un id desconocido responde una página VACÍA, jamás 422 (el patrón de los filtros del listado de expedientes) —; paginado (per_page ≤ 100, default 15), ordenado por fecha de alta (created_at/id DESC, los más recientes primero) y SIN alcance territorial (RF-PEN-002 no lo exige: el scope de oficina de expedientes es la corrección de usuario de RF-EXP-011). El filtro «provincia del control bancario» del requisito queda como dependencia del Sprint 10: bank_controls (RF-PAG-001) aún no existe (D-47 (a)). Cada fila viaja con la proyección COMPLETA de la persona (regla de usuario 3), tipo/régimen {id, code, name} y la referencia mínima al expediente de origen {id, number, status} — cargas anticipadas, sin segunda consulta por fila. Las filas NO llevan status_history ni bank_controls: esa evidencia es exclusiva de la ficha.
+         */
+        get: operations["pensionersIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pensioners/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ficha del pensionado
+         * @description La ficha del pensionado (RF-PEN-002, Task 60/SGP-45, D-49): la persona COMPLETA (regla de usuario 3), tipo y régimen {id, code, name}, la cuantía heredada del congelado de la aprobación, la referencia mínima al expediente de origen {id, number, status} — el detalle completo del expediente vive en su propio endpoint (cases.view) —, la línea de tiempo status_history DERIVADA DE LA BITÁCORA (ADR-42: activity_log, sin tabla de historial propia — la fila de nacimiento con from_status NULL más una fila por cambio de estado, con el motivo, el usuario responsable y el momento; el espejo administrativo del Task 59 la alimenta) y bank_controls: [] — el contrato del RF viaja vacío hasta que el Sprint 10 (RF-PAG-002) asigne controles. 404 para un pensionado inexistente o soft-deleted.
+         */
+        get: operations["pensionersShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/people": {
         parameters: {
             query?: never;
@@ -2441,6 +2481,154 @@ export interface components {
             actual_days?: number;
             /** @example 1 */
             cycles_count?: number;
+        };
+        /**
+         * Pensionado
+         * @description Pensionado (RF-PEN-001/RF-PEN-002): la fila nace de la aprobación del expediente con la cuantía congelada EXACTA y espeja su ciclo administrativo. La persona viaja como proyección COMPLETA, tipo y régimen como {id, code, name} y el expediente de origen como referencia mínima {id, number, status}. La ficha añade status_history (la línea de tiempo derivada de la bitácora, ADR-42) y bank_controls ([] hasta el Sprint 10, RF-PAG-002); las filas del listado viajan sin ambos.
+         */
+        Pensioner: {
+            /**
+             * Format: int64
+             * @description Pensioner projection (Task 60/SGP-45, S9.2/RF-PEN-002, D-48/D-49).
+             *
+             *     The listing row and the ficha share this shape: the born row with
+             *     its inherited cuantía, the status of the normative catalog and the
+             *     projections the consultation eager-loads — the FULL person (user
+             *     rule 3, PersonResource reused so the projection never drifts from
+             *     the people surface), the type/regime catalogs as {id, code, name}
+             *     and the origin case as the minimal {id, number, status} reference
+             *     (the client with cases.view follows to the full case; the ficha
+             *     never drags the case subrecords).
+             *
+             *     The ficha EXCLUSIVE evidence rides only when the detail timeline
+             *     is attached (constructor argument): `status_history` — the
+             *     bitácora-derived timeline (ADR-42, one row per status change plus
+             *     the birth) — and `bank_controls: []`, the RF contract travelling
+             *     empty until Sprint 10 provisions it (RF-PAG-002, dependency
+             *     registered).
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @example 7
+             */
+            person_id?: number;
+            /**
+             * Format: int64
+             * @description Expediente que origina al pensionado (H-04, UNIQUE — la re-aprobación tras reapertura reusa la fila)
+             * @example 3
+             */
+            origin_case_id?: number | null;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            pension_type_id?: number;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            pension_regime_id?: number;
+            /**
+             * @description Cuantía heredada del congelado de la aprobación (cuantía v3.1 con mínimo/máximo ya aplicados, DECIMAL(12,2) — H-03)
+             * @example 2127.00
+             */
+            amount?: string;
+            /**
+             * @description Estado normativo del catálogo de la sección 6 — espejo del ciclo administrativo del expediente de origen
+             * @example active
+             * @enum {string}
+             */
+            status?: "active" | "suspended" | "terminated";
+            /**
+             * @description Motivo del último cambio de estado (NULL al nacer: el nacimiento no es transición, su evidencia es la aprobación)
+             * @example Reapertura administrativa: el expediente vuelve a revisión.
+             */
+            status_reason?: string | null;
+            /** @description Persona pensionada: proyección COMPLETA (regla de usuario 3) */
+            person?: components["schemas"]["Person"] | null;
+            /** @description Tipo de pensión del catálogo */
+            pension_type?: {
+                /** Format: int64 */
+                id?: number;
+                code?: string;
+                name?: string;
+            } | null;
+            /** @description Régimen de pensión del catálogo */
+            pension_regime?: {
+                /** Format: int64 */
+                id?: number;
+                code?: string;
+                name?: string;
+            } | null;
+            /** @description Referencia mínima al expediente de origen — el detalle completo vive en GET /pension-cases/{id} (cases.view) */
+            origin_case?: {
+                /** Format: int64 */
+                id?: number;
+                /** @example 11032600001 */
+                number?: string;
+                /**
+                 * @example approved
+                 * @enum {string}
+                 */
+                status?: "submitted" | "under_review" | "approved" | "rejected";
+            } | null;
+            /** @description FICHA: línea de tiempo de estados derivada de la bitácora (ADR-42) — el nacimiento más una fila por cambio de estado; ausente en las filas del listado */
+            status_history?: components["schemas"]["PensionerStatusHistory"][];
+            /** @description FICHA: controles bancarios del cobro (RF-PAG-002) — viaja VACÍO hasta el Sprint 10, cuando el módulo Payments asigne controles; ausente en las filas del listado */
+            bank_controls?: Record<string, never>[];
+            /**
+             * Format: date-time
+             * @description Momento del alta (la aprobación del expediente de origen)
+             * @example 2026-10-12T10:30:00+00:00
+             */
+            created_at?: string;
+            /**
+             * Format: date-time
+             * @description Última escritura (montos refrescados por re-aprobación, cambios de estado)
+             * @example 2026-10-12T10:30:00+00:00
+             */
+            updated_at?: string;
+        };
+        /**
+         * Transición de estado del pensionado
+         * @description Una fila de la línea de tiempo de estados del pensionado (RF-PEN-002/RF-PEN-003), derivada de la bitácora append-only (ADR-42/ADR-19): estado previo y nuevo del catálogo normativo, motivo, usuario responsable y momento. La primera fila es el nacimiento (from_status NULL: el nacimiento no es transición, su evidencia es la aprobación). La línea de tiempo solo crece.
+         */
+        PensionerStatusHistory: {
+            /**
+             * @description Estado previo — NULL en la fila de nacimiento
+             * @example null
+             * @enum {string|null}
+             */
+            from_status?: "active" | "suspended" | "terminated" | null;
+            /**
+             * @description Estado nuevo (catálogo normativo de la sección 6)
+             * @example active
+             * @enum {string}
+             */
+            to_status?: "active" | "suspended" | "terminated";
+            /**
+             * @description Motivo del cambio de estado (la nota del espejo administrativo: nota de resolución en la re-aprobación, motivo de reapertura en la suspensión, motivo de denegación en la terminación)
+             * @example Reapertura administrativa: el expediente vuelve a revisión.
+             */
+            status_reason?: string | null;
+            /** @description Usuario responsable del cambio (null cuando la escritura ocurrió fuera de una sesión autenticada) */
+            changed_by?: {
+                /**
+                 * Format: int64
+                 * @example 3
+                 */
+                id?: number;
+                /** @example Director de Trámites */
+                name?: string;
+            } | null;
+            /**
+             * Format: date-time
+             * @description Momento del cambio (la marca de la entrada de bitácora)
+             * @example 2026-10-12T10:30:00+00:00
+             */
+            changed_at?: string;
         };
         /**
          * Persona
@@ -5304,7 +5492,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description La reapertura rompería la reservación de expediente-abierto-por-persona (devuelve el expediente vivo) */
+            /** @description La reapertura rompería la reservación de expediente-abierto-por-persona (devuelve el expediente vivo) o la persona del expediente ya ostenta un pensionado VIVO de otro caso — Task 59/SGP-44, D-43: la aprobación no provisiona una segunda pensión (devuelve el pensionado existente y su expediente de origen) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5315,6 +5503,8 @@ export interface operations {
                         case?: components["schemas"]["PensionCase"] | null;
                         case_id?: number | null;
                         status?: string | null;
+                        pensioner_id?: number | null;
+                        person_id?: number | null;
                     };
                 };
             };
@@ -5740,6 +5930,82 @@ export interface operations {
             };
             /** @description Expediente ya no editable (devuelve estado actual) */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pensionersIndex: {
+        parameters: {
+            query?: {
+                status?: "active" | "suspended" | "terminated";
+                /** @description Id del tipo de pensión del catálogo — sin sonda: un id desconocido responde página vacía */
+                pension_type_id?: number;
+                /** @description Id del régimen de pensión del catálogo — sin sonda: un id desconocido responde página vacía */
+                pension_regime_id?: number;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultados paginados con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Pensioner"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 42 */
+                            total?: number;
+                            /** @example 3 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionersShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ficha del pensionado con línea de tiempo y controles bancarios (vacíos hasta S10) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Pensioner"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Pensionado inexistente o desactivado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
