@@ -5,7 +5,6 @@ import { Plus, Eye } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { usePayments, useGeneratePayments } from '../api/queries';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { SearchSelect } from '@/components/ui/SearchSelect';
 import { Pagination } from '@/components/crud/Pagination';
 import { Dialog } from '@/components/ui/Dialog';
@@ -96,14 +95,38 @@ export function PaymentsListPage() {
 
 function GenerateModal({ onClose, t, tc }: { onClose: () => void; t: (k: string) => string; tc: (k: string) => string }) {
   const mutation = useGeneratePayments();
-  const [year, setYear] = useState(String(new Date().getFullYear()));
-  const [month, setMonth] = useState(String(new Date().getMonth() + 1));
+  const [year, setYear] = useState<string>(String(new Date().getFullYear()));
+  const [month, setMonth] = useState<string>(String(new Date().getMonth() + 1));
+  const CURRENT_YEAR = new Date().getFullYear();
   return (
     <Dialog open onClose={onClose} title={t('generate.title')} size="sm">
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('generate.year')} *</label><Input type="number" value={year} onChange={(e) => setYear(e.target.value)} /></div>
-          <div><label className="block text-sm font-medium mb-1">{t('generate.month')} *</label><Input type="number" min="1" max="12" value={month} onChange={(e) => setMonth(e.target.value)} /></div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('generate.year')} *</label>
+            <SearchSelect
+              value={Number(year) || undefined}
+              onChange={(v) => setYear(String(v ?? ''))}
+              options={Array.from({ length: 10 }, (_, i) => ({ value: CURRENT_YEAR - i, label: String(CURRENT_YEAR - i) }))}
+              placeholder={t('generate.year')}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('generate.month')} *</label>
+            <SearchSelect
+              value={Number(month) || undefined}
+              onChange={(v) => setMonth(String(v ?? ''))}
+              options={[
+                { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
+                { value: 4, label: 'Abril' }, { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
+                { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
+                { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
+              ]}
+              placeholder={t('generate.month')}
+              required
+            />
+          </div>
         </div>
         <div className="flex justify-end gap-2 pt-4 border-t border-border"><Button variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button><Button disabled={!year || !month || mutation.isPending} onClick={async () => { try { await mutation.mutateAsync({ year: Number(year), month: Number(month) }); onClose(); } catch { /* toast */ } }}>{mutation.isPending ? tc('status.loading') + '…' : t('generate.confirm')}</Button></div>
       </div>
