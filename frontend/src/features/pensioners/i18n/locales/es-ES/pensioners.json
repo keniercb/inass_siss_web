@@ -30,7 +30,8 @@
     "not_found": "Pensionado no encontrado",
     "tabs": {
       "summary": "Resumen",
-      "history": "Historial"
+      "history": "Historial",
+      "payments": "Pagos"
     },
     "fields": {
       "amount": "Cuantía",
@@ -47,7 +48,8 @@
       "sex": "Sexo",
       "birth_date": "Fecha de nacimiento",
       "address": "Dirección",
-      "deceased": "Fallecido"
+      "deceased": "Fallecido",
+      "paid_at": "Fecha de pago"
     },
     "section": {
       "person_data": "Datos de la persona",

@@ -44,12 +44,14 @@ export function PaymentsListPage() {
         {can('payments.manage') && <Button onClick={() => setGenerateOpen(true)}><Plus className="w-4 h-4" />{t('list.new')}</Button>}
       </div>
       <div className="bg-card rounded-lg border border-border p-4 mb-4 flex flex-wrap gap-3 items-center">
-        <div className="flex gap-2">
-          <Input type="number" placeholder="Año" value={year} onChange={(e) => updateParams({ year: e.target.value, page: 1 })} className="w-24" />
-          <Input type="number" placeholder="Mes" min="1" max="12" value={month} onChange={(e) => updateParams({ month: e.target.value, page: 1 })} className="w-24" />
+        <div className="w-32">
+          <SearchSelect value={year || undefined} onChange={(v) => updateParams({ year: String(v ?? ''), page: 1 })} options={Array.from({ length: 10 }, (_, i) => ({ value: new Date().getFullYear() - i, label: String(new Date().getFullYear() - i) }))} placeholder="Año" />
+        </div>
+        <div className="w-40">
+          <SearchSelect value={month || undefined} onChange={(v) => updateParams({ month: String(v ?? ''), page: 1 })} options={[{ value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' }, { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' }, { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' }]} placeholder="Mes" />
         </div>
         <div className="w-48">
-          <SearchSelect value={status || undefined} onChange={(v) => updateParams({ status: String(v ?? ''), page: 1 })} options={[{ value: '', label: t('list.status.pending') + ' / ' + t('list.status.paid') + ' / ' + t('list.status.cancelled') }, { value: 'pending', label: t('list.status.pending') }, { value: 'paid', label: t('list.status.paid') }, { value: 'cancelled', label: t('list.status.cancelled') }]} placeholder="Todos" />
+          <SearchSelect value={status || undefined} onChange={(v) => updateParams({ status: String(v ?? ''), page: 1 })} options={[{ value: '', label: 'Todos' }, { value: 'pending', label: t('list.status.pending') }, { value: 'paid', label: t('list.status.paid') }, { value: 'cancelled', label: t('list.status.cancelled') }]} placeholder="Todos" />
         </div>
       </div>
       <div className="bg-card rounded-lg border border-border overflow-hidden">

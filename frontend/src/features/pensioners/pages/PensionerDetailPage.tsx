@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, Clock, ArrowRight, GitBranch, CreditCard } from 'lucide-react';
+import { ChevronLeft, Clock, ArrowRight, GitBranch, CreditCard, Wallet } from 'lucide-react';
+import { usePayments } from '@/features/payments/api/queries';
 import { usePensioner, useUpdatePensionerStatus, useUpdateBankControl } from '../api/queries';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -12,7 +13,7 @@ import { usePermiso } from '@/hooks/use-permiso';
 import { http } from '@/lib/http';
 import { formatDate, formatCUP, cn } from '@/lib/utils';
 
-type Tab = 'summary' | 'history';
+type Tab = 'summary' | 'history' | 'payments';
 
 const STATUS_BADGE: Record<string, string> = {
   active: 'badge-approved',
@@ -100,6 +101,7 @@ export function PensionerDetailPage() {
         <nav className="flex gap-4">
           <button onClick={() => setActiveTab('summary')} className={cn('flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'summary' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>{t('detail.tabs.summary')}</button>
           <button onClick={() => setActiveTab('history')} className={cn('flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'history' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}><Clock className="w-4 h-4" />{t('detail.tabs.history')}</button>
+          <button onClick={() => setActiveTab('payments')} className={cn('flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'payments' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}><Wallet className="w-4 h-4" />{t('detail.tabs.payments')}</button>
         </nav>
       </div>
 
@@ -179,6 +181,10 @@ export function PensionerDetailPage() {
             </div>
           )}
         </div>
+      )}
+
+      {activeTab === 'payments' && (
+        <PensionerPaymentsTab pensionerId={id} t={t} tc={tc} />
       )}
 
       {/* Modal: Cambiar estado */}
@@ -303,4 +309,115 @@ function BankControlModal({ agencies, currentBankControl, t, tc, onClose, mutati
 
 function Field({ label, value, mono, fullWidth }: { label: string; value: string; mono?: boolean; fullWidth?: boolean }) {
   return <div className={fullWidth ? 'col-span-2' : ''}><p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</p><p className={cn('text-sm text-foreground', mono && 'font-mono')}>{value}</p></div>;
+}
+
+// Constantes para selects de año y mes
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 10 }, (_, i) => ({ value: CURRENT_YEAR - i, label: String(CURRENT_YEAR - i) }));
+const MONTH_OPTIONS = [
+  { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
+  { value: 4, label: 'Abril' }, { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
+  { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
+  { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
+];
+const PAYMENT_STATUS_BADGE: Record<string, string> = { pending: 'badge-submitted', paid: 'badge-approved', cancelled: 'badge-rejected' };
+
+/**
+ * Tab Pagos del pensionado — lista los pagos del pensionado ordenados
+ * cronológicamente de mayor a menor fecha, con filtros por mes, año y estado.
+ */
+function PensionerPaymentsTab({ pensionerId, t, tc }: { pensionerId: string; t: (k: string) => string; tc: (k: string) => string }) {
+  const { t: tp } = useTranslation('payments');
+  const [filterYear, setFilterYear] = useState<string>('');
+  const [filterMonth, setFilterMonth] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+
+  // Cargar TODOS los pagos del pensionado — filtramos en cliente por pensioner_id
+  // El endpoint GET /payments no filtra por pensioner_id directamente en el mock,
+  // pero en producción el backend podría soportarlo. Cargamos una página amplia.
+  const { data, isLoading } = usePayments({
+    per_page: 100,
+    year: filterYear ? Number(filterYear) : undefined,
+    month: filterMonth ? Number(filterMonth) : undefined,
+    status: filterStatus || undefined,
+  });
+
+  // Filtrar por pensioner_id en cliente (el endpoint no lo soporta en el mock)
+  const allPayments = (data?.data ?? []).filter((p) => String(p.pensioner_id) === String(pensionerId));
+  // Ordenar cronológicamente de mayor a menor fecha (created_at DESC)
+  allPayments.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+
+  return (
+    <div className="space-y-4">
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="w-32">
+          <SearchSelect
+            value={filterYear || undefined}
+            onChange={(v) => setFilterYear(String(v ?? ''))}
+            options={YEAR_OPTIONS}
+            placeholder="Año"
+          />
+        </div>
+        <div className="w-40">
+          <SearchSelect
+            value={filterMonth || undefined}
+            onChange={(v) => setFilterMonth(String(v ?? ''))}
+            options={MONTH_OPTIONS}
+            placeholder="Mes"
+          />
+        </div>
+        <div className="w-40">
+          <SearchSelect
+            value={filterStatus || undefined}
+            onChange={(v) => setFilterStatus(String(v ?? ''))}
+            options={[
+              { value: '', label: 'Todos' },
+              { value: 'pending', label: tp('list.status.pending') },
+              { value: 'paid', label: tp('list.status.paid') },
+              { value: 'cancelled', label: tp('list.status.cancelled') },
+            ]}
+            placeholder="Todos"
+          />
+        </div>
+      </div>
+
+      {/* Tabla de pagos */}
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
+              <th className="text-left px-4 py-3 font-medium">{tp('list.columns.period')}</th>
+              <th className="text-left px-4 py-3 font-medium">{tp('list.columns.amount')}</th>
+              <th className="text-left px-4 py-3 font-medium">{tp('list.columns.status')}</th>
+              <th className="text-left px-4 py-3 font-medium">{tp('list.columns.agency')}</th>
+              <th className="text-left px-4 py-3 font-medium">{tp('list.columns.created_at')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('detail.fields.paid_at') || tp('detail.fields.paid_at')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {isLoading ? (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
+            ) : allPayments.length === 0 ? (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">—</td></tr>
+            ) : (
+              allPayments.map((p) => {
+                const agencyName = p.bank_control?.agency?.name ?? '—';
+                return (
+                  <tr key={p.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => window.location.href = `/pagos/${p.id}`}>
+                    <td className="px-4 py-3 font-mono text-xs">{p.period ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono">{p.amount != null ? formatCUP(Number(p.amount)) : '—'}</td>
+                    <td className="px-4 py-3"><span className={cn('badge', PAYMENT_STATUS_BADGE[p.status ?? 'pending'] ?? '')}>{tp(`list.status.${p.status}`)}</span></td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">{agencyName}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{p.created_at ? formatDate(p.created_at) : '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{p.paid_at ? formatDate(p.paid_at) : '—'}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
