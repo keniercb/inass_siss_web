@@ -90,7 +90,8 @@ Correcciones semánticas de nomenclatura: `proponente` (era "propovente"), `firm
 | Historial del expediente | `pension_case_histories` | `PensionCaseHistory` |
 | Pensionado | `pensioners` | `Pensioner` |
 | Control bancario | `bank_controls` | `BankControl` |
-| Pago de pensión (propuesta) | `pension_payments` | `PensionPayment` |
+| Pago de pensión (S10.5/Task 64/SGP-49, tras flag) | `pension_payments` | `PensionPayment` |
+| Corridas de export de nómina (S10.5/Task 64/SGP-49) | `payroll_export_runs` | `PayrollExportRun` |
 | Usuario | `users` | `User` |
 | Bitácora de acciones | `activity_log` | (spatie/activitylog) |
 
@@ -804,7 +805,7 @@ Semántica de negocio (IMPLEMENTADA 2026-10-16 (Task 59/SGP-44): migración `202
 
 Sin `is_active` ni `deactivated_at` (la actualización es EN SITIO, corrección de usuario) y SIN soft deletes: registro financiero corregible por actualización, jamás borrado (la bitácora ADR-19 conserva el rastro). El histórico de RF-PAG-002 lo sirve la bitácora (old/attributes por cambio); la ficha del pensionado sirve el estado vigente.
 
-**`pension_payments`** (propuesta, H-16) — Pagos periódicos.
+**`pension_payments`** (H-16/RF-PAG-005) — Pagos periódicos (S10.5/Task 64/SGP-49: propuesta CONSTRUIDA tras el feature flag `payments.enabled` — «pendiente de validación funcional» del plan; los estados CHECK `pending/paid/cancelled` y el UNIQUE pensionado-año-mes exactamente como aquí se propuso).
 
 | Columna | Tipo | Nulo | Clave | Descripción |
 |---|---|---|---|---|
@@ -816,6 +817,27 @@ Sin `is_active` ni `deactivated_at` (la actualización es EN SITIO, corrección 
 | paid_at | DATE | SÍ | — | Fecha de pago efectivo |
 | bank_control_id | BIGINT UNSIGNED | SÍ | FK → bank_controls | Control por el que se liquidó |
 | — | — | — | UNIQUE | (`pensioner_id`, `period_year`, `period_month`) — un pago por pensionado y período (Task 42: sin clasificador de tipo de pago, eliminado) |
+
+Sin soft deletes (registro financiero corregible por TRANSICIÓN, jamás borrado — la cancelación es un estado, no una baja; la bitácora ADR-19 conserva el rastro por observer). `amount` CONGELA la cuantía del pensionado al generar el período (el snapshot del pago, doctrina RN-005 de cadena decimal); `bank_control_id` referencia el control por el que se liquidó (NULL si el pensionado carecía de control en la generación — H-16 sin clasificador de tipo de pago, corrección Task 42). El UNIQUE (pensionado, año, mes) hace la generación IDEMPOTENTE: re-generar salta los existentes y reporta created/skipped. Autoría `created_by`/`updated_by` estampadas por `AuditableObserver` (ADR-14); índice secundario `(period_year, period_month)` para los conteos de conciliación.
+
+**`payroll_export_runs`** — Corridas de exportación de nómina (S10.5/RF-PAG-004, Task 64/SGP-49).
+
+| Columna | Tipo | Nulo | Clave | Descripción |
+|---|---|---|---|---|
+| id | BIGINT UNSIGNED | NO | PK | Identificador de la corrida |
+| agency_id | BIGINT UNSIGNED | NO | FK → agencies | Agencia destinataria del archivo |
+| period_year | SMALLINT UNSIGNED | NO | — | Año del período |
+| period_month | TINYINT UNSIGNED | NO | CHECK 1-12 | Mes del período |
+| status | VARCHAR(20) | NO | DEFAULT 'queued', CHECK | `queued` / `processing` / `completed` / `failed` |
+| records_count | INT UNSIGNED | SÍ | — | Registros del archivo (al completar) |
+| total_amount | DECIMAL(12,2) | SÍ | — | Suma de importes del archivo (al completar) |
+| filename | VARCHAR(255) | SÍ | — | Archivo de nómina en `storage/app/payroll_exports` |
+| control_filename | VARCHAR(255) | SÍ | — | Archivo de CONTROL (conteo+suma contra la BD) |
+| error_message | TEXT | SÍ | — | Causa del failed |
+| created_by/updated_by | BIGINT UNSIGNED | SÍ | FK → users | Autoría (ADR-14) |
+| created_at/updated_at | TIMESTAMP | NO | — | Laravel |
+
+Índices `(agency_id, period_year, period_month)` y `(status)`. La corrida es el registro de CADA transmisión: re-ejecutar el período crea un run NUEVO (los archivos previos no se tocan); `queued→processing→completed/failed` es LINEAL, sin retries en la propuesta. Sin soft deletes: la corrida es evidencia del envío — `failed` es su estado terminal de error. El ARCHIVO DE CONTROL lleva el conteo y la suma contra la BD (el gate de conteo/suma del DoD 9.6 del plan).
 
 ### 5.9 Seguridad y auditoría
 
@@ -833,7 +855,8 @@ Sin `is_active` ni `deactivated_at` (la actualización es EN SITIO, corrección 
 |---|---|---|---|
 | `CaseStatus` | `submitted`, `under_review`, `approved`, `rejected` | `pension_cases.status` | submitted→under_review/rejected; under_review→approved/rejected/submitted; terminales con reapertura administrativa auditada |
 | `PensionerStatus` | `active`, `suspended`, `terminated` | `pensioners.status` | active↔suspended; active/suspended→terminated (terminal en la superficie del operador — S9.3; el flujo administrativo del expediente — reapertura/re-aprobación/denegación tras reapertura — suspende/reactiva/termina como excepción auditada, ADR-42) |
-| `PaymentStatus` | `pending`, `paid`, `cancelled` | `pension_payments.status` | pending→paid/cancelled (propuesta) |
+| `PaymentStatus` | `pending`, `paid`, `cancelled` | `pension_payments.status` | pending→paid/cancelled; paid/cancelled TERMINALES (Task 64/SGP-49, S10.5 — espejo de la matriz S9.3: mismo estado 422, intentos rechazados en bitácora JAMÁS en timeline; tras el flag `payments.enabled`) |
+| `PayrollExportStatus` | `queued`, `processing`, `completed`, `failed` | `payroll_export_runs.status` | queued→processing→completed/failed (lineal, sin retries — Task 64/SGP-49, S10.5) |
 | `PaymentForm` | `tarjeta magnetica`, `nomina electronica` | `agency_types.payment_form` (CHECK) | Minúsculas unificadas, sin tildes (Task 42/SGP-36, implementada); sin transiciones: decide la exigencia de la cuenta bancaria del cobro del expediente |
 | `Sex` | `M`, `F` | `people.sex` (CHECK) | — |
 
@@ -861,8 +884,9 @@ Todos respaldados por `CHECK (col IN (...))` en MySQL 8.4, que los enforcement d
 | Base legal por año/tipo | `legal_bases (year, legal_basis_type_id)` |
 | Pensionados activos por tipo/régimen | `pensioners (status, pension_type_id, pension_regime_id)` (migración `2026_10_12_100000`, Task 59/SGP-44) |
 | Control por pensionado | `bank_controls (pensioner_id UNIQUE)` |
+| Corridas de export por agencia y período | `payroll_export_runs (agency_id, period_year, period_month)` + `(status)` (Task 64/SGP-49, S10.5) |
 | Bitácora por sujeto | `activity_log (subject_type, subject_id, created_at)` |
-| Pagos por período (propuesta) | UNIQUE (`pensioner_id`, `period_year`, `period_month`) cubre rangos por pensionado; añadir `(period_year, period_month)` si se aprueba el módulo (Task 42: sin clasificador de tipo de pago, eliminado) |
+| Pagos por período | `pension_payments (UNIQUE pensioner_id, period_year, period_month)` + secundario `(period_year, period_month)` para los conteos de conciliación (Task 64/SGP-49, S10.5 — el módulo está construido tras el flag) |
 
 Volumetría esperada que calibra estos índices: ~500k personas, ~200k expedientes, ~3M registros de salario, ~600k pensionados acumulados a 10 años. Las agregaciones de reportes pesados se ejecutan en cola con lecturas indexadas por fecha; si RNF-002 se incumple, el plan de contención es tabla de resumen pre-agregada por noche, no desnormalizar el OLTP.
 
@@ -1070,6 +1094,7 @@ WHERE pc.status = 'under_review' AND pc.deleted_at IS NULL;
 | 1.41 | 2026-10-11 | Versión tres de la cuantía (Task 57/SGP-42; IMPLEMENTADA): ADR-41 — el motor consume la configuración ACTIVA (umbral combatiente FUC con PAU/PPU por comparación ESTRICTA D-29, II/IPmin/PMax absolutos D-31, PMax 0 = sin tope D-30 (b), 422 sin activa D-30 (a)); la RINSB (`applies_base_salary` = false) pasa de EXCLUIDA a PARTICIPANTE sobre la instantánea CuantíaTmp con UN redondeo por bloque (D-27/D-32); `pension_case_calculations.inputs` gana banderas + `non_salary_base_income_concepts[]` + bloque `general_settings` congelados (D-33) — CERO migraciones; REPARACIÓN del arrastre de la Task 55: la sección 5.3 documentaba la tabla v1 (seis parámetros muertos, resolver y `effective_to` derivados) y el listado de `pension_cases` aún mostraba `calculation_setting_id` (fuera del esquema desde S8.1) — ambas superficies ahora reflejan el esquema REAL de siete campos + `active`/`active_singleton`/`deactivated_at`; changelogs de Arquitectura (1.49) y Plan (1.40) alineados | Arq. Backend |
 | 1.42 | 2026-10-12 | Corrección V3.1 del bloque final de la cuantía (Task 58/SGP-43; IMPLEMENTADA): el motor anida IPmin+PMax bajo «Cuantía < PMax» — CERO cambios de esquema (los siete campos de `general_settings` y el congelado `inputs.general_settings` siguen EXACTAMENTE igual; la corrección es SEMÁNTICA del motor puro: PMax deja de recortar cuantías que lo superan y PMax 0.00 mata el bloque entero — D-37/D-38 (a)); la re-ejecución histórica con doctrina NEUTRA re-ejecuta exacto (RNF-010 intacto para los snapshots legacy); changelogs de Arquitectura (1.50) y Plan (1.41) alineados | Arq. Backend |
 | 1.43 | 2026-10-16 | Alta del pensionado (Task 59/SGP-44, S9.1; IMPLEMENTADA): ADR-42 — `pensioners` nace con el esquema de §5.8 (migración `2026_10_12_100000`: persona, `origin_case_id` UNIQUE, tipo, régimen, `amount` 12,2 ≥ 0, status + CHECK, `status_reason`, autoría, soft delete) MÁS la columna generada `active_pensioner_key` (patrón `open_case_key`, D-41 (b): una persona = un pensionado ACTIVO — suspended reserva, terminated libera) y el índice `(status, pension_type_id, pension_regime_id)` de §8; semántica: la fila solo nace de la aprobación dentro de su transacción (puerto invertido `CasePensionerSyncInterface`), `amount` hereda la cuantía congelada v3.1, el ciclo administrativo del expediente se refleja en el estado (reapertura→suspended, re-aprobación→reactiva con nueva cuantía, denegación tras reapertura→terminated, D-42 (b)) y la bitácora de transiciones vive en `activity_log` (sin tabla de historial propia); changelogs de Arquitectura (1.51) y Plan (1.42) alineados | Arq. Backend |
+| 1.45 | 2026-10-20 | `pension_payments` (H-16/RF-PAG-005) PROMOVIDA de propuesta a construida (Task 64/SGP-49, S10.5: semántica de generación idempotente + transiciones terminales + sin soft deletes, índice `(period_year, period_month)` creado) y NUEVA entrada `payroll_export_runs` (corridas de export de nómina en cola con archivo de control conteo/suma); enums `PaymentStatus` confirmado y `PayrollExportStatus` añadido; filas de índices §8; migraciones `create_pension_payments_table` y `create_payroll_export_runs_table`; changelog de Arquitectura (1.55) alineado  ✅ IMPLEMENTADA 2026-10-20: suite 1552 tests / 6198 aserciones (+60/+366 sobre la Task 63: 1492/5832), Pint/PHPStan 8/deptrac en verde, fumiga S10b 43×2 TODO OK con el worker real de la cola y el gate de conteo/suma contra SQL directo, flag OFF → 404 en pagos y 202 en la exportación, regresiones TODO OK (S6 46/47 preexistente) y spec 1.20.0| Arq. Backend |
 | 1.44 | 2026-10-20 | Entrada `bank_controls` (Task 63/SGP-48, S10.2/S10.3; IMPLEMENTADA): forma final con las TRES correcciones de usuario — `pensioner_id` UNIQUE (la relación 1:1 es FÍSICA), `number` GLOBAL emitido una vez del scope `bank_control` y estable de por vida, `electronic_payroll` DERIVADO de `agency_types.payment_form` en cada escritura, `account` VARCHAR(34) con CHECK 10–34, SIN is_active/deactivated_at (actualización EN SITIO) y SIN soft deletes; fila de índices §8 y SQL de ejemplo corregidos; migración `create_bank_controls` (la primera del módulo Payments); changelog de Arquitectura (1.54) alineado | Arq. Backend |
 | 1.38 | 2026-10-09 | Versión dos de la cuantía (Task 53/S8.9; IMPLEMENTADA): CERO migraciones — el algoritmo v2 es UNIVERSAL (D-8: no existe `calculation_version`) y SUMA los conceptos de ingreso APLICABLES como incrementos de la cuantía base (D-6: v2 suma sobre v1; RISB = filas de `income_concept_records` con `applies_base_salary = true`, aporte SPM × applied_percent/100 por fila, tope final SPM×PIL; D-13: factor total compuesto en bcmath con UN redondeo half-even; D-9: RISB vacío aporta 0.00, sin 422); `pension_case_calculations.inputs` gana `income_concepts[]` congelado (D-10) — la re-ejecución histórica reproduce exacto (snapshots previos: lista ausente ⇒ Σ = 0); `income_concept_records.applied_percent` pasa de dato declarado a PARÁMETRO del motor (los NO aplicables jamás alteran); changelogs de Arquitectura (1.46) y Plan (1.37) alineados | Arq. Backend |
 | 1.37 | 2026-10-09 | Corrección de especialistas (Task 52/S8.8; IMPLEMENTADA): `required_salary_records` re-interpretado como TOPE MÁXIMO (V-5: entrada a lo sumo N, gate de revisión con ≥ 1 registro + declaración de imputabilidad con déficit — el ítem `salary_records_count` desaparece); `pension_cases` gana `missing_salaries_attributable` TINYINT(1) NULL (V-6/D-2: NULL válido sin déficit, declaración obligatoria con déficit, editable solo en `submitted` — D-3; migración `2026_10_09_100000` tras `last_salary`); `pension_case_calculations` gana `average_years_effective` SMALLINT UNSIGNED (backfill = N, CHECK 1..15 y ≤ `average_years_count`) y `missing_salaries_attributable` congeladas (V-8/D-5) y `inputs` congela el flag; el diagrama ER de 4.5 se corrige del arrastre de `calculation_setting_id` (retirada del esquema en S8.1); changelogs de Arquitectura (1.45) y Plan (1.36) alineados | Arq. Backend |

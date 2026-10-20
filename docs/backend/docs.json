@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.19.0"
+        "version": "1.20.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -3417,6 +3417,665 @@
                     },
                     "404": {
                         "description": "Oficina inexistente o desactivada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payments/generate": {
+            "post": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Pagos periódicos: generación mensual",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49, S10.5): crea las filas `pending` del período para cada pensionado ACTIVO — la cuantía CONGELADA al generar y el control bancario por el que se liquida (null si no tenía). IDEMPOTENTE por el UNIQUE (pensionado, año, mes): re-generar SALTA los existentes y reporta created_count/skipped_count, jamás duplica. Los suspended/terminated no cobran el período. El período NO puede ser futuro (422 contra el reloj). Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).",
+                "operationId": "paymentsGenerate",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "year",
+                                    "month"
+                                ],
+                                "properties": {
+                                    "year": {
+                                        "description": "Año del período",
+                                        "type": "integer",
+                                        "example": 2026
+                                    },
+                                    "month": {
+                                        "description": "Mes del período (1-12) — NO futuro",
+                                        "type": "integer",
+                                        "example": 10
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "La evidencia de la generación idempotente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "year": {
+                                                    "type": "integer",
+                                                    "example": 2026
+                                                },
+                                                "month": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "period": {
+                                                    "type": "string",
+                                                    "example": "2026-10"
+                                                },
+                                                "created_count": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "skipped_count": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.manage"
+                    },
+                    "404": {
+                        "description": "Feature flag payments.enabled apagado"
+                    },
+                    "422": {
+                        "description": "Período futuro o calendario inválido"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payments": {
+            "get": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Listado de pagos del período",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49): el directorio del ledger — filtrable por año, mes, estado (enum exacto pending/paid/cancelled) y pensionado (id sin sonda: página vacía si no existe), paginado (per_page ≤ 100). Cada fila viaja con la proyección del pensionado (persona y cuantía) y del control bancario de liquidación (número, cuenta, agencia). Tras el feature flag `payments.enabled` y `payments.view` (admin, director, auditor).",
+                "operationId": "paymentsIndex",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 2026
+                        }
+                    },
+                    {
+                        "name": "month",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 12,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "paid",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "pensioner_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pagos paginados (envelope RF-API-002)"
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.view"
+                    },
+                    "404": {
+                        "description": "Feature flag payments.enabled apagado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payments/{id}": {
+            "get": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Ficha de un pago",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49): el pago con su pensionado (persona), su control de liquidación (número, cuenta, agencia) y su estado H-16. 404 de pago inexistente. Tras el feature flag y `payments.view`.",
+                "operationId": "paymentsShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "El pago"
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.view"
+                    },
+                    "404": {
+                        "description": "Pago inexistente o feature flag apagado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payments/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Transición del pago: pagar o anular",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49, D-75): el espejo del ciclo de vida S9.3 — la matriz `PaymentStatus::transitionsTo()`: pending→paid (estampa `paid_at`, la fecha del body o HOY por defecto) y pending→cancelled; paid/cancelled son TERMINALES (sin salida) y el mismo estado responde 422 (una transición debe MOVER). El intento rechazado queda en la bitácora tras el rollback (visible al auditor, jamás como transición). El 200 devuelve el pago COMPLETO actualizado. Tras el feature flag y `payments.manage` (admin + director).",
+                "operationId": "paymentsUpdateStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "El destino — solo los dos movimientos que la matriz admite desde pending",
+                                        "type": "string",
+                                        "enum": [
+                                            "paid",
+                                            "cancelled"
+                                        ]
+                                    },
+                                    "paid_at": {
+                                        "description": "Fecha efectiva del pago (Y-m-d) — opcional, HOY por defecto vía reloj; ignorada al anular",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-10-20"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "El pago actualizado (ficha completa)"
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.manage"
+                    },
+                    "404": {
+                        "description": "Pago inexistente o feature flag apagado"
+                    },
+                    "422": {
+                        "description": "Movimiento fuera de la matriz (terminal o mismo estado)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payments/reconciliation": {
+            "get": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Conciliación básica: conteos y sumas por período y agencia",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49): la «conciliación básica de pagos por período y agencia» — conteo y suma de importes por estado (pending/paid/cancelled) del período, más el total; el filtro `agency_id` estrecha a los pagos liquidados por los controles de esa agencia. Es la evidencia que se cruza con el archivo de control de la exportación (el gate de conteo/suma del DoD 9.6). La agencia con id desconocido responde buckets vacíos (sin sonda, el patrón del listado). Tras el feature flag y `payments.view`.",
+                "operationId": "paymentsReconciliation",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2026
+                        }
+                    },
+                    {
+                        "name": "month",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 12,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "agency_id",
+                        "in": "query",
+                        "description": "Opcional — estrecha a los pagos liquidados por controles de la agencia",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Los buckets de conciliación del período",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "year": {
+                                                    "type": "integer",
+                                                    "example": 2026
+                                                },
+                                                "month": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "period": {
+                                                    "type": "string",
+                                                    "example": "2026-10"
+                                                },
+                                                "agency": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "code": {
+                                                            "type": "string"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "statuses": {
+                                                    "properties": {
+                                                        "pending": {
+                                                            "properties": {
+                                                                "count": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "string",
+                                                                    "example": "12000.00"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "paid": {
+                                                            "properties": {
+                                                                "count": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "cancelled": {
+                                                            "properties": {
+                                                                "count": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "total": {
+                                                    "properties": {
+                                                        "count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "amount": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.view"
+                    },
+                    "404": {
+                        "description": "Feature flag payments.enabled apagado"
+                    },
+                    "422": {
+                        "description": "Calendario inválido"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payroll-exports": {
+            "get": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Listado de corridas de exportación",
+                "description": "El directorio de transmisiones de nómina (RF-PAG-004, Task 64/SGP-49): las corridas más recientes primero, con su estado lineal (queued/processing/completed/failed), el conteo de registros y la suma de importes al completar y ambos nombres de archivo. Permiso `payments.export`.",
+                "operationId": "payrollExportsIndex",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Corridas paginadas (envelope RF-API-002)"
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.export"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Exportación de nómina electrónica: solicitar la transmisión",
+                "description": "RF-PAG-004 (Task 64/SGP-49, S10.5): solicita el archivo de nómina de una agencia y período para el consumo del banco. Crea la corrida `queued` y responde 202 Accepted — el job en cola (driver `database`, `queue:work`) proyecta los pensionados ACTIVOS con control en la agencia, escribe el CSV con el layout de la agencia (estándar o su override por código — P-05 pendiente de especificación bancaria) y el ARCHIVO DE CONTROL con el conteo y la suma contra la BD. Reglas 422: la agencia debe existir en el catálogo VIVO y el período NO puede ser futuro (los pasados se permiten — un arranque tardío del proceso bancario re-transmite). Re-ejecutar el período crea una corrida NUEVA: cada transmisión queda registrada, los archivos previos jamás se tocan. Permiso `payments.export` (admin + director).",
+                "operationId": "payrollExportsStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "agency_id",
+                                    "year",
+                                    "month"
+                                ],
+                                "properties": {
+                                    "agency_id": {
+                                        "description": "Agencia destinataria — del catálogo VIVO (422 si no existe)",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 1
+                                    },
+                                    "year": {
+                                        "description": "Año del período (2000-3000)",
+                                        "type": "integer",
+                                        "example": 2026
+                                    },
+                                    "month": {
+                                        "description": "Mes del período (1-12) — NO futuro (422)",
+                                        "type": "integer",
+                                        "example": 10
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Transmisión aceptada: la corrida `queued` que el worker procesará",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PayrollExportRun"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.export"
+                    },
+                    "422": {
+                        "description": "Agencia inexistente/muerta o período futuro"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payroll-exports/{id}": {
+            "get": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Estado de una corrida de exportación",
+                "description": "El detalle de la transmisión (RF-PAG-004, Task 64/SGP-49): el estado del worker, el conteo y la suma contra la BD al completar (el gate de conteo/suma del DoD 9.6) y la causa del failed cuando corresponde. 404 de corrida inexistente. Permiso `payments.export`.",
+                "operationId": "payrollExportsShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "La corrida"
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.export"
+                    },
+                    "404": {
+                        "description": "Corrida inexistente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payroll-exports/{id}/download": {
+            "get": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Descargar el archivo de nómina generado",
+                "description": "La descarga del archivo de una transmisión COMPLETADA (RF-PAG-004, Task 64/SGP-49): el CSV de la agencia con el layout configurado. 409 mientras la corrida no esté `completed` (aún en cola, procesándose o fallida — el detalle de la corrida sirve el error). 404 de corrida inexistente. El ARCHIVO DE CONTROL (conteo+suma contra la BD) acompaña la misma corrida con ?type=control. Permiso `payments.export`.",
+                "operationId": "payrollExportsDownload",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "payroll = la nómina; control = el archivo de control (conteo+suma)",
+                        "schema": {
+                            "type": "string",
+                            "default": "payroll",
+                            "enum": [
+                                "payroll",
+                                "control"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "El archivo CSV (stream)"
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.export"
+                    },
+                    "404": {
+                        "description": "Corrida inexistente"
+                    },
+                    "409": {
+                        "description": "La corrida aún no está completed"
                     }
                 },
                 "security": [
@@ -9252,6 +9911,243 @@
                 },
                 "type": "object"
             },
+            "PayrollExportRun": {
+                "title": "Corrida de exportación de nómina",
+                "description": "Una transmisión del archivo de nómina electrónica de una agencia y período: nace `queued` (202 Accepted), el worker la mueve queued→processing→completed/failed (lineal, sin retries — re-transmitir crea una corrida NUEVA). Al completar sirve records_count + total_amount (la validación de conteo y suma contra la BD) y los nombres de ambos archivos (la nómina y su archivo de control).",
+                "properties": {
+                    "id": {
+                        "description": "Wire projection of a payroll export run (Task 64/SGP-49, S10.5,\nRF-PAG-004): the queued transmission the 202 answers and the\nworker's evidence — the lineal status (queued/processing/\ncompleted/failed), the record count and amount sum against the DB\n(the count/sum gate of the Sprint 10 DoD) and both file names.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "agency": {
+                        "description": "Agencia destinataria del archivo",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "BPA-NE-1"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "period": {
+                        "description": "Etiqueta canónica YYYY-MM del período",
+                        "type": "string",
+                        "example": "2026-10"
+                    },
+                    "period_year": {
+                        "type": "integer",
+                        "example": 2026
+                    },
+                    "period_month": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "status": {
+                        "description": "Ciclo de vida LINEAL del worker (PayrollExportStatus): sin retries — una transmisión fallida se re-solicita como corrida NUEVA",
+                        "type": "string",
+                        "example": "completed",
+                        "enum": [
+                            "queued",
+                            "processing",
+                            "completed",
+                            "failed"
+                        ]
+                    },
+                    "records_count": {
+                        "description": "Registros del archivo al completar (el gate de conteo del DoD 9.6)",
+                        "type": "integer",
+                        "example": 12,
+                        "nullable": true
+                    },
+                    "total_amount": {
+                        "description": "Suma de importes del archivo al completar (el gate de suma contra la BD, DECIMAL(12,2) como cadena)",
+                        "type": "string",
+                        "example": "25240.00",
+                        "nullable": true
+                    },
+                    "filename": {
+                        "type": "string",
+                        "example": "nomina_BPA-NE-1_2026-10.csv",
+                        "nullable": true
+                    },
+                    "control_filename": {
+                        "description": "El archivo de CONTROL: conteo + suma contra la BD",
+                        "type": "string",
+                        "example": "nomina_BPA-NE-1_2026-10_control.csv",
+                        "nullable": true
+                    },
+                    "download_url": {
+                        "description": "Solo con status completed (409 antes); ?type=control sirve el archivo de control",
+                        "type": "string",
+                        "example": "/api/v1/payroll-exports/1/download",
+                        "nullable": true
+                    },
+                    "error_message": {
+                        "description": "La causa del failed (terminal de error)",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "PensionPayment": {
+                "title": "Pago periódico (H-16)",
+                "description": "Un pago mensual de un pensionado activo: la cuantía CONGELADA al generar, el estado del catálogo H-16 (pending/paid/cancelled), la fecha efectiva del pago y el control bancario por el que se liquidó (nullable cuando el pensionado carecía de control al generar). Tras el feature flag `payments.enabled`.",
+                "properties": {
+                    "id": {
+                        "description": "Wire projection of a periodic payment row (Task 64/SGP-49, S10.5,\nRF-PAG-005/H-16): the frozen amount of the period, the H-16\nstatus, the effective payment date and the pensioner (person\nprojection) and the bank control (agency projection) it was\nliquidated through — the conciliation and audit evidence of the\nledger.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "pensioner_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "pensioner": {
+                        "description": "El pensionado del pago con su persona y su cuantía",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "person": {
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "full_name": {
+                                        "type": "string",
+                                        "example": "Juan Carlos Pérez Gómez"
+                                    }
+                                },
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "active",
+                                    "suspended",
+                                    "terminated"
+                                ]
+                            },
+                            "amount": {
+                                "type": "string",
+                                "example": "2127.00"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "period": {
+                        "description": "Etiqueta canónica YYYY-MM del período",
+                        "type": "string",
+                        "example": "2026-10"
+                    },
+                    "period_year": {
+                        "type": "integer",
+                        "example": 2026
+                    },
+                    "period_month": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "amount": {
+                        "description": "La cuantía CONGELADA al generar el período (DECIMAL(12,2) como cadena, RN-005)",
+                        "type": "string",
+                        "example": "2127.00"
+                    },
+                    "status": {
+                        "description": "El catálogo H-16: pending→paid/cancelled, terminales sin salida (matriz espejo S9.3)",
+                        "type": "string",
+                        "example": "pending",
+                        "enum": [
+                            "pending",
+                            "paid",
+                            "cancelled"
+                        ]
+                    },
+                    "paid_at": {
+                        "description": "Fecha efectiva del pago (hoy por defecto vía reloj; NULL hasta el paid y en la anulación)",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-20",
+                        "nullable": true
+                    },
+                    "bank_control": {
+                        "description": "El control por el que se liquidó (NULL si el pensionado carecía de control al generar)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "number": {
+                                "description": "Número de control GLOBAL del sistema",
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 1
+                            },
+                            "account": {
+                                "type": "string",
+                                "example": "02000012345678901234"
+                            },
+                            "electronic_payroll": {
+                                "description": "Marcador DERIVADO del tipo de la agencia (D-64)",
+                                "type": "boolean"
+                            },
+                            "agency": {
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "BPA-NE-1"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "CalculationPreview": {
                 "title": "Vista previa del cálculo",
                 "description": "Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía de la VERSIÓN TRES (Task 57/SGP-42: base del régimen + combatiente por umbral + conceptos aplicables + conceptos NO aplicables sobre la instantánea + tope del régimen + internacionalista + mínimo + tope final absoluto), los parámetros del régimen usados, la doctrina de la configuración ACTIVA usada (general_settings) y las advertencias.",
@@ -11064,6 +11960,10 @@
         {
             "name": "Pensionados",
             "description": "Pensionados: consulta (directorio filtrable y ficha con la línea de estados derivada de la bitácora — Task 60/SGP-45, S9.2), ciclo de vida del operador — PATCH /status: suspensión, reanudación y extinción con motivo obligatorio (Task 61/SGP-46, S9.3) — y el control bancario del cobro 1:1 anidado — PUT /bank-control: upsert en sitio con número global estable y marcador derivado del tipo de agencia (Task 63/SGP-48, S10.2/S10.3); el alta nace de la aprobación (Task 59/SGP-44)"
+        },
+        {
+            "name": "Pagos",
+            "description": "Pagos: exportación de nómina electrónica por agencia y período en cola — POST /payroll-exports con runs (202), job `queue:work`, plantilla configurable por agencia (P-05 pendiente de especificación bancaria) y archivo de control con conteo y suma contra la BD (Task 64/SGP-49, S10.5, RF-PAG-004) — y el registro de pagos periódicos H-16 tras el feature flag `payments.enabled` (default OFF, «pendiente de validación funcional»): generación mensual idempotente, transiciones pending→paid/cancelled espejo S9.3 y conciliación por período y agencia (RF-PAG-005)"
         }
     ]
 }
