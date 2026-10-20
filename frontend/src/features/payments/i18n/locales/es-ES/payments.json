@@ -1,0 +1,90 @@
+{
+  "list": {
+    "title": "Pagos",
+    "description": "Pagos periódicos de pensiones",
+    "empty": "No hay pagos para los filtros seleccionados",
+    "new": "Generar",
+    "columns": {
+      "pensioner": "Pensionado",
+      "period": "Período",
+      "amount": "Importe",
+      "status": "Estado",
+      "agency": "Agencia",
+      "created_at": "Creado"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "paid": "Pagado",
+      "cancelled": "Anulado"
+    }
+  },
+  "detail": {
+    "back_to_list": "Volver al listado",
+    "not_found": "Pago no encontrado",
+    "fields": {
+      "pensioner": "Pensionado",
+      "period": "Período",
+      "amount": "Importe",
+      "status": "Estado",
+      "bank_control": "Control bancario",
+      "paid_at": "Fecha de pago",
+      "created_at": "Creado",
+      "updated_at": "Actualizado"
+    }
+  },
+  "generate": {
+    "title": "Generar pagos",
+    "year": "Año",
+    "month": "Mes",
+    "confirm": "Generar",
+    "success": "Pagos generados correctamente",
+    "error": "No se pudieron generar los pagos"
+  },
+  "status_change": {
+    "pay": "Marcar como pagado",
+    "cancel": "Anular pago",
+    "paid_at": "Fecha de pago",
+    "confirm": "Confirmar",
+    "success": "Estado cambiado correctamente",
+    "error": "No se pudo cambiar el estado"
+  },
+  "reconciliation": {
+    "title": "Conciliación",
+    "total": "Total",
+    "pending": "Pendientes",
+    "paid": "Pagados",
+    "cancelled": "Anulados",
+    "paid_amount": "Importe pagado",
+    "pending_amount": "Importe pendiente"
+  },
+  "export": {
+    "title": "Exportación de nóminas",
+    "description": "Corridas de exportación de archivos de nómina",
+    "new": "Crear exportación",
+    "columns": {
+      "period": "Período",
+      "agency": "Agencia",
+      "status": "Estado",
+      "records": "Registros",
+      "total": "Total",
+      "created_at": "Creado"
+    },
+    "status": {
+      "queued": "En cola",
+      "processing": "Procesando",
+      "completed": "Completado",
+      "failed": "Fallido"
+    },
+    "download": "Descargar",
+    "control": "Archivo de control"
+  },
+  "export_create": {
+    "title": "Crear exportación de nómina",
+    "agency": "Agencia",
+    "year": "Año",
+    "month": "Mes",
+    "confirm": "Crear",
+    "success": "Exportación creada correctamente",
+    "error": "No se pudo crear la exportación"
+  }
+}

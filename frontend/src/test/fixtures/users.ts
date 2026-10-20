@@ -25,6 +25,7 @@ export interface MockAuthUser extends MockUser {
 const DIRECTOR_PERMISSIONS = [
   'cases.view', 'cases.review', 'cases.approve', 'cases.reject', 'cases.calculate',
   'pensioners.view', 'pensioners.manage',
+  'payments.view', 'payments.manage', 'payments.export',
   'reports.view', 'reports.export',
   'audit.view',
   'people.view', 'organizations.view', 'legalbases.view',
@@ -51,7 +52,7 @@ const OPERATOR_PERMISSIONS = [
 
 const AUDITOR_PERMISSIONS = [
   'cases.view', 'people.view', 'organizations.view', 'legalbases.view',
-  'pensioners.view', 'payments.view',
+  'pensioners.view', 'payments.view', 'payments.export',
   'reports.view', 'reports.export',
   'audit.view',
   'catalogs.view', 'settings.view',

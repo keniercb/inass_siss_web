@@ -1,0 +1,90 @@
+{
+  "list": {
+    "title": "Payments",
+    "description": "Periodic pension payments",
+    "empty": "No payments for the selected filters",
+    "new": "Generate",
+    "columns": {
+      "pensioner": "Pensioner",
+      "period": "Period",
+      "amount": "Amount",
+      "status": "Status",
+      "agency": "Agency",
+      "created_at": "Created"
+    },
+    "status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "cancelled": "Cancelled"
+    }
+  },
+  "detail": {
+    "back_to_list": "Back to list",
+    "not_found": "Payment not found",
+    "fields": {
+      "pensioner": "Pensioner",
+      "period": "Period",
+      "amount": "Amount",
+      "status": "Status",
+      "bank_control": "Bank control",
+      "paid_at": "Paid on",
+      "created_at": "Created",
+      "updated_at": "Updated"
+    }
+  },
+  "generate": {
+    "title": "Generate payments",
+    "year": "Year",
+    "month": "Month",
+    "confirm": "Generate",
+    "success": "Payments generated successfully",
+    "error": "Could not generate payments"
+  },
+  "status_change": {
+    "pay": "Mark as paid",
+    "cancel": "Cancel payment",
+    "paid_at": "Payment date",
+    "confirm": "Confirm",
+    "success": "Status changed successfully",
+    "error": "Could not change the status"
+  },
+  "reconciliation": {
+    "title": "Reconciliation",
+    "total": "Total",
+    "pending": "Pending",
+    "paid": "Paid",
+    "cancelled": "Cancelled",
+    "paid_amount": "Paid amount",
+    "pending_amount": "Pending amount"
+  },
+  "export": {
+    "title": "Payroll exports",
+    "description": "Payroll file export runs",
+    "new": "Create export",
+    "columns": {
+      "period": "Period",
+      "agency": "Agency",
+      "status": "Status",
+      "records": "Records",
+      "total": "Total",
+      "created_at": "Created"
+    },
+    "status": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "download": "Download",
+    "control": "Control file"
+  },
+  "export_create": {
+    "title": "Create payroll export",
+    "agency": "Agency",
+    "year": "Year",
+    "month": "Month",
+    "confirm": "Create",
+    "success": "Export created successfully",
+    "error": "Could not create the export"
+  }
+}

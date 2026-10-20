@@ -419,6 +419,170 @@ export interface paths {
         patch: operations["officesUpdate"];
         trace?: never;
     };
+    "/api/v1/payments/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pagos periódicos: generación mensual
+         * @description RF-PAG-005/H-16 (Task 64/SGP-49, S10.5): crea las filas `pending` del período para cada pensionado ACTIVO — la cuantía CONGELADA al generar y el control bancario por el que se liquida (null si no tenía). IDEMPOTENTE por el UNIQUE (pensionado, año, mes): re-generar SALTA los existentes y reporta created_count/skipped_count, jamás duplica. Los suspended/terminated no cobran el período. El período NO puede ser futuro (422 contra el reloj). Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).
+         */
+        post: operations["paymentsGenerate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado de pagos del período
+         * @description RF-PAG-005/H-16 (Task 64/SGP-49): el directorio del ledger — filtrable por año, mes, estado (enum exacto pending/paid/cancelled) y pensionado (id sin sonda: página vacía si no existe), paginado (per_page ≤ 100). Cada fila viaja con la proyección del pensionado (persona y cuantía) y del control bancario de liquidación (número, cuenta, agencia). Tras el feature flag `payments.enabled` y `payments.view` (admin, director, auditor).
+         */
+        get: operations["paymentsIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ficha de un pago
+         * @description RF-PAG-005/H-16 (Task 64/SGP-49): el pago con su pensionado (persona), su control de liquidación (número, cuenta, agencia) y su estado H-16. 404 de pago inexistente. Tras el feature flag y `payments.view`.
+         */
+        get: operations["paymentsShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Transición del pago: pagar o anular
+         * @description RF-PAG-005/H-16 (Task 64/SGP-49, D-75): el espejo del ciclo de vida S9.3 — la matriz `PaymentStatus::transitionsTo()`: pending→paid (estampa `paid_at`, la fecha del body o HOY por defecto) y pending→cancelled; paid/cancelled son TERMINALES (sin salida) y el mismo estado responde 422 (una transición debe MOVER). El intento rechazado queda en la bitácora tras el rollback (visible al auditor, jamás como transición). El 200 devuelve el pago COMPLETO actualizado. Tras el feature flag y `payments.manage` (admin + director).
+         */
+        patch: operations["paymentsUpdateStatus"];
+        trace?: never;
+    };
+    "/api/v1/payments/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conciliación básica: conteos y sumas por período y agencia
+         * @description RF-PAG-005/H-16 (Task 64/SGP-49): la «conciliación básica de pagos por período y agencia» — conteo y suma de importes por estado (pending/paid/cancelled) del período, más el total; el filtro `agency_id` estrecha a los pagos liquidados por los controles de esa agencia. Es la evidencia que se cruza con el archivo de control de la exportación (el gate de conteo/suma del DoD 9.6). La agencia con id desconocido responde buckets vacíos (sin sonda, el patrón del listado). Tras el feature flag y `payments.view`.
+         */
+        get: operations["paymentsReconciliation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll-exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado de corridas de exportación
+         * @description El directorio de transmisiones de nómina (RF-PAG-004, Task 64/SGP-49): las corridas más recientes primero, con su estado lineal (queued/processing/completed/failed), el conteo de registros y la suma de importes al completar y ambos nombres de archivo. Permiso `payments.export`.
+         */
+        get: operations["payrollExportsIndex"];
+        put?: never;
+        /**
+         * Exportación de nómina electrónica: solicitar la transmisión
+         * @description RF-PAG-004 (Task 64/SGP-49, S10.5): solicita el archivo de nómina de una agencia y período para el consumo del banco. Crea la corrida `queued` y responde 202 Accepted — el job en cola (driver `database`, `queue:work`) proyecta los pensionados ACTIVOS con control en la agencia, escribe el CSV con el layout de la agencia (estándar o su override por código — P-05 pendiente de especificación bancaria) y el ARCHIVO DE CONTROL con el conteo y la suma contra la BD. Reglas 422: la agencia debe existir en el catálogo VIVO y el período NO puede ser futuro (los pasados se permiten — un arranque tardío del proceso bancario re-transmite). Re-ejecutar el período crea una corrida NUEVA: cada transmisión queda registrada, los archivos previos jamás se tocan. Permiso `payments.export` (admin + director).
+         */
+        post: operations["payrollExportsStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll-exports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estado de una corrida de exportación
+         * @description El detalle de la transmisión (RF-PAG-004, Task 64/SGP-49): el estado del worker, el conteo y la suma contra la BD al completar (el gate de conteo/suma del DoD 9.6) y la causa del failed cuando corresponde. 404 de corrida inexistente. Permiso `payments.export`.
+         */
+        get: operations["payrollExportsShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll-exports/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Descargar el archivo de nómina generado
+         * @description La descarga del archivo de una transmisión COMPLETADA (RF-PAG-004, Task 64/SGP-49): el CSV de la agencia con el layout configurado. 409 mientras la corrida no esté `completed` (aún en cola, procesándose o fallida — el detalle de la corrida sirve el error). 404 de corrida inexistente. El ARCHIVO DE CONTROL (conteo+suma contra la BD) acompaña la misma corrida con ?type=control. Permiso `payments.export`.
+         */
+        get: operations["payrollExportsDownload"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pension-cases/{id}/calculation-preview": {
         parameters: {
             query?: never;
@@ -1782,6 +1946,162 @@ export interface components {
              * @example 7
              */
             scope_cases_count?: number;
+        };
+        /**
+         * Corrida de exportación de nómina
+         * @description Una transmisión del archivo de nómina electrónica de una agencia y período: nace `queued` (202 Accepted), el worker la mueve queued→processing→completed/failed (lineal, sin retries — re-transmitir crea una corrida NUEVA). Al completar sirve records_count + total_amount (la validación de conteo y suma contra la BD) y los nombres de ambos archivos (la nómina y su archivo de control).
+         */
+        PayrollExportRun: {
+            /**
+             * Format: int64
+             * @description Wire projection of a payroll export run (Task 64/SGP-49, S10.5,
+             *     RF-PAG-004): the queued transmission the 202 answers and the
+             *     worker's evidence — the lineal status (queued/processing/
+             *     completed/failed), the record count and amount sum against the DB
+             *     (the count/sum gate of the Sprint 10 DoD) and both file names.
+             * @example 1
+             */
+            id?: number;
+            /** @description Agencia destinataria del archivo */
+            agency?: {
+                /** Format: int64 */
+                id?: number;
+                /** @example BPA-NE-1 */
+                code?: string;
+                name?: string;
+            } | null;
+            /**
+             * @description Etiqueta canónica YYYY-MM del período
+             * @example 2026-10
+             */
+            period?: string;
+            /** @example 2026 */
+            period_year?: number;
+            /** @example 10 */
+            period_month?: number;
+            /**
+             * @description Ciclo de vida LINEAL del worker (PayrollExportStatus): sin retries — una transmisión fallida se re-solicita como corrida NUEVA
+             * @example completed
+             * @enum {string}
+             */
+            status?: "queued" | "processing" | "completed" | "failed";
+            /**
+             * @description Registros del archivo al completar (el gate de conteo del DoD 9.6)
+             * @example 12
+             */
+            records_count?: number | null;
+            /**
+             * @description Suma de importes del archivo al completar (el gate de suma contra la BD, DECIMAL(12,2) como cadena)
+             * @example 25240.00
+             */
+            total_amount?: string | null;
+            /** @example nomina_BPA-NE-1_2026-10.csv */
+            filename?: string | null;
+            /**
+             * @description El archivo de CONTROL: conteo + suma contra la BD
+             * @example nomina_BPA-NE-1_2026-10_control.csv
+             */
+            control_filename?: string | null;
+            /**
+             * @description Solo con status completed (409 antes); ?type=control sirve el archivo de control
+             * @example /api/v1/payroll-exports/1/download
+             */
+            download_url?: string | null;
+            /** @description La causa del failed (terminal de error) */
+            error_message?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        /**
+         * Pago periódico (H-16)
+         * @description Un pago mensual de un pensionado activo: la cuantía CONGELADA al generar, el estado del catálogo H-16 (pending/paid/cancelled), la fecha efectiva del pago y el control bancario por el que se liquidó (nullable cuando el pensionado carecía de control al generar). Tras el feature flag `payments.enabled`.
+         */
+        PensionPayment: {
+            /**
+             * Format: int64
+             * @description Wire projection of a periodic payment row (Task 64/SGP-49, S10.5,
+             *     RF-PAG-005/H-16): the frozen amount of the period, the H-16
+             *     status, the effective payment date and the pensioner (person
+             *     projection) and the bank control (agency projection) it was
+             *     liquidated through — the conciliation and audit evidence of the
+             *     ledger.
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @example 3
+             */
+            pensioner_id?: number;
+            /** @description El pensionado del pago con su persona y su cuantía */
+            pensioner?: {
+                /** Format: int64 */
+                id?: number;
+                person?: {
+                    /** Format: int64 */
+                    id?: number;
+                    /** @example Juan Carlos Pérez Gómez */
+                    full_name?: string;
+                } | null;
+                /** @enum {string} */
+                status?: "active" | "suspended" | "terminated";
+                /** @example 2127.00 */
+                amount?: string;
+            } | null;
+            /**
+             * @description Etiqueta canónica YYYY-MM del período
+             * @example 2026-10
+             */
+            period?: string;
+            /** @example 2026 */
+            period_year?: number;
+            /** @example 10 */
+            period_month?: number;
+            /**
+             * @description La cuantía CONGELADA al generar el período (DECIMAL(12,2) como cadena, RN-005)
+             * @example 2127.00
+             */
+            amount?: string;
+            /**
+             * @description El catálogo H-16: pending→paid/cancelled, terminales sin salida (matriz espejo S9.3)
+             * @example pending
+             * @enum {string}
+             */
+            status?: "pending" | "paid" | "cancelled";
+            /**
+             * Format: date
+             * @description Fecha efectiva del pago (hoy por defecto vía reloj; NULL hasta el paid y en la anulación)
+             * @example 2026-10-20
+             */
+            paid_at?: string | null;
+            /** @description El control por el que se liquidó (NULL si el pensionado carecía de control al generar) */
+            bank_control?: {
+                /** Format: int64 */
+                id?: number;
+                /**
+                 * Format: int64
+                 * @description Número de control GLOBAL del sistema
+                 * @example 1
+                 */
+                number?: number;
+                /** @example 02000012345678901234 */
+                account?: string;
+                /** @description Marcador DERIVADO del tipo de la agencia (D-64) */
+                electronic_payroll?: boolean;
+                agency?: {
+                    /** Format: int64 */
+                    id?: number;
+                    /** @example BPA-NE-1 */
+                    code?: string;
+                    name?: string;
+                } | null;
+            } | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
         };
         /**
          * Vista previa del cálculo
@@ -4846,6 +5166,510 @@ export interface operations {
                 content?: never;
             };
             422: components["responses"]["ValidationError"];
+        };
+    };
+    paymentsGenerate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Año del período
+                     * @example 2026
+                     */
+                    year: number;
+                    /**
+                     * @description Mes del período (1-12) — NO futuro
+                     * @example 10
+                     */
+                    month: number;
+                };
+            };
+        };
+        responses: {
+            /** @description La evidencia de la generación idempotente */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: {
+                            /** @example 2026 */
+                            year?: number;
+                            /** @example 10 */
+                            month?: number;
+                            /** @example 2026-10 */
+                            period?: string;
+                            /** @example 12 */
+                            created_count?: number;
+                            /** @example 0 */
+                            skipped_count?: number;
+                        };
+                    };
+                };
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.manage */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Feature flag payments.enabled apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Período futuro o calendario inválido */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    paymentsIndex: {
+        parameters: {
+            query?: {
+                year?: number;
+                month?: number;
+                status?: "pending" | "paid" | "cancelled";
+                pensioner_id?: number;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pagos paginados (envelope RF-API-002) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.view */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Feature flag payments.enabled apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    paymentsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El pago */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.view */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pago inexistente o feature flag apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    paymentsUpdateStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description El destino — solo los dos movimientos que la matriz admite desde pending
+                     * @enum {string}
+                     */
+                    status: "paid" | "cancelled";
+                    /**
+                     * Format: date
+                     * @description Fecha efectiva del pago (Y-m-d) — opcional, HOY por defecto vía reloj; ignorada al anular
+                     * @example 2026-10-20
+                     */
+                    paid_at?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description El pago actualizado (ficha completa) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.manage */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pago inexistente o feature flag apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Movimiento fuera de la matriz (terminal o mismo estado) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    paymentsReconciliation: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+                /** @description Opcional — estrecha a los pagos liquidados por controles de la agencia */
+                agency_id?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Los buckets de conciliación del período */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: {
+                            /** @example 2026 */
+                            year?: number;
+                            /** @example 10 */
+                            month?: number;
+                            /** @example 2026-10 */
+                            period?: string;
+                            agency?: {
+                                id?: number;
+                                code?: string;
+                                name?: string;
+                            } | null;
+                            statuses?: {
+                                pending?: {
+                                    count?: number;
+                                    /** @example 12000.00 */
+                                    amount?: string;
+                                };
+                                paid?: {
+                                    count?: number;
+                                    amount?: string;
+                                };
+                                cancelled?: {
+                                    count?: number;
+                                    amount?: string;
+                                };
+                            };
+                            total?: {
+                                count?: number;
+                                amount?: string;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.view */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Feature flag payments.enabled apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Calendario inválido */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payrollExportsIndex: {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Corridas paginadas (envelope RF-API-002) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.export */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payrollExportsStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: int64
+                     * @description Agencia destinataria — del catálogo VIVO (422 si no existe)
+                     * @example 1
+                     */
+                    agency_id: number;
+                    /**
+                     * @description Año del período (2000-3000)
+                     * @example 2026
+                     */
+                    year: number;
+                    /**
+                     * @description Mes del período (1-12) — NO futuro (422)
+                     * @example 10
+                     */
+                    month: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Transmisión aceptada: la corrida `queued` que el worker procesará */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["PayrollExportRun"];
+                    };
+                };
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.export */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Agencia inexistente/muerta o período futuro */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payrollExportsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description La corrida */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.export */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Corrida inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payrollExportsDownload: {
+        parameters: {
+            query?: {
+                /** @description payroll = la nómina; control = el archivo de control (conteo+suma) */
+                type?: "payroll" | "control";
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El archivo CSV (stream) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.export */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Corrida inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La corrida aún no está completed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     pensionCasesCalculationPreview: {
