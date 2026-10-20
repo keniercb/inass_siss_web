@@ -23,6 +23,9 @@ import { PensionCasesListPage } from '@/features/pension-cases/pages/PensionCase
 import { PensionCaseDetailPage } from '@/features/pension-cases/pages/PensionCaseDetailPage';
 import { PensionersListPage } from '@/features/pensioners/pages/PensionersListPage';
 import { PensionerDetailPage } from '@/features/pensioners/pages/PensionerDetailPage';
+import { PaymentsListPage } from '@/features/payments/pages/PaymentsListPage';
+import { PaymentDetailPage } from '@/features/payments/pages/PaymentDetailPage';
+import { PayrollExportsPage } from '@/features/payments/pages/PayrollExportsPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -213,11 +216,23 @@ export const router = createBrowserRouter([
         path: 'pagos',
         element: (
           <ProtectedRoute permiso="payments.view">
-            <ModulePlaceholder
-              title="Pagos"
-              description="Control bancario y exportación de nómina"
-              sprint="FE-S10"
-            />
+            <PaymentsListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'pagos/:id',
+        element: (
+          <ProtectedRoute permiso="payments.view">
+            <PaymentDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'nominas',
+        element: (
+          <ProtectedRoute permiso="payments.export">
+            <PayrollExportsPage />
           </ProtectedRoute>
         ),
       },

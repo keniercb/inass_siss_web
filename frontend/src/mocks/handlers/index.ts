@@ -23,5 +23,6 @@ export const handlers = [
   ...usersHandlers,
   ...rolesHandlers,
   ...pensionCasesHandlers,
-  ...pensionersHandlers,
+  ...pensionersHandlers, ...paymentsHandlers,
 ];
+import { paymentsHandlers } from './payments';

@@ -100,6 +100,12 @@ export const sidebarConfig: SidebarItem[] = [
     permiso: 'payments.view',
   },
   {
+    label: 'Nóminas',
+    path: '/nominas',
+    icon: Banknote,
+    permiso: 'payments.export',
+  },
+  {
     label: 'Reportes',
     path: '/reportes',
     icon: BarChart3,
