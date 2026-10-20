@@ -56,5 +56,30 @@
       "bank_controls": "Controles bancarios"
     },
     "bank_controls_empty": "Sin controles bancarios asignados (disponible a partir del Sprint 10)"
+  },
+  "status_change": {
+    "button": "Cambiar estado",
+    "title": "Cambiar estado de la pensión",
+    "status_label": "Estado destino",
+    "reason_label": "Motivo",
+    "reason_hint": "mínimo 10 caracteres",
+    "reason_placeholder": "Motivo del cambio…",
+    "reason_too_short": "El motivo debe tener al menos 10 caracteres",
+    "confirm": "Confirmar cambio",
+    "success": "Estado cambiado correctamente",
+    "error": "No se pudo cambiar el estado"
+  },
+  "bank_control": {
+    "button": "Control bancario",
+    "title": "Control bancario del cobro",
+    "agency_label": "Agencia de cobro",
+    "account_label": "Cuenta bancaria",
+    "account_hint": "10-34 caracteres alfanuméricos",
+    "success": "Control bancario actualizado correctamente",
+    "error": "No se pudo actualizar el control bancario",
+    "number": "Número de control",
+    "electronic_payroll": "Nómina electrónica",
+    "yes": "Sí",
+    "no": "No"
   }
 }

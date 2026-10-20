@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Clock, ArrowRight } from 'lucide-react';
-import { usePensioner } from '../api/queries';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, Clock, ArrowRight, GitBranch, CreditCard } from 'lucide-react';
+import { usePensioner, useUpdatePensionerStatus, useUpdateBankControl } from '../api/queries';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Dialog } from '@/components/ui/Dialog';
+import { SearchSelect } from '@/components/ui/SearchSelect';
+import { usePermiso } from '@/hooks/use-permiso';
+import { http } from '@/lib/http';
 import { formatDate, formatCUP, cn } from '@/lib/utils';
 
 type Tab = 'summary' | 'history';
@@ -13,14 +20,40 @@ const STATUS_BADGE: Record<string, string> = {
   terminated: 'badge-rejected',
 };
 
+// Matriz del operador: qué destinos son válos desde cada estado
+const STATUS_MATRIX: Record<string, Array<{ value: string; labelKey: string }>> = {
+  active: [
+    { value: 'suspended', labelKey: 'list.status.suspended' },
+    { value: 'terminated', labelKey: 'list.status.terminated' },
+  ],
+  suspended: [
+    { value: 'active', labelKey: 'list.status.active' },
+    { value: 'terminated', labelKey: 'list.status.terminated' },
+  ],
+  terminated: [],
+};
+
 export function PensionerDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
   const { t } = useTranslation('pensioners');
   const { t: tc } = useTranslation('common');
+  const can = usePermiso();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('summary');
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [bankModalOpen, setBankModalOpen] = useState(false);
 
   const { data: pensioner, isLoading, isError } = usePensioner(id);
+  const statusMutation = useUpdatePensionerStatus(id);
+  const bankMutation = useUpdateBankControl(id);
+
+  // Cargar agencias para el select de bank control
+  const { data: agenciesData } = useQuery({
+    queryKey: ['agencies', 'all'],
+    queryFn: async () => { const r = await http.get<{ data: { id: number; code: string; name: string }[] }>('/agencies', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+    enabled: bankModalOpen,
+  });
 
   if (isLoading) return <div className="max-w-7xl mx-auto"><p className="text-muted-foreground">{tc('status.loading')}…</p></div>;
   if (isError || !pensioner) return (
@@ -32,6 +65,9 @@ export function PensionerDetailPage() {
 
   const person = pensioner.person;
   const personName = person ? [person.first_surname, person.second_surname, person.first_name, person.middle_name].filter(Boolean).join(' ') : '—';
+  const canManage = can('pensioners.manage');
+  const currentStatus = pensioner.status ?? 'active';
+  const availableStatuses = STATUS_MATRIX[currentStatus] ?? [];
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -41,8 +77,24 @@ export function PensionerDetailPage() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">{personName}</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-mono">{person?.identity_number ?? '—'} · <span className={cn('badge', STATUS_BADGE[pensioner.status ?? 'active'] ?? '')}>{t(`list.status.${pensioner.status}`)}</span></p>
+          <p className="text-sm text-muted-foreground mt-1 font-mono">{person?.identity_number ?? '—'} · <span className={cn('badge', STATUS_BADGE[currentStatus] ?? '')}>{t(`list.status.${currentStatus}`)}</span></p>
         </div>
+        {canManage && (
+          <div className="flex items-center gap-2">
+            {availableStatuses.length > 0 && (
+              <Button variant="outline" onClick={() => setStatusModalOpen(true)}>
+                <GitBranch className="w-4 h-4" />
+                {t('status_change.button')}
+              </Button>
+            )}
+            {currentStatus !== 'terminated' && (
+              <Button variant="outline" onClick={() => setBankModalOpen(true)}>
+                <CreditCard className="w-4 h-4" />
+                {t('bank_control.button')}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
       <div className="border-b border-border mb-6">
         <nav className="flex gap-4">
@@ -53,7 +105,6 @@ export function PensionerDetailPage() {
 
       {activeTab === 'summary' && (
         <div className="space-y-6">
-          {/* Datos de la persona */}
           {person && (
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.person_data')}</h3>
@@ -67,12 +118,11 @@ export function PensionerDetailPage() {
               </div>
             </div>
           )}
-          {/* Datos de la pensión */}
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.pension_data')}</h3>
             <div className="grid grid-cols-2 gap-x-8 gap-y-4">
               <Field label={t('detail.fields.amount')} value={pensioner.amount != null ? formatCUP(Number(pensioner.amount)) : '—'} mono />
-              <Field label={t('detail.fields.status')} value={t(`list.status.${pensioner.status}`)} />
+              <Field label={t('detail.fields.status')} value={t(`list.status.${currentStatus}`)} />
               <Field label={t('detail.fields.status_reason')} value={pensioner.status_reason ?? '—'} />
               <Field label={t('detail.fields.pension_type')} value={pensioner.pension_type?.name ?? '—'} />
               <Field label={t('detail.fields.pension_regime')} value={pensioner.pension_regime?.name ?? '—'} />
@@ -81,10 +131,19 @@ export function PensionerDetailPage() {
               <Field label={t('detail.fields.updated_at')} value={pensioner.updated_at ? formatDate(pensioner.updated_at) : '—'} />
             </div>
           </div>
-          {/* Controles bancarios */}
+          {/* Control bancario */}
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.bank_controls')}</h3>
-            <p className="text-sm text-muted-foreground italic">{t('detail.bank_controls_empty')}</p>
+            {pensioner.bank_control ? (
+              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <Field label={t('bank_control.number')} value={`#${pensioner.bank_control.number ?? '—'}`} mono />
+                <Field label={t('bank_control.agency_label')} value={pensioner.bank_control.agency ? `${pensioner.bank_control.agency.code} — ${pensioner.bank_control.agency.name}` : '—'} />
+                <Field label={t('bank_control.account_label')} value={pensioner.bank_control.account ?? '—'} mono />
+                <Field label={t('bank_control.electronic_payroll')} value={pensioner.bank_control.electronic_payroll ? t('bank_control.yes') : t('bank_control.no')} />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">{t('detail.bank_controls_empty')}</p>
+            )}
           </div>
         </div>
       )}
@@ -111,7 +170,7 @@ export function PensionerDetailPage() {
                         <span className={cn('badge', STATUS_BADGE[row.to_status ?? 'active'] ?? '')}>{t(`list.status.${row.to_status}`)}</span>
                         {row.changed_at && <span className="text-xs text-muted-foreground ml-auto">{formatDate(row.changed_at)}</span>}
                       </div>
-                      {row.changed_by?.name && <p className="text-xs text-muted-foreground mb-1">{t('detail.fields.identity_number')}: {row.changed_by.name}</p>}
+                      {row.changed_by?.name && <p className="text-xs text-muted-foreground mb-1">{row.changed_by.name}</p>}
                       {row.status_reason && <p className="text-sm text-foreground bg-muted/50 rounded-md p-2 mt-1">{row.status_reason}</p>}
                     </div>
                   </div>
@@ -121,7 +180,124 @@ export function PensionerDetailPage() {
           )}
         </div>
       )}
+
+      {/* Modal: Cambiar estado */}
+      {statusModalOpen && (
+        <StatusChangeModal
+          caseId={id}
+          currentStatus={currentStatus}
+          availableStatuses={availableStatuses}
+          t={t}
+          tc={tc}
+          onClose={() => setStatusModalOpen(false)}
+          mutation={statusMutation}
+        />
+      )}
+
+      {/* Modal: Control bancario */}
+      {bankModalOpen && (
+        <BankControlModal
+          caseId={id}
+          agencies={agenciesData?.data ?? []}
+          currentBankControl={pensioner.bank_control as { agency?: { id: number }; account?: string } | null}
+          t={t}
+          tc={tc}
+          onClose={() => setBankModalOpen(false)}
+          mutation={bankMutation}
+        />
+      )}
     </div>
+  );
+}
+
+function StatusChangeModal({ currentStatus: _currentStatus, availableStatuses, t, tc, onClose, mutation }: {
+  caseId: string;
+  currentStatus: string;
+  availableStatuses: Array<{ value: string; labelKey: string }>;
+  t: (key: string) => string;
+  tc: (key: string) => string;
+  onClose: () => void;
+  mutation: ReturnType<typeof useUpdatePensionerStatus>;
+}) {
+  const [status, setStatus] = useState<string | null>(availableStatuses.length > 0 ? availableStatuses[0]!.value : null);
+  const [reason, setReason] = useState('');
+  const reasonTooShort = reason.length > 0 && reason.length < 10;
+  const canSubmit = !!status && reason.length >= 10 && !mutation.isPending;
+
+  return (
+    <Dialog open onClose={onClose} title={t('status_change.title')} size="md">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('status_change.status_label')} *</label>
+          <SearchSelect
+            value={status ?? undefined}
+            onChange={(v) => setStatus(String(v))}
+            options={availableStatuses.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
+            placeholder={tc('actions.select')}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('status_change.reason_label')} * <span className="text-xs text-muted-foreground ml-2">{t('status_change.reason_hint')}</span></label>
+          <textarea
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={t('status_change.reason_placeholder')}
+            maxLength={2000}
+          />
+          {reasonTooShort && <p className="text-xs text-destructive mt-1">{t('status_change.reason_too_short')}</p>}
+          <p className="text-xs text-muted-foreground mt-1 text-right">{reason.length}/2000</p>
+        </div>
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
+          <Button variant="outline" onClick={onClose}>{tc('actions.close')}</Button>
+          <Button disabled={!canSubmit} onClick={async () => { try { await mutation.mutateAsync({ status: status!, status_reason: reason }); onClose(); } catch { /* toast handled */ } }}>
+            {mutation.isPending ? tc('status.loading') + '…' : t('status_change.confirm')}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
+function BankControlModal({ agencies, currentBankControl, t, tc, onClose, mutation }: {
+  caseId: string;
+  agencies: Array<{ id: number; code: string; name: string }>;
+  currentBankControl: { agency?: { id: number }; account?: string } | null;
+  t: (key: string) => string;
+  tc: (key: string) => string;
+  onClose: () => void;
+  mutation: ReturnType<typeof useUpdateBankControl>;
+}) {
+  const [agencyId, setAgencyId] = useState<number>(currentBankControl?.agency?.id ?? 0);
+  const [account, setAccount] = useState(currentBankControl?.account ?? '');
+  const canSubmit = agencyId !== 0 && account.length >= 10 && account.length <= 34 && !mutation.isPending;
+
+  return (
+    <Dialog open onClose={onClose} title={t('bank_control.title')} size="md">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('bank_control.agency_label')} *</label>
+          <SearchSelect
+            value={agencyId || undefined}
+            onChange={(v) => setAgencyId(Number(v) || 0)}
+            options={agencies.map((a) => ({ value: a.id, label: a.name, secondary: a.code }))}
+            placeholder={tc('actions.select')}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('bank_control.account_label')} * <span className="text-xs text-muted-foreground ml-2">{t('bank_control.account_hint')}</span></label>
+          <Input type="text" maxLength={34} value={account} onChange={(e) => setAccount(e.target.value)} placeholder="02000012345678901234" />
+        </div>
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
+          <Button variant="outline" onClick={onClose}>{tc('actions.close')}</Button>
+          <Button disabled={!canSubmit} onClick={async () => { try { await mutation.mutateAsync({ agency_id: agencyId, account }); onClose(); } catch { /* toast handled */ } }}>
+            {mutation.isPending ? tc('status.loading') + '…' : tc('actions.save')}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 
