@@ -30,7 +30,8 @@
     "not_found": "Pensioner not found",
     "tabs": {
       "summary": "Summary",
-      "history": "History"
+      "history": "History",
+      "payments": "Payments"
     },
     "fields": {
       "amount": "Amount",
@@ -47,7 +48,8 @@
       "sex": "Sex",
       "birth_date": "Birth date",
       "address": "Address",
-      "deceased": "Deceased"
+      "deceased": "Deceased",
+      "paid_at": "Paid on"
     },
     "section": {
       "person_data": "Person data",
