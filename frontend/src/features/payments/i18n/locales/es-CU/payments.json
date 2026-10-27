@@ -9,7 +9,7 @@
       "period": "Período",
       "amount": "Importe",
       "status": "Estado",
-      "agency": "Agencia",
+      "agency": "Agencia de cobro",
       "created_at": "Creado"
     },
     "status": {
@@ -63,7 +63,7 @@
     "new": "Crear exportación",
     "columns": {
       "period": "Período",
-      "agency": "Agencia",
+      "agency": "Agencia de cobro",
       "status": "Estado",
       "records": "Registros",
       "total": "Total",
@@ -80,7 +80,7 @@
   },
   "export_create": {
     "title": "Crear exportación de nómina",
-    "agency": "Agencia",
+    "agency": "Agencia de cobro",
     "year": "Año",
     "month": "Mes",
     "confirm": "Crear",
