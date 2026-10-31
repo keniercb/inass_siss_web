@@ -9,7 +9,7 @@
       "period": "Period",
       "amount": "Amount",
       "status": "Status",
-      "agency": "Agency",
+      "agency": "Collection agency",
       "created_at": "Created"
     },
     "status": {
@@ -63,7 +63,7 @@
     "new": "Create export",
     "columns": {
       "period": "Period",
-      "agency": "Agency",
+      "agency": "Collection agency",
       "status": "Status",
       "records": "Records",
       "total": "Total",
@@ -80,7 +80,7 @@
   },
   "export_create": {
     "title": "Create payroll export",
-    "agency": "Agency",
+    "agency": "Collection agency",
     "year": "Year",
     "month": "Month",
     "confirm": "Create",
