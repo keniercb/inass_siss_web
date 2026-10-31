@@ -46,6 +46,7 @@
       "paid_at": "Collection date",
       "paid_on": "Collected at agency",
       "valid_from": "Valid from",
+      "payment_day": "Payment day",
       "set_provitional_at": "Window opens on",
       "set_expired_at": "Window closes on",
       "created_at": "Created",
@@ -53,14 +54,15 @@
     }
   },
   "generate": {
-    "title": "Generate payments",
+    "title": "Generate next-month payments",
+    "description": "The system automatically generates payments for the month following the current date. The period does not need to be specified.",
     "year": "Year",
     "month": "Month",
     "confirm": "Generate",
     "success": "Payments generated successfully",
     "error": "Could not generate payments",
     "result": {
-      "period": "Period",
+      "period": "Generated period",
       "anchor_payments": "Period payments (anchors per form)",
       "pensioner_payments": "Pensioner rows",
       "created": "Created",

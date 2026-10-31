@@ -132,6 +132,7 @@ export function PaymentDetailPage() {
           <Field label={t('detail.fields.paid_at')} value={payment.paid_at ? formatDate(payment.paid_at) : '—'} />
           <Field label={t('detail.fields.paid_on')} value={payment.paid_on ? `${payment.paid_on.code ?? ''} ${payment.paid_on.name ?? ''}`.trim() : '—'} />
           <Field label={t('detail.fields.valid_from')} value={payment.valid_from ? formatDate(payment.valid_from) : '—'} />
+          <Field label={t('detail.fields.payment_day')} value={payment.payment_day ? formatDate(payment.payment_day) : '—'} />
           <Field label={t('detail.fields.set_provitional_at')} value={payment.set_provitional_at ? formatDate(payment.set_provitional_at) : '—'} />
           <Field label={t('detail.fields.set_expired_at')} value={payment.set_expired_at ? formatDate(payment.set_expired_at) : '—'} />
           <Field label={t('detail.fields.created_at')} value={payment.created_at ? formatDate(payment.created_at) : '—'} />

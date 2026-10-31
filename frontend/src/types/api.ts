@@ -429,8 +429,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Pagos periódicos: generación mensual a dos niveles
-         * @description RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5): nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control; el activo SIN control se OMITE y se reporta `skipped_no_control`; re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. El período NO puede ser futuro (422 contra el reloj). Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).
+         * Pagos periódicos: generación mensual a dos niveles (período AUTOMÁTICO)
+         * @description RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5; Task 71/SGP-55, D-106/D-108): SIN CUERPO — el período NO se recibe, se resuelve AUTOMÁTICO para el MES SIGUIENTE a la fecha actual contra el reloj compartido. Nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control y el calendario NACE ESTAMPADO: `payment_day` (el día de pago de la configuración ACTIVA sobre el mes/año del pago, D-107) y `set_provitional_at`/`set_expired_at` (Task 70); el activo SIN control se OMITE y se reporta `skipped_no_control`; re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. La validación de fecha futura SE ELIMINÓ (D-108): el sistema trabaja un mes por adelantado. Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).
          */
         post: operations["paymentsGenerate"];
         delete?: never;
@@ -554,7 +554,7 @@ export interface paths {
         put?: never;
         /**
          * Exportación de nómina electrónica: solicitar la transmisión
-         * @description RF-PAG-004 (Task 64/SGP-49, S10.5): solicita el archivo de nómina de una agencia y período para el consumo del banco. Crea la corrida `queued` y responde 202 Accepted — el job en cola (driver `database`, `queue:work`) proyecta los pensionados ACTIVOS con control en la agencia, escribe el CSV con el layout de la agencia (estándar o su override por código — P-05 pendiente de especificación bancaria) y el ARCHIVO DE CONTROL con el conteo y la suma contra la BD. Reglas 422: la agencia debe existir en el catálogo VIVO y el período NO puede ser futuro (los pasados se permiten — un arranque tardío del proceso bancario re-transmite). Re-ejecutar el período crea una corrida NUEVA: cada transmisión queda registrada, los archivos previos jamás se tocan. Permiso `payments.export` (admin + director).
+         * @description RF-PAG-004 (Task 64/SGP-49, S10.5; Task 71/SGP-55, D-108): solicita el archivo de nómina de una agencia y período para el consumo del banco. Crea la corrida `queued` y responde 202 Accepted — el job en cola (driver `database`, `queue:work`) proyecta los pensionados ACTIVOS con control en la agencia, escribe el CSV con el layout de la agencia (estándar o su override por código — P-05 pendiente de especificación bancaria) y el ARCHIVO DE CONTROL con el conteo y la suma contra la BD. Regla 422: la agencia debe existir en el catálogo VIVO; el período CUALQUIERA desde Task 71 (la puerta de futuro se RETIRÓ: la generación apunta al mes siguiente, así que el archivo del mes que está por pagarse viaja POR ADELANTADO — los pasados re-transmiten). Re-ejecutar el período crea una corrida NUEVA: cada transmisión queda registrada, los archivos previos jamás se tocan. Permiso `payments.export` (admin + director).
          */
         post: operations["payrollExportsStore"];
         delete?: never;
@@ -2076,8 +2076,9 @@ export interface components {
              *     projection), the bank control it was liquidated through (the LIVE
              *     agency view), the FROZEN agency/account snapshot taken at
              *     generation time, the H-16 status, the collection stamp
-             *     (paid_at + paid_on) and valid_from — the conciliation and audit
-             *     evidence of the ledger.
+             *     (paid_at + paid_on), valid_from, the payment day and the
+             *     verification window — the conciliation and audit evidence of the
+             *     ledger.
              *
              *     `agency`/`account` are the FROZEN values of the payment; the
              *     `bank_control.agency` projection is the LIVE view — they may
@@ -2188,6 +2189,12 @@ export interface components {
              * @example 2026-10-30
              */
             valid_from?: string | null;
+            /**
+             * Format: date
+             * @description Task 71/SGP-55: el DÍA DE PAGO del pago — el día de pago de la configuración ACTIVA sobre el mes y el año del pago generado (aclampado al mes); NACE ESTAMPADA por la generación, la misma base de la ventana — NULL solo en filas nacidas antes de la política
+             * @example 2026-11-15
+             */
+            payment_day?: string | null;
             /**
              * Format: date
              * @description Task 69/SGP-53: la fecha en que el job de verificación abre la ventana de cobro (pending→provitional); desde Task 70/SGP-54 NACE ESTAMPADA por la generación desde la configuración ACTIVA — NULL solo en filas nacidas antes de la política
@@ -5296,24 +5303,9 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * @description Año del período
-                     * @example 2026
-                     */
-                    year: number;
-                    /**
-                     * @description Mes del período (1-12) — NO futuro
-                     * @example 10
-                     */
-                    month: number;
-                };
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description La evidencia de la generación idempotente a dos niveles */
+            /** @description La evidencia de la generación idempotente a dos niveles — el período resuelto automáticamente (el mes siguiente) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5321,11 +5313,17 @@ export interface operations {
                 content: {
                     "application/json": {
                         data?: {
-                            /** @example 2026 */
+                            /**
+                             * @description El año del período AUTOMÁTICO (mes siguiente a la fecha actual)
+                             * @example 2026
+                             */
                             year?: number;
-                            /** @example 10 */
+                            /**
+                             * @description El mes del período AUTOMÁTICO
+                             * @example 11
+                             */
                             month?: number;
-                            /** @example 2026-10 */
+                            /** @example 2026-11 */
                             period?: string;
                             /** @description El pago del período por cada forma, con la bandera created */
                             payments?: {
@@ -5369,7 +5367,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Período futuro o calendario inválido */
+            /** @description Sin configuración general activa (el calendario del pago no puede estamparse) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -5749,8 +5747,8 @@ export interface operations {
                      */
                     year: number;
                     /**
-                     * @description Mes del período (1-12) — NO futuro (422)
-                     * @example 10
+                     * @description Mes del período (1-12) — cualquier período desde Task 71 (D-108: el del mes siguiente viaja POR ADELANTADO)
+                     * @example 11
                      */
                     month: number;
                 };
@@ -5782,7 +5780,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Agencia inexistente/muerta o período futuro */
+            /** @description Agencia inexistente/muerta en el catálogo VIVO */
             422: {
                 headers: {
                     [name: string]: unknown;

@@ -46,6 +46,7 @@ const payments = new Map<number, PensionerPayment>([
     paid_at: null,
     paid_on: null,
     valid_from: '2026-10-01',
+    payment_day: '2026-10-15',
     set_provitional_at: '2026-11-01',
     set_expired_at: '2026-12-01',
     created_at: '2026-10-01T00:00:00Z',
@@ -64,6 +65,7 @@ const payments = new Map<number, PensionerPayment>([
     paid_at: '2026-10-20',
     paid_on: agency(2, 'BPA02', 'BPA Agencia 2'),
     valid_from: null,
+    payment_day: '2026-10-15',
     set_provitional_at: '2026-11-01',
     set_expired_at: '2026-12-01',
     created_at: '2026-10-01T00:00:00Z',
@@ -82,6 +84,7 @@ const payments = new Map<number, PensionerPayment>([
     paid_at: null,
     paid_on: null,
     valid_from: '2026-09-01',
+    payment_day: '2026-09-15',
     set_provitional_at: '2026-10-01',
     set_expired_at: '2026-11-01',
     created_at: '2026-09-01T00:00:00Z',
@@ -100,6 +103,7 @@ const payments = new Map<number, PensionerPayment>([
     paid_at: null,
     paid_on: null,
     valid_from: '2026-08-01',
+    payment_day: '2026-08-15',
     set_provitional_at: '2026-09-01',
     set_expired_at: '2026-10-01',
     created_at: '2026-08-01T00:00:00Z',
@@ -118,6 +122,7 @@ const payments = new Map<number, PensionerPayment>([
     paid_at: null,
     paid_on: null,
     valid_from: '2026-07-01',
+    payment_day: '2026-07-15',
     set_provitional_at: '2026-08-01',
     set_expired_at: '2026-09-01',
     created_at: '2026-07-01T00:00:00Z',
@@ -135,6 +140,7 @@ const payments = new Map<number, PensionerPayment>([
     paid_at: null,
     paid_on: null,
     valid_from: '2026-10-01',
+    payment_day: '2026-10-15',
     set_provitional_at: '2026-11-01',
     set_expired_at: '2026-12-01',
     created_at: '2026-10-01T00:00:00Z',
@@ -180,21 +186,16 @@ export const paymentsHandlers = [
     return HttpResponse.json({ data: paged, meta: { current_page: page, per_page: perPage, total, last_page: Math.max(1, Math.ceil(total / perPage)) } });
   }),
 
-  // POST /payments/generate — generación mensual a dos niveles (Task 68/SGP-52)
+  // POST /payments/generate — generación mensual a dos niveles SIN body (Task 71/SGP-55, D-106)
+  // El período se resuelve AUTOMÁTICO = mes siguiente a la fecha actual.
   // Respuesta: { period, payments: [{payment_id, payment_form, created}], pensioner_payments: {created_count, skipped_count, skipped_no_control} }
-  http.post(`${API_BASE}/payments/generate`, async ({ request }) => {
-    const body = (await request.json()) as { year?: number; month?: number };
-    if (!body.year || !body.month) return HttpResponse.json({ message: 'Error de validación.', errors: { year: ['El año es obligatorio.'], month: ['El mes es obligatorio.'] } }, { status: 422 });
-
-    const year = body.year!;
-    const month = body.month!;
-    const period = `${year}-${String(month).padStart(2, '0')}`;
-
-    // Verificar período futuro
+  http.post(`${API_BASE}/payments/generate`, async () => {
+    // Resolver el mes siguiente a HOY contra el reloj del servidor
     const now = new Date();
-    if (year > now.getFullYear() || (year === now.getFullYear() && month > now.getMonth() + 1)) {
-      return HttpResponse.json({ message: 'El período no puede ser futuro.' }, { status: 422 });
-    }
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const year = nextMonth.getFullYear();
+    const month = nextMonth.getMonth() + 1;
+    const period = `${year}-${String(month).padStart(2, '0')}`;
 
     // Nivel 1: crear/obtener el Payment por cada forma (idempotente por UNIQUE forma×período)
     const forms = ['tarjeta magnetica', 'nomina electronica'] as const;
@@ -236,8 +237,10 @@ export const paymentsHandlers = [
       const form: 'tarjeta magnetica' | 'nomina electronica' = ctrl.electronic_payroll ? 'nomina electronica' : 'tarjeta magnetica';
       const anchor = paymentsLevel1.find((p) => p.payment_form === form)!;
       const todayIso = new Date().toISOString().slice(0, 10);
+      // payment_day (Task 71/SGP-55, D-107): día de pago de la config ACTIVA (15) aclampado al mes/año del pago
+      const paymentDay = `${year}-${String(month).padStart(2, '0')}-15`;
       // set_provitional_at / set_expired_at: nacen estampados desde la config activa (Task 70)
-      const baseDate = new Date(year, month - 1, 15); // payment_day = 15 por defecto
+      const baseDate = new Date(year, month - 1, 15);
       const setProvitional = new Date(baseDate); setProvitional.setMonth(setProvitional.getMonth() + 1); // +1 mes
       const setExpired = new Date(setProvitional); setExpired.setMonth(setExpired.getMonth() + 1); // +1 mes
 
@@ -254,6 +257,7 @@ export const paymentsHandlers = [
         paid_at: form === 'tarjeta magnetica' ? todayIso : null,
         paid_on: form === 'tarjeta magnetica' ? ctrl.agency : null,
         valid_from: form === 'nomina electronica' ? todayIso : null,
+        payment_day: paymentDay,
         set_provitional_at: setProvitional.toISOString().slice(0, 10),
         set_expired_at: setExpired.toISOString().slice(0, 10),
         created_at: new Date().toISOString(),
@@ -390,7 +394,7 @@ export const paymentsHandlers = [
     return HttpResponse.json({ data: paged, meta: { current_page: page, per_page: perPage, total, last_page: Math.max(1, Math.ceil(total / perPage)) } });
   }),
 
-  // POST /payroll-exports
+  // POST /payroll-exports — cualquier período desde Task 71/SGP-55 (D-108)
   http.post(`${API_BASE}/payroll-exports`, async ({ request }) => {
     const body = (await request.json()) as { agency_id?: number; year?: number; month?: number };
     if (!body.agency_id || !body.year || !body.month) return HttpResponse.json({ message: 'Error de validación.', errors: { agency_id: ['La agencia es obligatoria.'], year: ['El año es obligatorio.'], month: ['El mes es obligatorio.'] } }, { status: 422 });
