@@ -23,6 +23,10 @@ const SETTING_FIELDS = [
   { name: 'minimum_pension', type: 'number', labelKey: 'form.minimum_pension', helpKey: 'form.minimum_pension_help', required: true, step: 0.01, min: 0 },
   { name: 'maximum_pension', type: 'number', labelKey: 'form.maximum_pension', helpKey: 'form.maximum_pension_help', required: true, step: 0.01, min: 0 },
   { name: 'minimum_pension_increment', type: 'number', labelKey: 'form.minimum_pension_increment', helpKey: 'form.minimum_pension_increment_help', required: true, step: 0.01, min: 0 },
+  // Task 70/SGP-54: calendario de cobro
+  { name: 'payment_day', type: 'number', labelKey: 'form.payment_day', helpKey: 'form.payment_day_help', required: true, min: 1, max: 30 },
+  { name: 'month_to_provitional', type: 'number', labelKey: 'form.month_to_provitional', helpKey: 'form.month_to_provitional_help', required: true, min: 1 },
+  { name: 'month_to_expired', type: 'number', labelKey: 'form.month_to_expired', helpKey: 'form.month_to_expired_help', required: true, min: 1 },
 ] as const;
 
 export function GeneralSettingFormModal({ onClose }: GeneralSettingFormModalProps) {
@@ -41,6 +45,9 @@ export function GeneralSettingFormModal({ onClose }: GeneralSettingFormModalProp
       minimum_pension: 200,
       maximum_pension: 2500,
       minimum_pension_increment: 50,
+      payment_day: 15,
+      month_to_provitional: 1,
+      month_to_expired: 1,
     },
   });
 

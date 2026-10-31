@@ -14,7 +14,10 @@
       "minimum_pension": "Pensión mín.",
       "maximum_pension": "Pensión máx.",
       "minimum_pension_increment": "Inc. pensión mín.",
-      "status": "Estado"
+      "status": "Estado",
+      "payment_day": "Día pago",
+      "month_to_provitional": "A ventana",
+      "month_to_expired": "A cierre"
     },
     "status": {
       "current": "Activa",
@@ -54,6 +57,12 @@
     "maximum_pension": "Pensión máxima",
     "maximum_pension_help": "Tope absoluto de la cuantía. Debe ser mayor o igual que la pensión mínima",
     "minimum_pension_increment": "Incremento a la pensión mínima",
-    "minimum_pension_increment_help": "Monto absoluto añadido cuando la cuantía queda por debajo de la pensión mínima"
+    "minimum_pension_increment_help": "Monto absoluto añadido cuando la cuantía queda por debajo de la pensión mínima",
+    "payment_day": "Día de pago",
+    "payment_day_help": "Día del mes en que se realiza el pago (1-30)",
+    "month_to_provitional": "Meses hasta ventana de cobro",
+    "month_to_provitional_help": "Meses desde el día de pago hasta abrir la ventana de cobro (> 0)",
+    "month_to_expired": "Meses hasta cierre",
+    "month_to_expired_help": "Meses de la ventana abierta hasta el cierre (> 0)"
   }
 }

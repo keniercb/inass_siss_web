@@ -14,7 +14,10 @@
       "minimum_pension": "Min. pension",
       "maximum_pension": "Max. pension",
       "minimum_pension_increment": "Min. pension inc.",
-      "status": "Status"
+      "status": "Status",
+      "payment_day": "Pay day",
+      "month_to_provitional": "To provitional",
+      "month_to_expired": "To expired"
     },
     "status": {
       "current": "Active",
@@ -54,6 +57,12 @@
     "maximum_pension": "Maximum pension",
     "maximum_pension_help": "Absolute cap of the pension. Must be greater than or equal to the minimum pension",
     "minimum_pension_increment": "Minimum pension increment",
-    "minimum_pension_increment_help": "Absolute amount added when the pension falls below the minimum"
+    "minimum_pension_increment_help": "Absolute amount added when the pension falls below the minimum",
+    "payment_day": "Payment day",
+    "payment_day_help": "Day of the month when payment is made (1-30)",
+    "month_to_provitional": "Months to provitional",
+    "month_to_provitional_help": "Months from payment day until the collection window opens (> 0)",
+    "month_to_expired": "Months to expired",
+    "month_to_expired_help": "Months of the open window until closure (> 0)"
   }
 }

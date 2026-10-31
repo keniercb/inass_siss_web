@@ -15,7 +15,9 @@
     "status": {
       "pending": "Pendiente",
       "paid": "Pagado",
-      "cancelled": "Anulado"
+      "cancelled": "Anulado",
+      "provitional": "Provisional",
+      "expired": "Vencido"
     }
   },
   "detail": {
@@ -86,5 +88,10 @@
     "confirm": "Crear",
     "success": "Exportación creada correctamente",
     "error": "No se pudo crear la exportación"
+  },
+  "collect": {
+    "button": "Cobrar",
+    "success": "Pago cobrado correctamente",
+    "error": "No se pudo cobrar el pago"
   }
 }

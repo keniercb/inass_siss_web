@@ -1,17 +1,17 @@
 import { http, HttpResponse } from 'msw';
 import type { components } from '@/types/api';
 
-type PensionPayment = components['schemas']['PensionPayment'];
+type PensionerPayment = components['schemas']['PensionerPayment'];
 type PayrollExportRun = components['schemas']['PayrollExportRun'];
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
 // Seeds: 4 payments (2 pending, 1 paid, 1 cancelled)
-const payments = new Map<number, PensionPayment>([
-  [1, { id: 1, pensioner_id: 1, pensioner: { id: 1, person: { id: 3, identity_number: '65112845679', first_name: 'Josefa', first_surname: 'Martínez' } as never, amount: '3250.00' } as never, period: '2026-10', period_year: 2026, period_month: 10, amount: '3250.00', status: 'pending', bank_control: { id: 1, number: 1, agency: { id: 1, code: 'BPA01', name: 'BPA Agencia 1' }, account: '02000012345678901234', electronic_payroll: false } as never, paid_at: null, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-01T00:00:00Z' } as PensionPayment],
-  [2, { id: 2, pensioner_id: 2, pensioner: { id: 2, person: { id: 7, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' } as never, amount: '2800.00' } as never, period: '2026-10', period_year: 2026, period_month: 10, amount: '2800.00', status: 'pending', bank_control: null, paid_at: null, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-01T00:00:00Z' } as PensionPayment],
-  [3, { id: 3, pensioner_id: 1, pensioner: { id: 1, person: { id: 3, identity_number: '65112845679', first_name: 'Josefa', first_surname: 'Martínez' } as never, amount: '3250.00' } as never, period: '2026-09', period_year: 2026, period_month: 9, amount: '3250.00', status: 'paid', bank_control: { id: 1, number: 1, agency: { id: 1, code: 'BPA01', name: 'BPA Agencia 1' }, account: '02000012345678901234', electronic_payroll: false } as never, paid_at: '2026-09-28', created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-28T12:00:00Z' } as PensionPayment],
-  [4, { id: 4, pensioner_id: 2, pensioner: { id: 2, person: { id: 7, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' } as never, amount: '2800.00' } as never, period: '2026-09', period_year: 2026, period_month: 9, amount: '2800.00', status: 'cancelled', bank_control: null, paid_at: null, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-15T10:00:00Z' } as PensionPayment],
+const payments = new Map<number, PensionerPayment>([
+  [1, { id: 1, pensioner_id: 1, pensioner: { id: 1, person: { id: 3, identity_number: '65112845679', first_name: 'Josefa', first_surname: 'Martínez' } as never, amount: '3250.00' } as never, period: '2026-10', period_year: 2026, period_month: 10, amount: '3250.00', status: 'pending', bank_control: { id: 1, number: 1, agency: { id: 1, code: 'BPA01', name: 'BPA Agencia 1' }, account: '02000012345678901234', electronic_payroll: false } as never, paid_at: null, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-01T00:00:00Z' } as PensionerPayment],
+  [2, { id: 2, pensioner_id: 2, pensioner: { id: 2, person: { id: 7, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' } as never, amount: '2800.00' } as never, period: '2026-10', period_year: 2026, period_month: 10, amount: '2800.00', status: 'pending', bank_control: null, paid_at: null, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-01T00:00:00Z' } as PensionerPayment],
+  [3, { id: 3, pensioner_id: 1, pensioner: { id: 1, person: { id: 3, identity_number: '65112845679', first_name: 'Josefa', first_surname: 'Martínez' } as never, amount: '3250.00' } as never, period: '2026-09', period_year: 2026, period_month: 9, amount: '3250.00', status: 'paid', bank_control: { id: 1, number: 1, agency: { id: 1, code: 'BPA01', name: 'BPA Agencia 1' }, account: '02000012345678901234', electronic_payroll: false } as never, paid_at: '2026-09-28', created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-28T12:00:00Z' } as PensionerPayment],
+  [4, { id: 4, pensioner_id: 2, pensioner: { id: 2, person: { id: 7, identity_number: '78092145678', first_name: 'Carlos', first_surname: 'Rodríguez' } as never, amount: '2800.00' } as never, period: '2026-09', period_year: 2026, period_month: 9, amount: '2800.00', status: 'cancelled', bank_control: null, paid_at: null, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-15T10:00:00Z' } as PensionerPayment],
 ]);
 
 let nextPaymentId = 100;
@@ -34,8 +34,8 @@ export const paymentsHandlers = [
     const status = url.searchParams.get('status');
 
     let items = Array.from(payments.values());
-    if (year) items = items.filter((p) => String(p.period_year) === year);
-    if (month) items = items.filter((p) => String(p.period_month) === month);
+    if (year) items = items.filter((p) => String(p.payment?.year) === year);
+    if (month) items = items.filter((p) => String(p.payment?.month) === month);
     if (status) items = items.filter((p) => p.status === status);
     items.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
 
@@ -52,7 +52,7 @@ export const paymentsHandlers = [
 
     // Crear pagos para pensionados activos
     const period = `${body.year}-${String(body.month).padStart(2, '0')}`;
-    const existing = Array.from(payments.values()).filter((p) => p.period === period);
+    const existing = Array.from(payments.values()).filter((p) => p.payment?.period === period);
     if (existing.length > 0) return HttpResponse.json({ message: `Ya existen pagos generados para el período ${period}.` }, { status: 409 });
 
     // Simular creación de 2 pagos nuevos
@@ -60,7 +60,7 @@ export const paymentsHandlers = [
       const id = nextPaymentId++;
       const p = payments.get(pid);
       if (p) {
-        payments.set(id, { ...p, id, period, period_year: body.year!, period_month: body.month!, status: 'pending', paid_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as PensionPayment);
+        payments.set(id, { ...p, id, period, period_year: body.year!, period_month: body.month!, status: 'pending', paid_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as PensionerPayment);
       }
     });
 
@@ -75,17 +75,54 @@ export const paymentsHandlers = [
     return HttpResponse.json({ data: p });
   }),
 
-  // PATCH /payments/{id}/status
+  // PATCH /payments/{id}/status — matriz ampliada (Task 68-69)
   http.patch(`${API_BASE}/payments/:id/status`, async ({ request, params }) => {
     const id = parseInt(params.id as string, 10);
     const p = payments.get(id);
     if (!p) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
 
     const body = (await request.json()) as { status?: string; paid_at?: string };
-    if (p.status !== 'pending') return HttpResponse.json({ message: 'Solo los pagos pendientes pueden cambiar de estado.' }, { status: 422 });
-    if (!body.status || !['paid', 'cancelled'].includes(body.status)) return HttpResponse.json({ message: 'Error de validación.', errors: { status: ['El estado debe ser paid o cancelled.'] } }, { status: 422 });
+    // Matriz: pending→paid|provitional, provitional→expired|paid, expired→cancelled, cancelled→paid
+    const matrix: Record<string, string[]> = {
+      pending: ['paid', 'provitional', 'cancelled'],
+      provitional: ['expired', 'paid'],
+      expired: ['cancelled'],
+      cancelled: ['paid'],
+      paid: [],
+    };
+    const currentStatus = p.status ?? 'pending';
+    const allowed = matrix[currentStatus] ?? [];
+    if (!body.status || !allowed.includes(body.status)) {
+      if (currentStatus === body.status) return HttpResponse.json({ message: 'La transición debe cambiar el estado actual.' }, { status: 422 });
+      return HttpResponse.json({ message: `El pago ${id} está ${currentStatus}: la transición a ${body.status} está fuera de la matriz.` }, { status: 422 });
+    }
 
-    const updated: PensionPayment = { ...p, status: body.status as PensionPayment['status'], paid_at: body.status === 'paid' ? (body.paid_at ?? new Date().toISOString().slice(0, 10)) : null, updated_at: new Date().toISOString() };
+    const updated: PensionerPayment = { ...p, status: body.status as PensionerPayment['status'], paid_at: body.status === 'paid' ? (body.paid_at ?? new Date().toISOString().slice(0, 10)) : p.paid_at, updated_at: new Date().toISOString() };
+    payments.set(id, updated);
+    return HttpResponse.json({ data: updated });
+  }),
+
+  // POST /payments/{id}/collect — cobro de primera clase (Task 68/SGP-52)
+  http.post(`${API_BASE}/payments/:id/collect`, async ({ request, params }) => {
+    const id = parseInt(params.id as string, 10);
+    const p = payments.get(id);
+    if (!p) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+
+    const body = (await request.json()) as { agency_id?: number; paid_at?: string };
+    if (!body.agency_id) return HttpResponse.json({ message: 'Error de validación.', errors: { agency_id: ['La agencia de cobro es obligatoria.'] } }, { status: 422 });
+
+    // pending o provitional → paid + sello; paid → solo sello; expired/cancelled → 422
+    const currentStatus = p.status ?? 'pending';
+    if (currentStatus === 'expired' || currentStatus === 'cancelled') {
+      return HttpResponse.json({ message: `Un pago ${currentStatus} no puede ser cobrado directamente. Use PATCH /status primero.` }, { status: 422 });
+    }
+
+    const updated: PensionerPayment = {
+      ...p,
+      status: 'paid',
+      paid_at: body.paid_at ?? new Date().toISOString().slice(0, 10),
+      updated_at: new Date().toISOString(),
+    };
     payments.set(id, updated);
     return HttpResponse.json({ data: updated });
   }),
@@ -96,8 +133,8 @@ export const paymentsHandlers = [
     const year = url.searchParams.get('year');
     const month = url.searchParams.get('month');
     let items = Array.from(payments.values());
-    if (year) items = items.filter((p) => String(p.period_year) === year);
-    if (month) items = items.filter((p) => String(p.period_month) === month);
+    if (year) items = items.filter((p) => String(p.payment?.year) === year);
+    if (month) items = items.filter((p) => String(p.payment?.month) === month);
 
     const total = items.length;
     const pending = items.filter((p) => p.status === 'pending').length;

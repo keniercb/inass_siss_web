@@ -15,7 +15,9 @@
     "status": {
       "pending": "Pending",
       "paid": "Paid",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "provitional": "Provisional",
+      "expired": "Expired"
     }
   },
   "detail": {
@@ -86,5 +88,10 @@
     "confirm": "Create",
     "success": "Export created successfully",
     "error": "Could not create the export"
+  },
+  "collect": {
+    "button": "Collect",
+    "success": "Payment collected successfully",
+    "error": "Could not collect the payment"
   }
 }
