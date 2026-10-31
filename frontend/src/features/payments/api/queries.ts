@@ -10,7 +10,7 @@ type PayrollExportRun = components['schemas']['PayrollExportRun'];
 
 interface PaginatedResponse<T> { data: T[]; meta: { current_page: number; per_page: number; total: number; last_page: number }; }
 
-export interface PaymentsListParams { page?: number; per_page?: number; year?: number; month?: number; status?: string; agency_id?: number; }
+export interface PaymentsListParams { page?: number; per_page?: number; year?: number; month?: number; status?: string; agency_id?: number; payment_form?: string; pensioner_id?: number; }
 
 export function usePayments(params: PaymentsListParams = {}) {
   return useQuery({

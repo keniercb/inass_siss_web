@@ -16,7 +16,7 @@
       "minimum_pension_increment": "Min. pension inc.",
       "status": "Status",
       "payment_day": "Pay day",
-      "month_to_provitional": "To provitional",
+      "month_to_provitional": "To provisional",
       "month_to_expired": "To expired"
     },
     "status": {
@@ -60,9 +60,9 @@
     "minimum_pension_increment_help": "Absolute amount added when the pension falls below the minimum",
     "payment_day": "Payment day",
     "payment_day_help": "Day of the month when payment is made (1-30)",
-    "month_to_provitional": "Months to provitional",
-    "month_to_provitional_help": "Months from payment day until the collection window opens (> 0)",
-    "month_to_expired": "Months to expired",
-    "month_to_expired_help": "Months of the open window until closure (> 0)"
+    "month_to_provitional": "Months to collection window (provisional)",
+    "month_to_provitional_help": "Months from payment generation during which it can remain pending. After this period elapses, the payment automatically transitions to the provisional state.",
+    "month_to_expired": "Months to closure (expired)",
+    "month_to_expired_help": "Months the payment can remain in the provisional state from the moment it reached the collection window. After this period elapses, the payment transitions to the expired state."
   }
 }

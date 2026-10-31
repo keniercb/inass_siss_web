@@ -1,6 +1,6 @@
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { es } from 'date-fns/locale/es';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 
 // Registrar locale español una sola vez
@@ -25,6 +25,11 @@ interface DatePickerFieldProps {
  * El calendario soporta navegación por meses (botones < >) y por años
  * (click en el header del mes abre el selector de año, con navegación
  * por décadas mediante los botones < > del selector de año).
+ *
+ * NOTA: El objeto `Date` para `selected` se memoiza por valor (string
+ * YYYY-MM-DD). Sin memoización, `new Date(value + 'T00:00:00')` crea una
+ * referencia nueva en cada render y react-datepicker entra en un bucle
+ * infinito de setPreSelection → "Maximum update depth exceeded".
  */
 export function DatePickerField({
   id,
@@ -37,7 +42,13 @@ export function DatePickerField({
   minDate,
   className,
 }: DatePickerFieldProps) {
-  const selected = value ? new Date(value + 'T00:00:00') : null;
+  // Memoizar por valor (string): misma referencia Date mientras value no cambie.
+  // Esto evita el bucle de componentDidUpdate → setPreSelection en react-datepicker.
+  const selected = useMemo(() => {
+    if (!value) return null;
+    const d = new Date(value + 'T00:00:00');
+    return Number.isNaN(d.getTime()) ? null : d;
+  }, [value]);
 
   const handleChange = useCallback((date: Date | null) => {
     if (date) {
