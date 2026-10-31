@@ -46,6 +46,7 @@
       "paid_at": "Fecha de cobro",
       "paid_on": "Cobrado en agencia",
       "valid_from": "Acreditable desde",
+      "payment_day": "Día de pago",
       "set_provitional_at": "Apertura de ventana",
       "set_expired_at": "Cierre de ventana",
       "created_at": "Creado",
@@ -53,14 +54,15 @@
     }
   },
   "generate": {
-    "title": "Generar pagos",
+    "title": "Generar pagos del mes siguiente",
+    "description": "El sistema genera automáticamente los pagos para el mes siguiente a la fecha actual. No se requiere indicar el período.",
     "year": "Año",
     "month": "Mes",
     "confirm": "Generar",
     "success": "Pagos generados correctamente",
     "error": "No se pudieron generar los pagos",
     "result": {
-      "period": "Período",
+      "period": "Período generado",
       "anchor_payments": "Pagos del período (anclas por forma)",
       "pensioner_payments": "Filas de pensionados",
       "created": "Creados",

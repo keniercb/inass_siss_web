@@ -35,7 +35,9 @@ export function useGeneratePayments() {
   const { t } = useTranslation('payments');
   const toast = useToast();
   return useMutation({
-    mutationFn: async (input: { year: number; month: number }) => { const r = await http.post('/payments/generate', input); return r.data; },
+    // Task 71/SGP-55 (D-106): el endpoint NO recibe body — el período se resuelve
+    // AUTOMÁTICO al mes siguiente a la fecha actual contra el reloj del servidor.
+    mutationFn: async () => { const r = await http.post('/payments/generate'); return r.data; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['payments'] }); toast.success(t('generate.success')); },
     onError: (err: unknown) => { const ae = err as AxiosError<{ message?: string }>; toast.error(ae.response?.data?.message ?? t('generate.error')); },
   });
