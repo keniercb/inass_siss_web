@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.20.0"
+        "version": "1.25.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -3431,8 +3431,8 @@
                 "tags": [
                     "Pagos"
                 ],
-                "summary": "Pagos periódicos: generación mensual",
-                "description": "RF-PAG-005/H-16 (Task 64/SGP-49, S10.5): crea las filas `pending` del período para cada pensionado ACTIVO — la cuantía CONGELADA al generar y el control bancario por el que se liquida (null si no tenía). IDEMPOTENTE por el UNIQUE (pensionado, año, mes): re-generar SALTA los existentes y reporta created_count/skipped_count, jamás duplica. Los suspended/terminated no cobran el período. El período NO puede ser futuro (422 contra el reloj). Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).",
+                "summary": "Pagos periódicos: generación mensual a dos niveles",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5): nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control; el activo SIN control se OMITE y se reporta `skipped_no_control`; re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. El período NO puede ser futuro (422 contra el reloj). Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).",
                 "operationId": "paymentsGenerate",
                 "requestBody": {
                     "required": true,
@@ -3462,7 +3462,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "La evidencia de la generación idempotente",
+                        "description": "La evidencia de la generación idempotente a dos niveles",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3481,13 +3481,46 @@
                                                     "type": "string",
                                                     "example": "2026-10"
                                                 },
-                                                "created_count": {
-                                                    "type": "integer",
-                                                    "example": 12
+                                                "payments": {
+                                                    "description": "El pago del período por cada forma, con la bandera created",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "payment_id": {
+                                                                "type": "integer",
+                                                                "example": 101
+                                                            },
+                                                            "payment_form": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "tarjeta magnetica",
+                                                                    "nomina electronica"
+                                                                ]
+                                                            },
+                                                            "created": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
                                                 },
-                                                "skipped_count": {
-                                                    "type": "integer",
-                                                    "example": 0
+                                                "pensioner_payments": {
+                                                    "properties": {
+                                                        "created_count": {
+                                                            "type": "integer",
+                                                            "example": 12
+                                                        },
+                                                        "skipped_count": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        },
+                                                        "skipped_no_control": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        }
+                                                    },
+                                                    "type": "object"
                                                 }
                                             },
                                             "type": "object"
@@ -3523,8 +3556,8 @@
                 "tags": [
                     "Pagos"
                 ],
-                "summary": "Listado de pagos del período",
-                "description": "RF-PAG-005/H-16 (Task 64/SGP-49): el directorio del ledger — filtrable por año, mes, estado (enum exacto pending/paid/cancelled) y pensionado (id sin sonda: página vacía si no existe), paginado (per_page ≤ 100). Cada fila viaja con la proyección del pensionado (persona y cuantía) y del control bancario de liquidación (número, cuenta, agencia). Tras el feature flag `payments.enabled` y `payments.view` (admin, director, auditor).",
+                "summary": "Listado de pagos del período — la fila completa",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52 + Task 69/SGP-53): el directorio del ledger con TODOS los datos del pago — el `payment` del período con su forma, la cuantía y la agencia/cuenta CONGELADAS, el sello del cobro (`paid_at`/`paid_on`), `valid_from` y el calendario de verificación `set_provitional_at`/`set_expired_at` — filtrable por año, mes, estado (enum exacto pending/paid/expired/provitional/cancelled), pensionado (id sin sonda: página vacía si no existe), forma de pago (`payment_form`) y la agencia CONGELADA (`agency_id`), paginado (per_page ≤ 100). Tras el feature flag `payments.enabled` y `payments.view` (admin, director, auditor).",
                 "operationId": "paymentsIndex",
                 "parameters": [
                     {
@@ -3552,6 +3585,8 @@
                             "enum": [
                                 "pending",
                                 "paid",
+                                "expired",
+                                "provitional",
                                 "cancelled"
                             ]
                         }
@@ -3559,6 +3594,26 @@
                     {
                         "name": "pensioner_id",
                         "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "payment_form",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "tarjeta magnetica",
+                                "nomina electronica"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "agency_id",
+                        "in": "query",
+                        "description": "La agencia CONGELADA del pago (snapshot, D-92)",
                         "schema": {
                             "type": "integer",
                             "format": "int64"
@@ -3586,7 +3641,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Pagos paginados (envelope RF-API-002)"
+                        "description": "Pagos paginados (envelope RF-API-002) con la fila completa"
                     },
                     "401": {
                         "description": "Sin token Sanctum válido"
@@ -3610,8 +3665,8 @@
                 "tags": [
                     "Pagos"
                 ],
-                "summary": "Ficha de un pago",
-                "description": "RF-PAG-005/H-16 (Task 64/SGP-49): el pago con su pensionado (persona), su control de liquidación (número, cuenta, agencia) y su estado H-16. 404 de pago inexistente. Tras el feature flag y `payments.view`.",
+                "summary": "Ficha de un pago — todos los datos",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52 + Task 69/SGP-53): el pago con TODOS sus datos — el pensionado (persona), el `payment` del período con su forma, el control de liquidación (número, cuenta, agencia VIVA), la agencia/cuenta CONGELADAS al generar, el estado H-16, el sello del cobro, `valid_from` y el calendario de verificación de la ventana (`set_provitional_at`/`set_expired_at`). 404 de pago inexistente. Tras el feature flag y `payments.view`.",
                 "operationId": "paymentsShow",
                 "parameters": [
                     {
@@ -3626,7 +3681,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "El pago"
+                        "description": "El pago (fila completa)"
                     },
                     "401": {
                         "description": "Sin token Sanctum válido"
@@ -3650,8 +3705,8 @@
                 "tags": [
                     "Pagos"
                 ],
-                "summary": "Transición del pago: pagar o anular",
-                "description": "RF-PAG-005/H-16 (Task 64/SGP-49, D-75): el espejo del ciclo de vida S9.3 — la matriz `PaymentStatus::transitionsTo()`: pending→paid (estampa `paid_at`, la fecha del body o HOY por defecto) y pending→cancelled; paid/cancelled son TERMINALES (sin salida) y el mismo estado responde 422 (una transición debe MOVER). El intento rechazado queda en la bitácora tras el rollback (visible al auditor, jamás como transición). El 200 devuelve el pago COMPLETO actualizado. Tras el feature flag y `payments.manage` (admin + director).",
+                "summary": "Transición del pago: pagar, provisionar, expirar o anular",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, D-86; Task 69/SGP-53 redefine la matriz): la matriz `PaymentStatus::transitionsTo()`: pending→paid (estampa `paid_at`, la fecha del body o HOY por defecto) y pending→provitional (la ventana de cobro se abre); provitional→expired y provitional→paid; expired→cancelled (el anulado de un vencido); cancelled→paid (la corrección bancaria — estampa `paid_at`, la fecha del body o HOY). `paid` es TERMINAL ESTRICTO E INMUTABLE (sin salida; su única escritura es el sello del cobro, que no es transición) y el mismo estado responde 422 (una transición debe MOVER). El intento rechazado queda en la bitácora tras el rollback (visible al auditor, jamás como transición). El 200 devuelve el pago COMPLETO actualizado. Tras el feature flag y `payments.manage` (admin + director).",
                 "operationId": "paymentsUpdateStatus",
                 "parameters": [
                     {
@@ -3674,15 +3729,17 @@
                                 ],
                                 "properties": {
                                     "status": {
-                                        "description": "El destino — solo los dos movimientos que la matriz admite desde pending",
+                                        "description": "El destino — solo los movimientos que la matriz H-16 admite (pending→paid|provitional, provitional→expired|paid, expired→cancelled, cancelled→paid)",
                                         "type": "string",
                                         "enum": [
                                             "paid",
+                                            "expired",
+                                            "provitional",
                                             "cancelled"
                                         ]
                                     },
                                     "paid_at": {
-                                        "description": "Fecha efectiva del pago (Y-m-d) — opcional, HOY por defecto vía reloj; ignorada al anular",
+                                        "description": "Fecha efectiva del pago (Y-m-d) — opcional, HOY por defecto vía reloj; ignorada al provisionar, expirar o anular",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-10-20"
@@ -3717,13 +3774,82 @@
                 ]
             }
         },
+        "/api/v1/payments/{id}/collect": {
+            "post": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "El cobro del pago — operación de primera clase",
+                "description": "RF-PAG-005/H-16 (Task 68/SGP-52, D-88; Task 69/SGP-53): registra el COBRO del pago en la agencia de ventanilla. Sobre una fila `pending` o `provitional` (la ventana abierta) transiciona a `paid` Y sella el cobro ATÓMICAMENTE (una sola operación cubre ambos canales); sobre una fila `paid` (nacida pagada de tarjeta magnética, ya acreditada o corregida desde cancelled) sella SOLO (`paid_at` + `paid_on`); sobre `expired`/`cancelled` responde 422 (el camino de corrección es PATCH /status primero) y una fila YA sellada responde 422 «already collected» — el PRIMER sello gana, la corrección es evidencia de auditoría (P-11). La agencia del body se valida VIVA (no soft-deleted). Los intentos rechazados caen a la bitácora tras el rollback. Tras el feature flag `payments.enabled` y `payments.manage` (admin + director).",
+                "operationId": "paymentsCollect",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "agency_id"
+                                ],
+                                "properties": {
+                                    "agency_id": {
+                                        "description": "La agencia donde se hizo efectivo el cobro — debe ser VIVA (422 si no existe o está desactivada)",
+                                        "type": "integer",
+                                        "example": 18
+                                    },
+                                    "paid_at": {
+                                        "description": "Fecha efectiva del cobro (Y-m-d) — opcional, HOY por defecto vía reloj",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-11-02"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "El pago con el cobro sellado (ficha completa)"
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.manage"
+                    },
+                    "404": {
+                        "description": "Pago inexistente o feature flag apagado"
+                    },
+                    "422": {
+                        "description": "Fila terminal, cobro ya sellado o agencia no viva"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/payments/reconciliation": {
             "get": {
                 "tags": [
                     "Pagos"
                 ],
                 "summary": "Conciliación básica: conteos y sumas por período y agencia",
-                "description": "RF-PAG-005/H-16 (Task 64/SGP-49): la «conciliación básica de pagos por período y agencia» — conteo y suma de importes por estado (pending/paid/cancelled) del período, más el total; el filtro `agency_id` estrecha a los pagos liquidados por los controles de esa agencia. Es la evidencia que se cruza con el archivo de control de la exportación (el gate de conteo/suma del DoD 9.6). La agencia con id desconocido responde buckets vacíos (sin sonda, el patrón del listado). Tras el feature flag y `payments.view`.",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, D-92; Task 69/SGP-53 añade el quinto bucket): la «conciliación básica de pagos por período y agencia» — conteo y suma de importes por estado (pending/provitional/paid/expired/cancelled) del período, más el total; el filtro `agency_id` estrecha a los pagos cuya agencia CONGELADA del pago es esa agencia (el snapshot del row, SIN join a controles — la evidencia viaja con el pago). Es la evidencia que se cruza con el archivo de control de la exportación (el gate de conteo/suma del DoD 9.6). La agencia con id desconocido responde buckets vacíos (sin sonda, el patrón del listado). Tras el feature flag y `payments.view`.",
                 "operationId": "paymentsReconciliation",
                 "parameters": [
                     {
@@ -3748,7 +3874,7 @@
                     {
                         "name": "agency_id",
                         "in": "query",
-                        "description": "Opcional — estrecha a los pagos liquidados por controles de la agencia",
+                        "description": "Opcional — estrecha a los pagos con la agencia CONGELADA de esa agencia",
                         "schema": {
                             "type": "integer",
                             "format": "int64"
@@ -3757,7 +3883,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Los buckets de conciliación del período",
+                        "description": "Los cuatro buckets de conciliación del período",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3805,7 +3931,31 @@
                                                             },
                                                             "type": "object"
                                                         },
+                                                        "provitional": {
+                                                            "description": "Task 69/SGP-53: la ventana de cobro abierta por el job de verificación",
+                                                            "properties": {
+                                                                "count": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "string",
+                                                                    "example": "0.00"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
                                                         "paid": {
+                                                            "properties": {
+                                                                "count": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "expired": {
                                                             "properties": {
                                                                 "count": {
                                                                     "type": "integer"
@@ -5495,7 +5645,7 @@
                     "Expedientes"
                 ],
                 "summary": "Alta de un registro de servicio",
-                "description": "Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. Task 37 (corrección de usuario): end_date es OBLIGATORIA, estrictamente posterior a start_date (422) y el período no puede solapar NINGÚN subregistro existente del expediente (422 sobre end_date nombrando los registros cruzados) — los vínculos abiertos y los solapamientos advertidos de Sprint 5 ya no existen. Task 48 (SGP-38, corrección de usuario): la fila nace con su par DERIVADO de tiempo de trabajo, calculado por el sistema al alta en el mismo momento — worked_years, número DOUBLE REDONDEADO al entero más cercano (meses de diferencia divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 6, la media sube), y worked_months, entero con los meses TOTALES de diferencia SIN divisor (2000-01-01 → 2005-12-31 responde 71) —; ambos campos JAMÁS se aceptan en el payload (422 si el cliente los envía) y quedan congelados con la fila.",
+                "description": "Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. Task 37 (corrección de usuario): end_date es OBLIGATORIA, estrictamente posterior a start_date (422) y el período no puede solapar NINGÚN subregistro existente del expediente (422 sobre end_date nombrando los registros cruzados) — los vínculos abiertos y los solapamientos advertidos de Sprint 5 ya no existen. Task 66 (SGP-38, corrección de usuario 2026-10-23): la fila nace con su par DERIVADO de tiempo de trabajo, calculado por el sistema al alta en el mismo momento — worked_years, número DOUBLE TRUNCADO al entero (meses de diferencia divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 5, la media jamás sube — el redondeo de la Task 48 quedó retirado), y worked_months, entero con los meses TOTALES de diferencia SIN divisor (2000-01-01 → 2005-12-31 responde 71) —; ambos campos JAMÁS se aceptan en el payload (422 si el cliente los envía) y quedan congelados con la fila.",
                 "operationId": "pensionCasesAddServiceRecord",
                 "parameters": [
                     {
@@ -6551,7 +6701,7 @@
                     "Personas"
                 ],
                 "summary": "Registro de una persona",
-                "description": "Alta con validación estructural del carné (RN-001) y control de duplicados (RF-PER-005): identidad ya registrada responde 409 con la persona registrada (también contra desactivadas); homónimos vivos responden 409 con los candidatos hasta que la petición lleve confirm=true. La ficha única de ciudadano es opcional y única.",
+                "description": "Alta con validación estructural del carné (RN-001) y control de duplicados (RF-PER-005): identidad ya registrada responde 409 con la persona registrada (también contra desactivadas); homónimos vivos responden 409 con los candidatos hasta que la petición lleve confirm=true. La ficha única de ciudadano es opcional y única. Desde Task 69 (SGP-53): los seis primeros dígitos del carné se validan contra la fecha de nacimiento declarada (posiciones 1-2 los dos terminales del año de nacimiento — 89xxxx con 1989 o cualquier año terminado en 89; 3-4 el mes — 8901xx enero del 89; 5-6 el día — 890131 31 de enero del 89) y la fecha de nacimiento no puede ser futura (422 en ambos casos).",
                 "operationId": "peopleStore",
                 "requestBody": {
                     "required": true,
@@ -8887,7 +9037,7 @@
                     "Settings"
                 ],
                 "summary": "Publicar una nueva versión de la configuración",
-                "description": "Publica la nueva configuración de doctrina 2026 (Task 55/S9.1): crea la versión y la ACTIVA, desactivando la anterior en la misma transacción (regla de única activa garantizada en base de datos). El sello de activación effective_from lo sella el reloj del servidor — NO se acepta del cliente. Los siete campos son obligatorios; la pensión máxima nunca es menor que la mínima. Los seis parámetros de sprints anteriores (min_work_years, min_age_men, min_age_women, base_calc_percent, max_calc_percent, annual_increase_percent) y effective_from fueron RETIRADOS: todo payload que los traiga responde 422 explícito (doctrina anti-descarte-silencioso).",
+                "description": "Publica la nueva configuración de doctrina 2026 (Task 55/S9.1 + Task 70/SGP-54): crea la versión y la ACTIVA, desactivando la anterior en la misma transacción (regla de única activa garantizada en base de datos). El sello de activación effective_from lo sella el reloj del servidor — NO se acepta del cliente. Los DIEZ campos son obligatorios: los siete de doctrina y los tres del calendario de la ventana de cobro (payment_day entre 1 y 30, month_to_provitional y month_to_expired ambos > 0 por directriz); la pensión máxima nunca es menor que la mínima. Los seis parámetros de sprints anteriores (min_work_years, min_age_men, min_age_women, base_calc_percent, max_calc_percent, annual_increase_percent) y effective_from fueron RETIRADOS: todo payload que los traiga responde 422 explícito (doctrina anti-descarte-silencioso).",
                 "operationId": "generalSettingsStore",
                 "requestBody": {
                     "required": true,
@@ -8901,7 +9051,10 @@
                                     "internationalist_increment",
                                     "minimum_pension",
                                     "maximum_pension",
-                                    "minimum_pension_increment"
+                                    "minimum_pension_increment",
+                                    "payment_day",
+                                    "month_to_provitional",
+                                    "month_to_expired"
                                 ],
                                 "properties": {
                                     "combatant_threshold_date": {
@@ -8953,6 +9106,25 @@
                                         "format": "double",
                                         "example": 50,
                                         "minimum": 0
+                                    },
+                                    "payment_day": {
+                                        "description": "Task 70/SGP-54: día del mes en que se realiza el pago (entre 1 y 30)",
+                                        "type": "integer",
+                                        "example": 15,
+                                        "maximum": 30,
+                                        "minimum": 1
+                                    },
+                                    "month_to_provitional": {
+                                        "description": "Task 70/SGP-54: meses desde el día de pago hasta abrir la ventana de cobro (> 0 por directriz)",
+                                        "type": "integer",
+                                        "example": 2,
+                                        "minimum": 1
+                                    },
+                                    "month_to_expired": {
+                                        "description": "Task 70/SGP-54: meses de la ventana abierta hasta el cierre (> 0 por directriz)",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "minimum": 1
                                     }
                                 },
                                 "type": "object"
@@ -9911,6 +10083,41 @@
                 },
                 "type": "object"
             },
+            "Payment": {
+                "title": "Pago del período por forma (H-16, dos niveles)",
+                "description": "El objeto de pago de un mes, un año y una forma de pago (tarjeta magnetica / nomina electronica) — el ancla del período del ledger pensioner_payments. Tras el feature flag `payments.enabled`.",
+                "properties": {
+                    "id": {
+                        "description": "Wire projection of the FIRST level of the payments engine (Task\n68/SGP-52, S10.5, D-82): the payment of a period and a form of\npayment — the anchor the ledger rows hang from.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 101
+                    },
+                    "payment_form": {
+                        "description": "La forma de pago del objeto — literales exactos del enum PaymentForm (Task 42)",
+                        "type": "string",
+                        "example": "nomina electronica",
+                        "enum": [
+                            "tarjeta magnetica",
+                            "nomina electronica"
+                        ]
+                    },
+                    "period": {
+                        "description": "Etiqueta canónica YYYY-MM del período",
+                        "type": "string",
+                        "example": "2026-10"
+                    },
+                    "year": {
+                        "type": "integer",
+                        "example": 2026
+                    },
+                    "month": {
+                        "type": "integer",
+                        "example": 10
+                    }
+                },
+                "type": "object"
+            },
             "PayrollExportRun": {
                 "title": "Corrida de exportación de nómina",
                 "description": "Una transmisión del archivo de nómina electrónica de una agencia y período: nace `queued` (202 Accepted), el worker la mueve queued→processing→completed/failed (lineal, sin retries — re-transmitir crea una corrida NUEVA). Al completar sirve records_count + total_amount (la validación de conteo y suma contra la BD) y los nombres de ambos archivos (la nómina y su archivo de control).",
@@ -10008,15 +10215,15 @@
                 },
                 "type": "object"
             },
-            "PensionPayment": {
-                "title": "Pago periódico (H-16)",
-                "description": "Un pago mensual de un pensionado activo: la cuantía CONGELADA al generar, el estado del catálogo H-16 (pending/paid/cancelled), la fecha efectiva del pago y el control bancario por el que se liquidó (nullable cuando el pensionado carecía de control al generar). Tras el feature flag `payments.enabled`.",
+            "PensionerPayment": {
+                "title": "Pago de pensión (H-16, dos niveles)",
+                "description": "Un pago mensual de un pensionado: nace COMPLETO con el Payment del período cuya forma coincide con el marcador del control y el control por el que se liquida; la cuantía y la agencia/cuenta están CONGELADAS al generar; el estado de nacimiento lo decide el canal (nómina electrónica → pending, tarjeta magnética → paid); paid_at/paid_on son el sello del cobro (POST /payments/{id}/collect), valid_from la fecha desde la que el banco puede acreditar y set_provitional_at/set_expired_at el calendario de verificación de la ventana de cobro — desde Task 70/SGP-54 NACE ESTAMPADO por la generación desde la configuración ACTIVA (NULL solo en filas nacidas antes de la política). Tras el feature flag `payments.enabled`.",
                 "properties": {
                     "id": {
-                        "description": "Wire projection of a periodic payment row (Task 64/SGP-49, S10.5,\nRF-PAG-005/H-16): the frozen amount of the period, the H-16\nstatus, the effective payment date and the pensioner (person\nprojection) and the bank control (agency projection) it was\nliquidated through — the conciliation and audit evidence of the\nledger.",
+                        "description": "Wire projection of a periodic payment row — the COMPLETE row\n(«todos los datos del pago», Task 68/SGP-52, S10.5, D-93): the\nPayment of the period (with its form), the pensioner (person\nprojection), the bank control it was liquidated through (the LIVE\nagency view), the FROZEN agency/account snapshot taken at\ngeneration time, the H-16 status, the collection stamp\n(paid_at + paid_on) and valid_from — the conciliation and audit\nevidence of the ledger.\n\n`agency`/`account` are the FROZEN values of the payment; the\n`bank_control.agency` projection is the LIVE view — they may\ndiverge after a control change, and BOTH travel with distinct\nnames (the frozen one is the evidence of the payment).",
                         "type": "integer",
                         "format": "int64",
-                        "example": 1
+                        "example": 5
                     },
                     "pensioner_id": {
                         "type": "integer",
@@ -10060,43 +10267,39 @@
                         "type": "object",
                         "nullable": true
                     },
-                    "period": {
-                        "description": "Etiqueta canónica YYYY-MM del período",
-                        "type": "string",
-                        "example": "2026-10"
-                    },
-                    "period_year": {
-                        "type": "integer",
-                        "example": 2026
-                    },
-                    "period_month": {
-                        "type": "integer",
-                        "example": 10
-                    },
-                    "amount": {
-                        "description": "La cuantía CONGELADA al generar el período (DECIMAL(12,2) como cadena, RN-005)",
-                        "type": "string",
-                        "example": "2127.00"
-                    },
-                    "status": {
-                        "description": "El catálogo H-16: pending→paid/cancelled, terminales sin salida (matriz espejo S9.3)",
-                        "type": "string",
-                        "example": "pending",
-                        "enum": [
-                            "pending",
-                            "paid",
-                            "cancelled"
-                        ]
-                    },
-                    "paid_at": {
-                        "description": "Fecha efectiva del pago (hoy por defecto vía reloj; NULL hasta el paid y en la anulación)",
-                        "type": "string",
-                        "format": "date",
-                        "example": "2026-10-20",
+                    "payment": {
+                        "description": "El pago del período por forma — el ancla del período",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64",
+                                "example": 101
+                            },
+                            "payment_form": {
+                                "type": "string",
+                                "enum": [
+                                    "tarjeta magnetica",
+                                    "nomina electronica"
+                                ]
+                            },
+                            "period": {
+                                "type": "string",
+                                "example": "2026-10"
+                            },
+                            "year": {
+                                "type": "integer",
+                                "example": 2026
+                            },
+                            "month": {
+                                "type": "integer",
+                                "example": 10
+                            }
+                        },
+                        "type": "object",
                         "nullable": true
                     },
                     "bank_control": {
-                        "description": "El control por el que se liquidó (NULL si el pensionado carecía de control al generar)",
+                        "description": "El control por el que se liquida (la agencia aquí es la proyección VIVA)",
                         "properties": {
                             "id": {
                                 "type": "integer",
@@ -10135,6 +10338,92 @@
                             }
                         },
                         "type": "object",
+                        "nullable": true
+                    },
+                    "agency": {
+                        "description": "La agencia de cobro CONGELADA del control al generar (la evidencia del pago — puede divergir de la viva del control)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "BPA-NE-1"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "account": {
+                        "description": "La cuenta CONGELADA del control al generar",
+                        "type": "string",
+                        "example": "02000012345678901234"
+                    },
+                    "amount": {
+                        "description": "La cuantía CONGELADA al generar el período (DECIMAL(12,2) como cadena, RN-005)",
+                        "type": "string",
+                        "example": "2127.00"
+                    },
+                    "status": {
+                        "description": "El catálogo H-16 con provitional (Task 69/SGP-53): nacimiento por canal (nómina → pending, tarjeta → paid), flujos pending→paid|provitional, provitional→expired|paid, expired→cancelled y cancelled→paid (corrección bancaria) — paid es el terminal estricto",
+                        "type": "string",
+                        "example": "pending",
+                        "enum": [
+                            "pending",
+                            "paid",
+                            "expired",
+                            "provitional",
+                            "cancelled"
+                        ]
+                    },
+                    "paid_at": {
+                        "description": "Fecha del cobro (NULL al crear; se estampa en el cobro)",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-20",
+                        "nullable": true
+                    },
+                    "paid_on": {
+                        "description": "La agencia donde se hizo efectivo el cobro (NULL hasta el cobro)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "BPA-HAB-7"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "valid_from": {
+                        "description": "Acreditable desde: nómina electrónica = fecha actual al generar; tarjeta magnética = NULL hasta la acreditación bancaria (P-08)",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-30",
+                        "nullable": true
+                    },
+                    "set_provitional_at": {
+                        "description": "Task 69/SGP-53: la fecha en que el job de verificación abre la ventana de cobro (pending→provitional); desde Task 70/SGP-54 NACE ESTAMPADA por la generación desde la configuración ACTIVA — NULL solo en filas nacidas antes de la política",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-11-05",
+                        "nullable": true
+                    },
+                    "set_expired_at": {
+                        "description": "Task 69/SGP-53: la fecha en que el job de verificación cierra la ventana sin cobro (provitional→expired); desde Task 70/SGP-54 NACE ESTAMPADA por la generación — base + monthToProvitional + monthToExpired, LITERAL desde la base",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-11-25",
                         "nullable": true
                     },
                     "created_at": {
@@ -10221,9 +10510,10 @@
                                 "example": 311
                             },
                             "exact": {
+                                "description": "AT exacto servido REDONDEADO a 2 decimales de presentación (Task 65/SGP-50, ajuste de usuario 2026-10-21: 311/12 → 25.92) — el motor compara con el truncado (C-3) y el DOUBLE completo viaja solo en el congelado",
                                 "type": "number",
                                 "format": "double",
-                                "example": 25.916666666666668
+                                "example": 25.92
                             },
                             "truncated": {
                                 "description": "C-3: solo cuentan los años cumplidos",
@@ -10519,9 +10809,10 @@
                         "example": 311
                     },
                     "service_years_exact": {
+                        "description": "AT exacto servido REDONDEADO a 2 decimales de presentación (Task 65/SGP-50, ajuste de usuario 2026-10-21); la columna congelada conserva el DOUBLE completo (RNF-010)",
                         "type": "number",
                         "format": "double",
-                        "example": 25.916666666666668
+                        "example": 25.92
                     },
                     "service_years_truncated": {
                         "type": "integer",
@@ -11036,10 +11327,10 @@
             },
             "ServiceRecord": {
                 "title": "Registro de servicio",
-                "description": "Vinculo laboral declarado en el expediente (RF-EXP-003). Desde la Task 37 todo período está CERRADO y DISJUNTO: end_date obligatoria y estrictamente posterior a start_date (422 en caso contrario, CHECK chk_service_records_dates como última línea) y sin solapamiento con ningún otro subregistro del expediente (422). is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. Task 48 (SGP-38): worked_years responde los años de trabajo del vínculo — número DOUBLE DERIVADO calculado al alta con la fórmula del usuario REDONDEADA al entero más cercano (mitad hacia arriba) — y worked_months los meses de trabajo TOTALES del vínculo — entero DERIVADO, sin divisor —, ambos calculados en el mismo momento, congelados con la fila y jamás aceptados en el wire (422). La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).",
+                "description": "Vinculo laboral declarado en el expediente (RF-EXP-003). Desde la Task 37 todo período está CERRADO y DISJUNTO: end_date obligatoria y estrictamente posterior a start_date (422 en caso contrario, CHECK chk_service_records_dates como última línea) y sin solapamiento con ningún otro subregistro del expediente (422). is_appendix marca la coletilla (servicio reconocido adicional) y declaration_form fija cómo se declaró el vínculo: Documental (por defecto) o Testifical. Task 66 (SGP-38, corrección de usuario 2026-10-23): worked_years responde los años de trabajo del vínculo — número DOUBLE DERIVADO calculado al alta con la fórmula del usuario TRUNCADA al entero (la fracción se descarta, la media jamás sube; el redondeo de la Task 48 quedó retirado) — y worked_months los meses de trabajo TOTALES del vínculo — entero DERIVADO, sin divisor —, ambos calculados en el mismo momento, congelados con la fila y jamás aceptados en el wire (422). La proyeccion completa de la entidad empleadora viaja en entity (null si la entidad fue desactivada).",
                 "properties": {
                     "id": {
-                        "description": "Work service projection (RF-EXP-003). Since the Task 37 user\ncorrection every period is CLOSED: end_date is mandatory,\nstrictly posterior to start_date (422 otherwise) and DISJOINT\nfrom every sibling row of the case (422 otherwise) — the open\nlink and the advertised overlaps of Sprint 5 no longer exist.\nTask 48 (SGP-38) refines the derived worked time of every row:\nworked_years — the months of difference divided by the regime's\nmonths_per_year, ROUNDED to the nearest integer over a DOUBLE —\nand worked_months — the total months of difference, no divisor —\n, both serialized as JSON NUMBERS (unlike the decimal string of\nlast_salary) and frozen with the row. The full employer entity\nprojection travels with every row (user rule: the\nservice-records listing answers the entity data, not a bare id).",
+                        "description": "Work service projection (RF-EXP-003). Since the Task 37 user\ncorrection every period is CLOSED: end_date is mandatory,\nstrictly posterior to start_date (422 otherwise) and DISJOINT\nfrom every sibling row of the case (422 otherwise) — the open\nlink and the advertised overlaps of Sprint 5 no longer exist.\nTask 66 (SGP-38, corrección de usuario 2026-10-23) refines the\nderived worked time of every row: worked_years — the months of\ndifference divided by the regime's months_per_year, TRUNCATED\nto the integer over a DOUBLE (the Task 48 rounding is retired:\nthe fraction is discarded, the half never points up) — and\nworked_months — the total months of difference, no divisor —,\nboth serialized as JSON NUMBERS (unlike the decimal string of\nlast_salary) and frozen with the row. The full employer entity\nprojection travels with every row (user rule: the\nservice-records listing answers the entity data, not a bare id).",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -11080,10 +11371,10 @@
                         ]
                     },
                     "worked_years": {
-                        "description": "Años de trabajo del vínculo (Task 48, SGP-38): número DOUBLE DERIVADO calculado al alta con la fórmula del usuario y REDONDEADO al entero más cercano (la media sube: la fracción ya no se descarta) — meses de diferencia entre start_date y end_date (el día no cuenta) divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 6 — jamás aceptado en el wire (422), congelado con la fila; el valor siempre es un entero exacto (round de enteros del servidor, decisión de usuario documentada como excepción acotada de RN-005)",
+                        "description": "Años de trabajo del vínculo (Task 66, SGP-38, corrección de usuario 2026-10-23): número DOUBLE DERIVADO calculado al alta con la fórmula del usuario y TRUNCADO al entero (la fracción se descarta otra vez: la media 6/12 = 0.5 responde 0 y jamás sube — el redondeo de la Task 48 quedó retirado) — meses de diferencia entre start_date y end_date (el día no cuenta) divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 5 — jamás aceptado en el wire (422), congelado con la fila; el valor siempre es un entero exacto (intdiv de enteros del servidor, decisión de usuario documentada como excepción acotada de RN-005)",
                         "type": "number",
                         "format": "double",
-                        "example": 6
+                        "example": 5
                     },
                     "worked_months": {
                         "description": "Meses de trabajo TOTALES del vínculo (Task 48, SGP-38): entero DERIVADO calculado al alta en el mismo momento que worked_years con la fórmula del usuario SIN divisor — (AÑO(end_date) - AÑO(start_date)) × 12 + (MES(end_date) - MES(start_date)), el día no cuenta; 2000-01-01 → 2005-12-31 responde 71 — jamás aceptado en el wire (422), congelado con la fila",
@@ -11744,7 +12035,7 @@
             },
             "GeneralSettingVersion": {
                 "title": "Versión de configuración general",
-                "description": "Los siete campos de doctrina 2026 de una versión de la configuración general (RF-CAT-005, Task 55/S9.1). Las versiones son append-only: publicar una nueva desactiva la anterior en la misma transacción. La vigencia es un hecho almacenado — effective_from (sello del Clock) y deactivated_at (baja de la versión) — y solo UNA versión está activa a la vez (garantizado en base de datos). Los montos se sirven como Double y se almacenan DECIMAL(12,2) exacto (RN-005).",
+                "description": "Los DIEZ campos de una versión de la configuración general (RF-CAT-005, Task 55/S9.1 + Task 70/SGP-54): los siete de doctrina 2026 y los tres del calendario de la ventana de cobro — payment_day (1–30), month_to_provitional y month_to_expired (ambos > 0, directriz «monthToProvitional y monthToExpired > 0 ambos»). Las versiones son append-only: publicar una nueva desactiva la anterior en la misma transacción. La vigencia es un hecho almacenado — effective_from (sello del Clock) y deactivated_at (baja de la versión) — y solo UNA versión está activa a la vez (garantizado en base de datos). Los montos se sirven como Double y se almacenan DECIMAL(12,2) exacto (RN-005).",
                 "required": [
                     "id",
                     "combatant_threshold_date",
@@ -11754,6 +12045,9 @@
                     "minimum_pension",
                     "maximum_pension",
                     "minimum_pension_increment",
+                    "payment_day",
+                    "month_to_provitional",
+                    "month_to_expired",
                     "active"
                 ],
                 "properties": {
@@ -11811,6 +12105,25 @@
                         "format": "double",
                         "example": 50,
                         "minimum": 0
+                    },
+                    "payment_day": {
+                        "description": "Task 70/SGP-54: día del mes en que se realiza el pago (entre 1 y 30)",
+                        "type": "integer",
+                        "example": 15,
+                        "maximum": 30,
+                        "minimum": 1
+                    },
+                    "month_to_provitional": {
+                        "description": "Task 70/SGP-54: meses desde el día de pago hasta abrir la ventana de cobro (> 0 por directriz)",
+                        "type": "integer",
+                        "example": 2,
+                        "minimum": 1
+                    },
+                    "month_to_expired": {
+                        "description": "Task 70/SGP-54: meses de la ventana abierta hasta el cierre (> 0 por directriz)",
+                        "type": "integer",
+                        "example": 1,
+                        "minimum": 1
                     },
                     "active": {
                         "description": "Única versión activa (regla de configuración general)",
@@ -11963,7 +12276,7 @@
         },
         {
             "name": "Pagos",
-            "description": "Pagos: exportación de nómina electrónica por agencia y período en cola — POST /payroll-exports con runs (202), job `queue:work`, plantilla configurable por agencia (P-05 pendiente de especificación bancaria) y archivo de control con conteo y suma contra la BD (Task 64/SGP-49, S10.5, RF-PAG-004) — y el registro de pagos periódicos H-16 tras el feature flag `payments.enabled` (default OFF, «pendiente de validación funcional»): generación mensual idempotente, transiciones pending→paid/cancelled espejo S9.3 y conciliación por período y agencia (RF-PAG-005)"
+            "description": "Pagos: exportación de nómina electrónica por agencia y período en cola — POST /payroll-exports con runs (202), job `queue:work`, plantilla configurable por agencia (P-05 pendiente de especificación bancaria) y archivo de control con conteo y suma contra la BD (Task 64/SGP-49, S10.5, RF-PAG-004) — y el registro de pagos periódicos H-16 tras el feature flag `payments.enabled` (default OFF, «pendiente de validación funcional»): generación mensual idempotente, la matriz Task 69/SGP-53 pending→paid|provitional, provitional→expired|paid, expired→cancelled y cancelled→paid (paid terminal estricto), el job de verificación `VerifyPaymentStatuses` (diario 00:05: pending→provitional al llegar `set_provitional_at`, provitional→expired al llegar `set_expired_at`), el cobro en ventana y la conciliación de CINCO buckets por período y agencia (RF-PAG-005)"
         }
     ]
 }
