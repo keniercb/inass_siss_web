@@ -320,7 +320,7 @@ const MONTH_OPTIONS = [
   { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
   { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
 ];
-const PAYMENT_STATUS_BADGE: Record<string, string> = { pending: 'badge-submitted', paid: 'badge-approved', cancelled: 'badge-rejected' };
+const PAYMENT_STATUS_BADGE: Record<string, string> = { pending: 'badge-submitted', paid: 'badge-approved', cancelled: 'badge-rejected', provitional: 'badge-under_review', expired: 'badge-rejected' };
 
 /**
  * Tab Pagos del pensionado — lista los pagos del pensionado ordenados
@@ -405,7 +405,7 @@ function PensionerPaymentsTab({ pensionerId, t, tc }: { pensionerId: string; t: 
                 const agencyName = p.bank_control?.agency?.name ?? '—';
                 return (
                   <tr key={p.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => window.location.href = `/pagos/${p.id}`}>
-                    <td className="px-4 py-3 font-mono text-xs">{p.period ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{p.payment?.period ?? '—'}</td>
                     <td className="px-4 py-3 font-mono">{p.amount != null ? formatCUP(Number(p.amount)) : '—'}</td>
                     <td className="px-4 py-3"><span className={cn('badge', PAYMENT_STATUS_BADGE[p.status ?? 'pending'] ?? '')}>{tp(`list.status.${p.status}`)}</span></td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{agencyName}</td>

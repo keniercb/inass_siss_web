@@ -16,6 +16,10 @@ export const createSettingSchema = z.object({
   minimum_pension: z.coerce.number().min(0, 'Debe ser ≥ 0'),
   maximum_pension: z.coerce.number().min(0, 'Debe ser ≥ 0'),
   minimum_pension_increment: z.coerce.number().min(0, 'Debe ser ≥ 0'),
+  // Task 70/SGP-54: calendario de cobro (3 campos enteros)
+  payment_day: z.coerce.number().int().min(1, 'Debe estar entre 1 y 30').max(30, 'Debe estar entre 1 y 30'),
+  month_to_provitional: z.coerce.number().int().min(1, 'Debe ser > 0'),
+  month_to_expired: z.coerce.number().int().min(1, 'Debe ser > 0'),
 });
 
 // Refinamiento: maximum_pension >= minimum_pension

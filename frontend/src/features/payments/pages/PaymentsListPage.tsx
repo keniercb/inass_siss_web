@@ -10,7 +10,7 @@ import { Pagination } from '@/components/crud/Pagination';
 import { Dialog } from '@/components/ui/Dialog';
 import { formatDate, formatCUP, cn } from '@/lib/utils';
 
-const STATUS_BADGE: Record<string, string> = { pending: 'badge-submitted', paid: 'badge-approved', cancelled: 'badge-rejected' };
+const STATUS_BADGE: Record<string, string> = { pending: 'badge-submitted', paid: 'badge-approved', cancelled: 'badge-rejected', provitional: 'badge-under_review', expired: 'badge-rejected' };
 
 export function PaymentsListPage() {
   const { t } = useTranslation('payments');
@@ -73,7 +73,7 @@ export function PaymentsListPage() {
               return (
                 <tr key={p.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/pagos/${p.id}`)}>
                   <td className="px-4 py-3 font-medium">{personName}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{p.period ?? '—'}</td>
+                  <td className="px-4 py-3 font-mono text-xs">{p.payment?.period ?? '—'}</td>
                   <td className="px-4 py-3 font-mono">{p.amount != null ? formatCUP(Number(p.amount)) : '—'}</td>
                   <td className="px-4 py-3"><span className={cn('badge', STATUS_BADGE[p.status ?? 'pending'] ?? '')}>{t(`list.status.${p.status}`)}</span></td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{agencyName}</td>

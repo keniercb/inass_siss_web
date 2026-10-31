@@ -17,6 +17,9 @@ const seedVersions: GeneralSettingVersion[] = [
     minimum_pension: 200,
     maximum_pension: 2000,
     minimum_pension_increment: 50,
+    payment_day: 15,
+    month_to_provitional: 1,
+    month_to_expired: 1,
     active: false,
     effective_from: '2024-01-01',
     deactivated_at: '2026-01-01T00:00:00Z',
@@ -32,6 +35,9 @@ const seedVersions: GeneralSettingVersion[] = [
     minimum_pension: 200,
     maximum_pension: 2500,
     minimum_pension_increment: 50,
+    payment_day: 15,
+    month_to_provitional: 1,
+    month_to_expired: 1,
     active: true,
     effective_from: '2026-01-01',
     deactivated_at: null,
@@ -102,8 +108,8 @@ export const settingsHandlers = [
       }
     }
 
-    // Validar 7 campos requeridos nuevos
-    const required = ['combatant_threshold_date', 'pre_threshold_percent', 'post_threshold_percent', 'internationalist_increment', 'minimum_pension', 'maximum_pension', 'minimum_pension_increment'];
+    // Validar 10 campos requeridos (7 originales + 3 del calendario de cobro Task 70)
+    const required = ['combatant_threshold_date', 'pre_threshold_percent', 'post_threshold_percent', 'internationalist_increment', 'minimum_pension', 'maximum_pension', 'minimum_pension_increment', 'payment_day', 'month_to_provitional', 'month_to_expired'];
     for (const f of required) {
       if (body[f] === undefined || body[f] === null || body[f] === '') {
         errors[f] = [`El campo ${f} es obligatorio.`];
@@ -113,6 +119,17 @@ export const settingsHandlers = [
     // Validar maximum_pension >= minimum_pension
     if (typeof body.minimum_pension === 'number' && typeof body.maximum_pension === 'number' && body.maximum_pension < body.minimum_pension) {
       errors.maximum_pension = ['La pensión máxima debe ser mayor o igual que la pensión mínima.'];
+    }
+
+    // Task 70: validar payment_day 1-30, months > 0
+    if (typeof body.payment_day === 'number' && (body.payment_day < 1 || body.payment_day > 30)) {
+      errors.payment_day = ['El día de pago debe estar entre 1 y 30.'];
+    }
+    if (typeof body.month_to_provitional === 'number' && body.month_to_provitional < 1) {
+      errors.month_to_provitional = ['Los meses hasta ventana deben ser > 0.'];
+    }
+    if (typeof body.month_to_expired === 'number' && body.month_to_expired < 1) {
+      errors.month_to_expired = ['Los meses hasta cierre deben ser > 0.'];
     }
 
     if (Object.keys(errors).length > 0) {
@@ -141,6 +158,9 @@ export const settingsHandlers = [
       minimum_pension: body.minimum_pension as number,
       maximum_pension: body.maximum_pension as number,
       minimum_pension_increment: body.minimum_pension_increment as number,
+      payment_day: body.payment_day as number,
+      month_to_provitional: body.month_to_provitional as number,
+      month_to_expired: body.month_to_expired as number,
       active: true,
       effective_from: now,
       deactivated_at: null,

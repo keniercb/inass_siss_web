@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/Toast';
 import type { components } from '@/types/api';
 import type { AxiosError } from 'axios';
 
-type PensionPayment = components['schemas']['PensionPayment'];
+type PensionerPayment = components['schemas']['PensionerPayment'];
 type PayrollExportRun = components['schemas']['PayrollExportRun'];
 
 interface PaginatedResponse<T> { data: T[]; meta: { current_page: number; per_page: number; total: number; last_page: number }; }
@@ -15,7 +15,7 @@ export interface PaymentsListParams { page?: number; per_page?: number; year?: n
 export function usePayments(params: PaymentsListParams = {}) {
   return useQuery({
     queryKey: ['payments', 'list', params],
-    queryFn: async () => { const r = await http.get<PaginatedResponse<PensionPayment>>('/payments', { params }); return r.data; },
+    queryFn: async () => { const r = await http.get<PaginatedResponse<PensionerPayment>>('/payments', { params }); return r.data; },
     placeholderData: (prev) => prev,
     staleTime: 30_000,
   });
@@ -24,7 +24,7 @@ export function usePayments(params: PaymentsListParams = {}) {
 export function usePayment(id?: number | string) {
   return useQuery({
     queryKey: ['payments', 'detail', id],
-    queryFn: async () => { const r = await http.get<{ data: PensionPayment }>(`/payments/${id}`); return r.data.data; },
+    queryFn: async () => { const r = await http.get<{ data: PensionerPayment }>(`/payments/${id}`); return r.data.data; },
     enabled: !!id,
     staleTime: 60_000,
   });
@@ -46,9 +46,21 @@ export function useUpdatePaymentStatus(id: number | string) {
   const { t } = useTranslation('payments');
   const toast = useToast();
   return useMutation({
-    mutationFn: async (input: { status: string; paid_at?: string }) => { const r = await http.patch<{ data: PensionPayment }>(`/payments/${id}/status`, input); return r.data.data; },
+    mutationFn: async (input: { status: string; paid_at?: string }) => { const r = await http.patch<{ data: PensionerPayment }>(`/payments/${id}/status`, input); return r.data.data; },
     onSuccess: (data) => { qc.setQueryData(['payments', 'detail', id], data); qc.invalidateQueries({ queryKey: ['payments', 'list'] }); toast.success(t('status_change.success')); },
     onError: (err: unknown) => { const ae = err as AxiosError<{ message?: string }>; toast.error(ae.response?.data?.message ?? t('status_change.error')); },
+  });
+}
+
+/** POST /payments/{id}/collect — cobro de primera clase (Task 68/SGP-52) */
+export function useCollectPayment(id: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('payments');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (input: { agency_id: number; paid_at?: string }) => { const r = await http.post<{ data: PensionerPayment }>(`/payments/${id}/collect`, input); return r.data.data; },
+    onSuccess: (data) => { qc.setQueryData(['payments', 'detail', id], data); qc.invalidateQueries({ queryKey: ['payments', 'list'] }); toast.success(t('collect.success')); },
+    onError: (err: unknown) => { const ae = err as AxiosError<{ message?: string }>; toast.error(ae.response?.data?.message ?? t('collect.error')); },
   });
 }
 
