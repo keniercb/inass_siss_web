@@ -9,8 +9,19 @@
       "period": "Período",
       "amount": "Importe",
       "status": "Estado",
-      "agency": "Agencia de cobro",
+      "payment_form": "Forma de pago",
+      "agency": "Agencia (congelada)",
       "created_at": "Creado"
+    },
+    "filters": {
+      "payment_form": "Forma de pago",
+      "payment_form_all": "Todas las formas",
+      "agency": "Agencia",
+      "agency_all": "Todas las agencias",
+      "payment_form_tarjeta": "Tarjeta magnética",
+      "payment_form_nomina": "Nómina electrónica",
+      "status_expired": "Vencido",
+      "status_provitional": "Provisional"
     },
     "status": {
       "pending": "Pendiente",
@@ -28,8 +39,15 @@
       "period": "Período",
       "amount": "Importe",
       "status": "Estado",
+      "payment_form": "Forma de pago",
       "bank_control": "Control bancario",
-      "paid_at": "Fecha de pago",
+      "frozen_agency": "Agencia (congelada al generar)",
+      "frozen_account": "Cuenta (congelada al generar)",
+      "paid_at": "Fecha de cobro",
+      "paid_on": "Cobrado en agencia",
+      "valid_from": "Acreditable desde",
+      "set_provitional_at": "Apertura de ventana",
+      "set_expired_at": "Cierre de ventana",
       "created_at": "Creado",
       "updated_at": "Actualizado"
     }
@@ -40,12 +58,24 @@
     "month": "Mes",
     "confirm": "Generar",
     "success": "Pagos generados correctamente",
-    "error": "No se pudieron generar los pagos"
+    "error": "No se pudieron generar los pagos",
+    "result": {
+      "period": "Período",
+      "anchor_payments": "Pagos del período (anclas por forma)",
+      "pensioner_payments": "Filas de pensionados",
+      "created": "Creados",
+      "skipped": "Saltados (ya existían)",
+      "skipped_no_control": "Saltados sin control bancario",
+      "form_created": "creado",
+      "form_existing": "existente"
+    }
   },
   "status_change": {
     "pay": "Marcar como pagado",
+    "provision": "Abrir ventana de cobro",
+    "expire": "Marcar como vencido",
     "cancel": "Anular pago",
-    "paid_at": "Fecha de pago",
+    "paid_at": "Fecha de cobro",
     "confirm": "Confirmar",
     "success": "Estado cambiado correctamente",
     "error": "No se pudo cambiar el estado"
@@ -54,10 +84,14 @@
     "title": "Conciliación",
     "total": "Total",
     "pending": "Pendientes",
+    "provitional": "Provisionales",
     "paid": "Pagados",
+    "expired": "Vencidos",
     "cancelled": "Anulados",
     "paid_amount": "Importe pagado",
-    "pending_amount": "Importe pendiente"
+    "pending_amount": "Importe pendiente",
+    "provitional_amount": "Importe provisional",
+    "expired_amount": "Importe vencido"
   },
   "export": {
     "title": "Exportación de nóminas",
@@ -91,6 +125,10 @@
   },
   "collect": {
     "button": "Cobrar",
+    "title": "Cobrar pago",
+    "agency": "Agencia de cobro",
+    "paid_at": "Fecha de cobro (opcional)",
+    "confirm": "Confirmar cobro",
     "success": "Pago cobrado correctamente",
     "error": "No se pudo cobrar el pago"
   }

@@ -89,7 +89,7 @@ function CreateExportModal({ onClose, t, tc }: { onClose: () => void; t: (k: str
   });
 
   return (
-    <Dialog open onClose={onClose} title={t('export_create.title')} size="sm">
+    <Dialog open onClose={onClose} title={t('export_create.title')} size="md">
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">{t('export_create.agency')} *</label>

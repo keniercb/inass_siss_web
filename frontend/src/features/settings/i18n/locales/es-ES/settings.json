@@ -16,8 +16,8 @@
       "minimum_pension_increment": "Inc. pensión mín.",
       "status": "Estado",
       "payment_day": "Día pago",
-      "month_to_provitional": "A ventana",
-      "month_to_expired": "A cierre"
+      "month_to_provitional": "A provisional",
+      "month_to_expired": "A expirado"
     },
     "status": {
       "current": "Activa",
@@ -60,9 +60,9 @@
     "minimum_pension_increment_help": "Monto absoluto añadido cuando la cuantía queda por debajo de la pensión mínima",
     "payment_day": "Día de pago",
     "payment_day_help": "Día del mes en que se realiza el pago (1-30)",
-    "month_to_provitional": "Meses hasta ventana de cobro",
-    "month_to_provitional_help": "Meses desde el día de pago hasta abrir la ventana de cobro (> 0)",
-    "month_to_expired": "Meses hasta cierre",
-    "month_to_expired_help": "Meses de la ventana abierta hasta el cierre (> 0)"
+    "month_to_provitional": "Meses hasta ventana de cobro (provisional)",
+    "month_to_provitional_help": "Meses desde la generación del pago durante los cuales puede estar pendiente. Al cumplir este plazo, el pago pasa automáticamente al estado provisional.",
+    "month_to_expired": "Meses hasta cierre (expirado)",
+    "month_to_expired_help": "Meses que el pago puede permanecer en estado provisional desde que alcanzó la ventana de cobro. Al cumplir este plazo, el pago pasa al estado expirado (vencido)."
   }
 }

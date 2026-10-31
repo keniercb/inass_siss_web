@@ -9,8 +9,19 @@
       "period": "Period",
       "amount": "Amount",
       "status": "Status",
-      "agency": "Collection agency",
+      "payment_form": "Payment form",
+      "agency": "Agency (frozen)",
       "created_at": "Created"
+    },
+    "filters": {
+      "payment_form": "Payment form",
+      "payment_form_all": "All forms",
+      "agency": "Agency",
+      "agency_all": "All agencies",
+      "payment_form_tarjeta": "Magnetic card",
+      "payment_form_nomina": "Electronic payroll",
+      "status_expired": "Expired",
+      "status_provitional": "Provisional"
     },
     "status": {
       "pending": "Pending",
@@ -28,8 +39,15 @@
       "period": "Period",
       "amount": "Amount",
       "status": "Status",
+      "payment_form": "Payment form",
       "bank_control": "Bank control",
-      "paid_at": "Paid on",
+      "frozen_agency": "Agency (frozen at generation)",
+      "frozen_account": "Account (frozen at generation)",
+      "paid_at": "Collection date",
+      "paid_on": "Collected at agency",
+      "valid_from": "Valid from",
+      "set_provitional_at": "Window opens on",
+      "set_expired_at": "Window closes on",
       "created_at": "Created",
       "updated_at": "Updated"
     }
@@ -40,12 +58,24 @@
     "month": "Month",
     "confirm": "Generate",
     "success": "Payments generated successfully",
-    "error": "Could not generate payments"
+    "error": "Could not generate payments",
+    "result": {
+      "period": "Period",
+      "anchor_payments": "Period payments (anchors per form)",
+      "pensioner_payments": "Pensioner rows",
+      "created": "Created",
+      "skipped": "Skipped (already existed)",
+      "skipped_no_control": "Skipped without bank control",
+      "form_created": "created",
+      "form_existing": "existing"
+    }
   },
   "status_change": {
     "pay": "Mark as paid",
+    "provision": "Open collection window",
+    "expire": "Mark as expired",
     "cancel": "Cancel payment",
-    "paid_at": "Payment date",
+    "paid_at": "Collection date",
     "confirm": "Confirm",
     "success": "Status changed successfully",
     "error": "Could not change the status"
@@ -54,10 +84,14 @@
     "title": "Reconciliation",
     "total": "Total",
     "pending": "Pending",
+    "provitional": "Provisional",
     "paid": "Paid",
+    "expired": "Expired",
     "cancelled": "Cancelled",
     "paid_amount": "Paid amount",
-    "pending_amount": "Pending amount"
+    "pending_amount": "Pending amount",
+    "provitional_amount": "Provisional amount",
+    "expired_amount": "Expired amount"
   },
   "export": {
     "title": "Payroll exports",
@@ -91,6 +125,10 @@
   },
   "collect": {
     "button": "Collect",
+    "title": "Collect payment",
+    "agency": "Collection agency",
+    "paid_at": "Collection date (optional)",
+    "confirm": "Confirm collection",
     "success": "Payment collected successfully",
     "error": "Could not collect the payment"
   }

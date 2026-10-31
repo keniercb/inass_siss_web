@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Search as SearchIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -48,7 +49,10 @@ interface SearchSelectProps {
  *
  * Características:
  *  - Abre el dropdown al FOCUS (no solo al escribir) — muestra mínimo 5 opciones
- *  - max-h-60 (240px) → ~6 opciones visibles de 40px cada una
+ *  - El dropdown se renderiza vía React Portal en document.body, escapando
+ *    cualquier contenedor con overflow (Dialog, cards, etc.) — esto evita el
+ *    "overflow" reportado cuando el campo está dentro de un modal.
+ *  - Posicionamiento dinámico con flip: si no cabe abajo, se abre arriba.
  *  - Búsqueda con debounce 300ms (modo async) o filtro local (modo estático)
  *  - Navegación por teclado: ↑↓ navega, Enter selecciona, Escape cierra
  *  - Accesible: aria-expanded, aria-activedescendant, focus trap
@@ -82,7 +86,58 @@ export function SearchSelect({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const debouncedSearch = useDebounce(search, isAsync ? 300 : 0);
+
+  // --- Posicionamiento del dropdown (portal en body) -----------------------
+  // Calcula top/left/width según el rect del input, con flip arriba
+  // si no cabe debajo dentro del viewport.
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  const reposition = useCallback(() => {
+    const inputEl = inputRef.current;
+    if (!inputEl) return;
+    const rect = inputEl.getBoundingClientRect();
+    const viewportH = typeof window !== 'undefined' ? window.innerHeight : 0;
+    const margin = 8;
+    const dropdownMaxH = 240; // max-h-60 = 15rem = 240px
+
+    const spaceBelow = viewportH - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    const openUpward = spaceBelow < dropdownMaxH && spaceAbove > spaceBelow;
+
+    const style: React.CSSProperties = {
+      position: 'fixed',
+      left: rect.left,
+      width: rect.width,
+      // z alto: por encima del Dialog (z-[10000]) y overlay
+      zIndex: 10050,
+      maxHeight: dropdownMaxH,
+    };
+    if (openUpward) {
+      style.bottom = viewportH - rect.top + 4; // 4px de separación del input
+    } else {
+      style.top = rect.bottom + 4;
+    }
+    setDropdownStyle(style);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    reposition();
+  }, [open, reposition]);
+
+  // Repositionar al hacer scroll o resize en cualquier ancestro (capture phase)
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => reposition();
+    window.addEventListener('resize', handler);
+    window.addEventListener('scroll', handler, true);
+    return () => {
+      window.removeEventListener('resize', handler);
+      window.removeEventListener('scroll', handler, true);
+    };
+  }, [open, reposition]);
 
   // Sync options si se pasan estáticas
   useEffect(() => {
@@ -130,13 +185,18 @@ export function SearchSelect({
     }
   }, [open, value, options, internalOptions, initialDisplayValue]);
 
-  // Click fuera para cerrar
+  // Click fuera para cerrar (considera input Y dropdown portalizado)
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+      const target = e.target as Node;
+      if (
+        containerRef.current?.contains(target) ||
+        dropdownRef.current?.contains(target)
+      ) {
+        return;
       }
+      setOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -167,6 +227,8 @@ export function SearchSelect({
     }
   };
 
+  const listboxId = `${id ?? 'search-select'}-listbox`;
+
   return (
     <div ref={containerRef} className={cn('relative', fullWidth && 'w-full', className)}>
       {label && (
@@ -189,7 +251,7 @@ export function SearchSelect({
           disabled={disabled}
           aria-expanded={open}
           aria-autocomplete="list"
-          aria-controls={`${id ?? 'search-select'}-listbox`}
+          aria-controls={listboxId}
           aria-activedescendant={open && filteredOptions[activeIndex] ? `${id ?? 'search-select'}-opt-${activeIndex}` : undefined}
           className={cn(
             'flex h-10 w-full rounded-md border bg-white pl-3 pr-9 py-2 text-sm transition-colors',
@@ -208,12 +270,18 @@ export function SearchSelect({
         />
       </div>
 
-      {/* Dropdown */}
-      {open && (
+      {/* Dropdown renderizado vía Portal en document.body para escapar
+          cualquier contenedor con overflow (Dialog, cards, etc.) */}
+      {open && createPortal(
         <div
-          id={`${id ?? 'search-select'}-listbox`}
+          ref={dropdownRef}
+          id={listboxId}
           role="listbox"
-          className="absolute z-50 mt-1 w-full bg-white border border-border rounded-md shadow-modal max-h-60 overflow-y-auto"
+          style={dropdownStyle}
+          className={cn(
+            'bg-white border border-border rounded-md shadow-modal overflow-y-auto',
+            'animate-modal-in',
+          )}
         >
           {loading && (
             <div className="px-3 py-2 text-xs text-muted-foreground">Cargando…</div>
@@ -252,7 +320,8 @@ export function SearchSelect({
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
