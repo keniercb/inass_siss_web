@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.26.0"
+        "version": "1.31.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -2300,7 +2300,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Signature revoked."
+                                            "example": "Firma revocada."
                                         }
                                     },
                                     "type": "object"
@@ -2813,7 +2813,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Entity deactivated."
+                                            "example": "Entidad desactivada."
                                         }
                                     },
                                     "type": "object"
@@ -3313,7 +3313,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Office deactivated."
+                                            "example": "Oficina desactivada."
                                         }
                                     },
                                     "type": "object"
@@ -3432,7 +3432,7 @@
                     "Pagos"
                 ],
                 "summary": "Pagos periódicos: generación mensual a dos niveles (período AUTOMÁTICO)",
-                "description": "RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5; Task 71/SGP-55, D-106/D-108): SIN CUERPO — el período NO se recibe, se resuelve AUTOMÁTICO para el MES SIGUIENTE a la fecha actual contra el reloj compartido. Nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control y el calendario NACE ESTAMPADO: `payment_day` (el día de pago de la configuración ACTIVA sobre el mes/año del pago, D-107) y `set_provitional_at`/`set_expired_at` (Task 70); el activo SIN control se OMITE y se reporta `skipped_no_control`; re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. La validación de fecha futura SE ELIMINÓ (D-108): el sistema trabaja un mes por adelantado. Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).",
+                "description": "RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5; Task 71/SGP-55, D-106/D-108): SIN CUERPO — el período NO se recibe, se resuelve AUTOMÁTICO para el MES SIGUIENTE a la fecha actual contra el reloj compartido. Nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control (la cuenta puede ser null — la «cuenta nula/vacía» del control nacido de un expediente sin cuenta utilizable, Task 72c/72e/D-117, en cualquier forma de cobro) y el calendario NACE ESTAMPADO: `payment_day` (el día de pago de la configuración ACTIVA sobre el mes/año del pago, D-107) y `set_provitional_at`/`set_expired_at` (Task 70); el activo SIN control se OMITE y se reporta `skipped_no_control` (alcanzable SOLO con la agencia de cobro desaparecida del catálogo vivo, D-118 — la arista D-119 de la Task 72d quedó derogada por la Task 72e); re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. La validación de fecha futura SE ELIMINÓ (D-108): el sistema trabaja un mes por adelantado. Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).",
                 "operationId": "paymentsGenerate",
                 "responses": {
                     "200": {
@@ -5337,6 +5337,19 @@
                                         "type": "boolean",
                                         "example": false,
                                         "nullable": true
+                                    },
+                                    "initial_payment_amount": {
+                                        "description": "Task 73 (Bloque B-3): monto del pago inicial — OBLIGATORIO en la aprobación de un NUEVO expediente (422 pension_cases.initial_payment_required si falta), opcional en la re-aprobación tras reapertura y PROHIBIDO en las demás transiciones. La pareja es todo-o-nada con initial_payment_description; el pago inicial nace con amount = cuantía + monto (D-7311, literal CONFIRMADO)",
+                                        "type": "string",
+                                        "example": "800.50",
+                                        "nullable": true
+                                    },
+                                    "initial_payment_description": {
+                                        "description": "Task 73 (Bloque B-3): la evidencia del operador que instruye el pago inicial — misma regla todo-o-nada y de prohibición que el monto",
+                                        "type": "string",
+                                        "example": "Pago inicial por la aprobación del expediente.",
+                                        "nullable": true,
+                                        "maxLength": 255
                                     }
                                 },
                                 "type": "object"
@@ -5416,7 +5429,7 @@
                         }
                     },
                     "422": {
-                        "description": "Fuera de la matriz (con el estado actual y el destino intentado), evidencia exigida ausente o corta, base legal no vigente o checklist de completitud (lista missing)",
+                        "description": "Fuera de la matriz (con el estado actual y el destino intentado), evidencia exigida ausente o corta, base legal no vigente, instrucción de pago inicial ausente (Task 73, aprobación de un nuevo expediente) o checklist de completitud (lista missing)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5445,7 +5458,30 @@
                                             },
                                             "example": [
                                                 "service_records",
-                                                "salary_records"
+                                                "salary_records",
+                                                "salary_records_years",
+                                                "salary_records_out_of_window",
+                                                "imputable_salary_months"
+                                            ]
+                                        },
+                                        "missing_salary_years": {
+                                            "description": "Task 73 (Bloque B-1): los años de la ventana cubiertos por un servicio que aún deben su registro de salario (viaja con el ítem salary_records_years)",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer"
+                                            },
+                                            "example": [
+                                                2024
+                                            ]
+                                        },
+                                        "out_of_window_salary_years": {
+                                            "description": "Task 73 (Bloque B-1): los años declarados POR DEBAJO de la ventana del régimen — el operador los elimina por el DELETE del subrecurso (viaja con el ítem salary_records_out_of_window)",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer"
+                                            },
+                                            "example": [
+                                                2018
                                             ]
                                         }
                                     },
@@ -6213,6 +6249,83 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pensioners/{id}/initial-payments": {
+            "get": {
+                "tags": [
+                    "Pensionados"
+                ],
+                "summary": "Pagos adicionales del pensionado",
+                "description": "Task 73 (ajuste de usuario 2026-11-12, Bloque A-2): todos los pagos adicionales de un pensionado, los más recientes primero, paginados (page, per_page ≤ 100). Cada fila nace de la instrucción de pago inicial de una aprobación (amount = cuantía + monto introducido, D-7311; status pending al nacer) y pasa a done cuando la generación mensual de pagos la liquida sobre la fila del período (Bloque C-1, D-7312 (a)) — el listado es la superficie de control del operador antes de aprobar una reapertura con pendientes vivos. 404 para un pensionado inexistente o soft-deleted.",
+                "operationId": "pensionersInitialPaymentsIndex",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        },
+                        "example": 15
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Los pagos adicionales del pensionado, los más recientes primero",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/InitialPayment"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Pensionado inexistente o desactivado"
                     }
                 },
                 "security": [
@@ -7640,6 +7753,82 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/language": {
+            "patch": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Cambiar el propio idioma de respuesta",
+                "description": "Primera superficie de autoedición de perfil (Task 72/SGP-56, D-110): cada cuenta autenticada cambia SU idioma de respuesta — «el idioma seleccionado» pertenece a la cuenta, no al navegador, por lo que NO exige permiso alguno. A partir de la siguiente solicitud el middleware SetAppLocale compone TODA la envolvente de mensajes en ese idioma (éxitos, 422 campo a campo, aborts). El cambio queda en la bitácora como cualquier otra escritura de cuenta.",
+                "operationId": "authUpdateLanguage",
+                "requestBody": {
+                    "description": "Idioma a seleccionar",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "language"
+                                ],
+                                "properties": {
+                                    "language": {
+                                        "description": "Uno de los idiomas soportados del registro (config/app.php supported_locales) — es institucional por defecto",
+                                        "type": "string",
+                                        "example": "en",
+                                        "enum": [
+                                            "es",
+                                            "en"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Idioma seleccionado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido o ya revocado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No autenticado."
                                         }
                                     },
                                     "type": "object"
@@ -10288,8 +10477,10 @@
                                 "example": 1
                             },
                             "account": {
+                                "description": "La cuenta del control VIVO — null cuando nació con la «cuenta nula/vacía» (D-117, cualquier forma de cobro desde Task 72e)",
                                 "type": "string",
-                                "example": "02000012345678901234"
+                                "example": "02000012345678901234",
+                                "nullable": true
                             },
                             "electronic_payroll": {
                                 "description": "Marcador DERIVADO del tipo de la agencia (D-64)",
@@ -10335,9 +10526,10 @@
                         "nullable": true
                     },
                     "account": {
-                        "description": "La cuenta CONGELADA del control al generar",
+                        "description": "La cuenta CONGELADA del control al generar — null cuando el control nació sin cuenta utilizable (D-117, cualquier forma de cobro)",
                         "type": "string",
-                        "example": "02000012345678901234"
+                        "example": "02000012345678901234",
+                        "nullable": true
                     },
                     "amount": {
                         "description": "La cuantía CONGELADA al generar el período (DECIMAL(12,2) como cadena, RN-005)",
@@ -10429,6 +10621,8 @@
                     "service_years",
                     "average_monthly_salary",
                     "average_years_used",
+                    "imputable_salary_months",
+                    "average_divisor_months",
                     "missing_salaries_attributable",
                     "excess_years",
                     "amount",
@@ -10515,6 +10709,17 @@
                         "description": "Task 52/S8.8, V-7: el N EFECTIVO divisor — R ≥ N ⇒ N; déficit no imputable ⇒ R; imputable ⇒ N con los ausentes a salario cero",
                         "type": "integer",
                         "example": 5
+                    },
+                    "imputable_salary_months": {
+                        "description": "Task 73 (ajuste de usuario 2026-11-12, Bloque B-2): los meses de salarios imputables declarados por el expediente — null ⇒ el divisor es N_ef × 12",
+                        "type": "integer",
+                        "example": 58,
+                        "nullable": true
+                    },
+                    "average_divisor_months": {
+                        "description": "Task 73 (Bloque B-2): los MESES EXACTOS que dividieron el SPM — los imputable_salary_months declarados en la rama no imputable, N_ef × 12 en el resto",
+                        "type": "integer",
+                        "example": 60
                     },
                     "missing_salaries_attributable": {
                         "description": "Task 52/S8.8, V-6: declaración de imputabilidad de los salarios ausentes — null sin déficit; obligatoria con déficit (422 si falta, D-4)",
@@ -10750,6 +10955,7 @@
                     "average_years_count",
                     "average_years_effective",
                     "missing_salaries_attributable",
+                    "imputable_salary_months",
                     "average_monthly_salary",
                     "excess_years",
                     "amount",
@@ -10823,6 +11029,12 @@
                     "missing_salaries_attributable": {
                         "description": "Task 52/S8.8, V-8/D-5: la declaración de imputabilidad congelada con la resolución (null sin déficit)",
                         "type": "boolean",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "imputable_salary_months": {
+                        "description": "Task 73 (ajuste de usuario 2026-11-12, Bloque B-2, D-7308 (a)): los meses de salarios imputables congelados con la resolución — null ⇒ el divisor fue N_ef × 12 (la semántica histórica); el valor también viaja dentro de inputs",
+                        "type": "integer",
                         "example": null,
                         "nullable": true
                     },
@@ -11067,6 +11279,12 @@
                         "description": "Task 52/S8.8, V-6: ¿los salarios ausentes son imputables al trabajador? — null válido sin déficit, obligatoria con déficit R < N de la estrategia (422 en revisión/vista previa, D-4); editable solo en submitted (D-3)",
                         "type": "boolean",
                         "example": null,
+                        "nullable": true
+                    },
+                    "imputable_salary_months": {
+                        "description": "Task 73 (ajuste de usuario 2026-11-12, Bloque B-2): meses de salarios imputables — el divisor EXPLÍCITO del salario promedio. Solo declarable cuando missing_salaries_attributable = false (422 en el resto de las ramas, nunca descarte silencioso); obligatorio en esa rama al pasar a revisión, previsualizar y aprobar (422 imputable_months_indeterminate, D-7307 (a)). 1..180 = el techo de quince años de la serie en meses; null ⇒ el divisor es N_ef × 12",
+                        "type": "integer",
+                        "example": 58,
                         "nullable": true
                     },
                     "rebel_army_member": {
@@ -11406,12 +11624,61 @@
                 },
                 "type": "object"
             },
+            "InitialPayment": {
+                "title": "Pago inicial del pensionado",
+                "description": "Task 73 (ajuste de usuario 2026-11-12, Bloque A): el pago inicial de un pensionado — nace con la aprobación del expediente (amount = cuantía + monto introducido, la fórmula literal CONFIRMADA por el negocio, D-7311; description = la evidencia del operador; status = pending) y se liquida con la primera fila del registro de pagos que el pensionado genere: el monto viaja en la fila y el estado pasa a done (Bloque C-1, D-7312 (a)). Varias filas por pensionado son legítimas — una reapertura + re-aprobación con nueva instrucción agrega otra (D-7310 (a)). Evidencia financiera append-only: sin anulaciones, cada escritura aterriza en la bitácora.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "pensioner_id": {
+                        "description": "El pensionado dueño del pago inicial (nace en su transición de aprobación)",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "amount": {
+                        "description": "cuantía + monto introducido (D-7311, literal CONFIRMADO): DECIMAL(12,2) exacto, Money bcmath — ej.: cuantía 2500.00 + monto 800.50",
+                        "type": "string",
+                        "example": "3300.50"
+                    },
+                    "status": {
+                        "description": "pending al nacer; done cuando la generación de pagos lo liquidó sobre la fila del período (terminal)",
+                        "type": "string",
+                        "example": "pending",
+                        "enum": [
+                            "pending",
+                            "done"
+                        ]
+                    },
+                    "description": {
+                        "description": "La evidencia del operador que instruyó el pago (máx. 255)",
+                        "type": "string",
+                        "example": "Pago inicial por la aprobación del expediente."
+                    },
+                    "created_at": {
+                        "description": "Momento del nacimiento (la aprobación del expediente de origen)",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-11-12T10:30:00+00:00"
+                    },
+                    "updated_at": {
+                        "description": "Última escritura (la liquidación a done)",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-11-12T10:30:00+00:00"
+                    }
+                },
+                "type": "object"
+            },
             "Pensioner": {
                 "title": "Pensionado",
                 "description": "Pensionado (RF-PEN-001/RF-PEN-002): la fila nace de la aprobación del expediente con la cuantía congelada EXACTA y espeja su ciclo administrativo. La persona viaja como proyección COMPLETA, tipo y régimen como {id, code, name} y el expediente de origen como referencia mínima {id, number, status}. La ficha añade status_history (la línea de tiempo derivada de la bitácora, ADR-42); bank_control viaja en TODO GET del pensionado — proyección mínima en las filas (el número GLOBAL siempre legible, corrección de usuario de Task 63) y completa en la ficha (RF-PAG-002).",
                 "properties": {
                     "id": {
-                        "description": "Pensioner projection (Task 60/SGP-45, S9.2/RF-PEN-002, D-48/D-49).\n\nThe listing row and the ficha share this shape: the born row with\nits inherited cuantía, the status of the normative catalog and the\nprojections the consultation eager-loads — the FULL person (user\nrule 3, PersonResource reused so the projection never drifts from\nthe people surface), the type/regime catalogs as {id, code, name}\nand the origin case as the minimal {id, number, status} reference\n(the client with cases.view follows to the full case; the ficha\nnever drags the case subrecords).\n\nThe ficha EXCLUSIVE evidence rides only when the detail timeline\nis attached (constructor argument): `status_history` — the\nbitácora-derived timeline (ADR-42, one row per status change plus\nthe birth) — while `bank_control` travels EVERYWHERE (Task 63,\nthe user correction: the GLOBAL number must be readable from the\npensioner GETs): the MINIMAL projection {id, number, agency,\nelectronic_payroll} on listing rows, the full projection (+\naccount and write timestamps) on the ficha shapes, null while\nthe nested PUT has not provisioned the control (RF-PAG-002).",
+                        "description": "Pensioner projection (Task 60/SGP-45, S9.2/RF-PEN-002, D-48/D-49).\n\nThe listing row and the ficha share this shape: the born row with\nits inherited cuantía, the status of the normative catalog and the\nprojections the consultation eager-loads — the FULL person (user\nrule 3, PersonResource reused so the projection never drifts from\nthe people surface), the type/regime catalogs as {id, code, name}\nand the origin case as the minimal {id, number, status} reference\n(the client with cases.view follows to the full case; the ficha\nnever drags the case subrecords).\n\nThe ficha EXCLUSIVE evidence rides only when the detail timeline\nis attached (constructor argument): `status_history` — the\nbitácora-derived timeline (ADR-42, one row per status change plus\nthe birth) — while `bank_control` travels EVERYWHERE (Task 63,\nthe user correction: the GLOBAL number must be readable from the\npensioner GETs): the MINIMAL projection {id, number, agency,\nelectronic_payroll} on listing rows, the full projection (+\naccount and write timestamps) on the ficha shapes, null ONLY in\nthe surviving catalog edge of the birth (Task 72c/D-118: the\ncollection agency vanished mid-review — the control stays\npending for the operator PUT; a case without account births the\ncontrol with the cuenta NULL, D-117) (RF-PAG-002).",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -11535,7 +11802,7 @@
                         }
                     },
                     "bank_control": {
-                        "description": "EL control bancario del cobro (RF-PAG-001/002, Task 63/SGP-48): relación 1:1 — número GLOBAL del scope bank_control (ADR-17), agencia {id, code, name} y marcador derivado del tipo de la agencia (electronic_payroll, D-64). Proyección mínima en las filas del listado; la ficha añade account, created_at y updated_at. null mientras PUT /pensioners/{id}/bank-control no haya provisto el control.",
+                        "description": "EL control bancario del cobro (RF-PAG-001/002, Task 63/SGP-48): relación 1:1 — número GLOBAL del scope bank_control (ADR-17), agencia {id, code, name} y marcador derivado del tipo de la agencia (electronic_payroll, D-64). Nace CON el pensionado de la aprobación del expediente (Task 67) — sin cuenta utilizable la cuenta viaja null, la «cuenta nula/vacía» del D-117 (Task 72c/72e, en cualquier forma de cobro). Proyección mínima en las filas del listado; la ficha añade account, created_at y updated_at. null cuando la agencia de cobro dejó el catálogo vivo durante la revisión (D-118) — el único nacimiento sin control, que queda pendiente para el PUT del operador.",
                         "properties": {
                             "id": {
                                 "type": "integer",
@@ -11570,9 +11837,10 @@
                                 "example": false
                             },
                             "account": {
-                                "description": "FICHA: cuenta bancaria (10-34 alfanumérica)",
+                                "description": "FICHA: cuenta bancaria (10-34 alfanumérica cuando existe) — null es la «cuenta nula/vacía» del nacimiento sin cuenta utilizable (D-117, Task 72c/72e, en cualquier forma de cobro), el operador la completa por el PUT",
                                 "type": "string",
-                                "example": "02000012345678901234"
+                                "example": "02000012345678901234",
+                                "nullable": true
                             },
                             "created_at": {
                                 "description": "FICHA: momento de la creación del control",
@@ -11981,6 +12249,14 @@
                         "nullable": true,
                         "description": "Oficina territorial de pertenencia (ADR-29): /auth/me y la gestión de cuentas la devuelven; null si la cuenta no pertenece a ninguna oficina activa"
                     },
+                    "language": {
+                        "description": "Idioma seleccionado para los mensajes de la API (Task 72/SGP-56): es institucional por defecto; el middleware SetAppLocale lo aplica a toda respuesta que constituya un mensaje",
+                        "type": "string",
+                        "enum": [
+                            "es",
+                            "en"
+                        ]
+                    },
                     "status": {
                         "description": "Ciclo de vida de la cuenta: inactive = desactivada (borrado lógico, RF-AUD-004)",
                         "type": "string",
@@ -12255,7 +12531,7 @@
         },
         {
             "name": "Pensionados",
-            "description": "Pensionados: consulta (directorio filtrable y ficha con la línea de estados derivada de la bitácora — Task 60/SGP-45, S9.2), ciclo de vida del operador — PATCH /status: suspensión, reanudación y extinción con motivo obligatorio (Task 61/SGP-46, S9.3) — y el control bancario del cobro 1:1 anidado — PUT /bank-control: upsert en sitio con número global estable y marcador derivado del tipo de agencia (Task 63/SGP-48, S10.2/S10.3); el alta nace de la aprobación (Task 59/SGP-44)"
+            "description": "Pensionados: consulta (directorio filtrable y ficha con la línea de estados derivada de la bitácora — Task 60/SGP-45, S9.2), ciclo de vida del operador — PATCH /status: suspensión, reanudación y extinción con motivo obligatorio (Task 61/SGP-46, S9.3) — y el control bancario del cobro 1:1 anidado — PUT /bank-control: upsert en sitio con número global estable y marcador derivado del tipo de agencia (Task 63/SGP-48, S10.2/S10.3); el alta nace de la aprobación (Task 59/SGP-44) CON su control bancario provisionado de los datos de cobro del expediente — la cuenta puede nacer null, la «cuenta nula/vacía» del D-117 cuando el expediente no trae cuenta utilizable, en cualquier forma de cobro (Task 67/72c/72e; la arista D-119 de la 72d quedó derogada); el control queda pendiente SOLO cuando la agencia de cobro desapareció del catálogo vivo durante la revisión (D-118)"
         },
         {
             "name": "Pagos",

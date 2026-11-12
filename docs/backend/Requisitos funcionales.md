@@ -487,6 +487,7 @@ El concepto se REIMPLEMENTA con EXACTAMENTE siete campos: la fecha umbral para c
 **RF-API-002 (M) — Convenciones de respuesta (DA)**
 - [ ] Colecciones paginadas con metadatos de paginación estándar.
 - [ ] Errores estructurados conforme a RFC 9457 (problem+json) con código, título y detalle.
+- [x] Mensajes de la envolvente en el idioma seleccionado (ajuste de usuario Task 72/SGP-56, directriz 2026-11-01): toda respuesta que constituye un MENSAJE (éxitos, 422 campo a campo con los nombres de campo, aborts 403/404 y el 401) se compone en el idioma de la cuenta — `users.language`, es default institucional / en —, con `Accept-Language` como fallback pre-autenticación (login, 401); el payload de datos, la bitácora, los logs y el export bancario NO se traducen (registro institucional monoidioma, D-114). ✅ 2026-11-01 IMPLEMENTADA (Task 72/SGP-56): atributo `language` con CHECK espejo en BD, `PATCH /auth/language` (autoedición), middleware global `SetAppLocale` (usuario autenticado > Accept-Language > default es), catálogo central es|en con claves semánticas + `laravel/lang` para las líneas del framework, contrato `TranslatableMessage` para las excepciones y test de paridad es↔en en CI; spec OpenAPI 1.27.0.
 
 **RF-API-003 (M) — Idempotencia y concurrencia (DA)**
 - [ ] Creación de recursos protegida contra doble envío (llave de idempotencia opcional).
