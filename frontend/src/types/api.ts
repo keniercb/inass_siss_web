@@ -430,7 +430,7 @@ export interface paths {
         put?: never;
         /**
          * Pagos periódicos: generación mensual a dos niveles (período AUTOMÁTICO)
-         * @description RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5; Task 71/SGP-55, D-106/D-108): SIN CUERPO — el período NO se recibe, se resuelve AUTOMÁTICO para el MES SIGUIENTE a la fecha actual contra el reloj compartido. Nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control y el calendario NACE ESTAMPADO: `payment_day` (el día de pago de la configuración ACTIVA sobre el mes/año del pago, D-107) y `set_provitional_at`/`set_expired_at` (Task 70); el activo SIN control se OMITE y se reporta `skipped_no_control`; re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. La validación de fecha futura SE ELIMINÓ (D-108): el sistema trabaja un mes por adelantado. Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).
+         * @description RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5; Task 71/SGP-55, D-106/D-108): SIN CUERPO — el período NO se recibe, se resuelve AUTOMÁTICO para el MES SIGUIENTE a la fecha actual contra el reloj compartido. Nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control (la cuenta puede ser null — la «cuenta nula/vacía» del control nacido de un expediente sin cuenta utilizable, Task 72c/72e/D-117, en cualquier forma de cobro) y el calendario NACE ESTAMPADO: `payment_day` (el día de pago de la configuración ACTIVA sobre el mes/año del pago, D-107) y `set_provitional_at`/`set_expired_at` (Task 70); el activo SIN control se OMITE y se reporta `skipped_no_control` (alcanzable SOLO con la agencia de cobro desaparecida del catálogo vivo, D-118 — la arista D-119 de la Task 72d quedó derogada por la Task 72e); re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. La validación de fecha futura SE ELIMINÓ (D-108): el sistema trabaja un mes por adelantado. Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).
          */
         post: operations["paymentsGenerate"];
         delete?: never;
@@ -899,6 +899,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pensioners/{id}/initial-payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pagos adicionales del pensionado
+         * @description Task 73 (ajuste de usuario 2026-11-12, Bloque A-2): todos los pagos adicionales de un pensionado, los más recientes primero, paginados (page, per_page ≤ 100). Cada fila nace de la instrucción de pago inicial de una aprobación (amount = cuantía + monto introducido, D-7311; status pending al nacer) y pasa a done cuando la generación mensual de pagos la liquida sobre la fila del período (Bloque C-1, D-7312 (a)) — el listado es la superficie de control del operador antes de aprobar una reapertura con pendientes vivos. 404 para un pensionado inexistente o soft-deleted.
+         */
+        get: operations["pensionersInitialPaymentsIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pensioners/{id}": {
         parameters: {
             query?: never;
@@ -1149,6 +1169,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/language": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cambiar el propio idioma de respuesta
+         * @description Primera superficie de autoedición de perfil (Task 72/SGP-56, D-110): cada cuenta autenticada cambia SU idioma de respuesta — «el idioma seleccionado» pertenece a la cuenta, no al navegador, por lo que NO exige permiso alguno. A partir de la siguiente solicitud el middleware SetAppLocale compone TODA la envolvente de mensajes en ese idioma (éxitos, 422 campo a campo, aborts). El cambio queda en la bitácora como cualquier otra escritura de cuenta.
+         */
+        patch: operations["authUpdateLanguage"];
         trace?: never;
     };
     "/api/v1/permissions": {
@@ -2133,8 +2173,11 @@ export interface components {
                  * @example 1
                  */
                 number?: number;
-                /** @example 02000012345678901234 */
-                account?: string;
+                /**
+                 * @description La cuenta del control VIVO — null cuando nació con la «cuenta nula/vacía» (D-117, cualquier forma de cobro desde Task 72e)
+                 * @example 02000012345678901234
+                 */
+                account?: string | null;
                 /** @description Marcador DERIVADO del tipo de la agencia (D-64) */
                 electronic_payroll?: boolean;
                 agency?: {
@@ -2154,10 +2197,10 @@ export interface components {
                 name?: string;
             } | null;
             /**
-             * @description La cuenta CONGELADA del control al generar
+             * @description La cuenta CONGELADA del control al generar — null cuando el control nació sin cuenta utilizable (D-117, cualquier forma de cobro)
              * @example 02000012345678901234
              */
-            account?: string;
+            account?: string | null;
             /**
              * @description La cuantía CONGELADA al generar el período (DECIMAL(12,2) como cadena, RN-005)
              * @example 2127.00
@@ -2263,6 +2306,16 @@ export interface components {
              * @example 5
              */
             average_years_used: number;
+            /**
+             * @description Task 73 (ajuste de usuario 2026-11-12, Bloque B-2): los meses de salarios imputables declarados por el expediente — null ⇒ el divisor es N_ef × 12
+             * @example 58
+             */
+            imputable_salary_months: number | null;
+            /**
+             * @description Task 73 (Bloque B-2): los MESES EXACTOS que dividieron el SPM — los imputable_salary_months declarados en la rama no imputable, N_ef × 12 en el resto
+             * @example 60
+             */
+            average_divisor_months: number;
             /**
              * @description Task 52/S8.8, V-6: declaración de imputabilidad de los salarios ausentes — null sin déficit; obligatoria con déficit (422 si falta, D-4)
              * @example null
@@ -2480,6 +2533,11 @@ export interface components {
              * @example null
              */
             missing_salaries_attributable: boolean | null;
+            /**
+             * @description Task 73 (ajuste de usuario 2026-11-12, Bloque B-2, D-7308 (a)): los meses de salarios imputables congelados con la resolución — null ⇒ el divisor fue N_ef × 12 (la semántica histórica); el valor también viaja dentro de inputs
+             * @example null
+             */
+            imputable_salary_months: number | null;
             /** @example 475.00 */
             average_monthly_salary: string;
             /** @example 0 */
@@ -2707,6 +2765,11 @@ export interface components {
              * @example null
              */
             missing_salaries_attributable?: boolean | null;
+            /**
+             * @description Task 73 (ajuste de usuario 2026-11-12, Bloque B-2): meses de salarios imputables — el divisor EXPLÍCITO del salario promedio. Solo declarable cuando missing_salaries_attributable = false (422 en el resto de las ramas, nunca descarte silencioso); obligatorio en esa rama al pasar a revisión, previsualizar y aprobar (422 imputable_months_indeterminate, D-7307 (a)). 1..180 = el techo de quince años de la serie en meses; null ⇒ el divisor es N_ef × 12
+             * @example 58
+             */
+            imputable_salary_months?: number | null;
             /**
              * @description Pertenece al Ejército Rebelde (regla 4)
              * @example false
@@ -2956,6 +3019,51 @@ export interface components {
             cycles_count?: number;
         };
         /**
+         * Pago inicial del pensionado
+         * @description Task 73 (ajuste de usuario 2026-11-12, Bloque A): el pago inicial de un pensionado — nace con la aprobación del expediente (amount = cuantía + monto introducido, la fórmula literal CONFIRMADA por el negocio, D-7311; description = la evidencia del operador; status = pending) y se liquida con la primera fila del registro de pagos que el pensionado genere: el monto viaja en la fila y el estado pasa a done (Bloque C-1, D-7312 (a)). Varias filas por pensionado son legítimas — una reapertura + re-aprobación con nueva instrucción agrega otra (D-7310 (a)). Evidencia financiera append-only: sin anulaciones, cada escritura aterriza en la bitácora.
+         */
+        InitialPayment: {
+            /**
+             * Format: int64
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @description El pensionado dueño del pago inicial (nace en su transición de aprobación)
+             * @example 3
+             */
+            pensioner_id?: number;
+            /**
+             * @description cuantía + monto introducido (D-7311, literal CONFIRMADO): DECIMAL(12,2) exacto, Money bcmath — ej.: cuantía 2500.00 + monto 800.50
+             * @example 3300.50
+             */
+            amount?: string;
+            /**
+             * @description pending al nacer; done cuando la generación de pagos lo liquidó sobre la fila del período (terminal)
+             * @example pending
+             * @enum {string}
+             */
+            status?: "pending" | "done";
+            /**
+             * @description La evidencia del operador que instruyó el pago (máx. 255)
+             * @example Pago inicial por la aprobación del expediente.
+             */
+            description?: string;
+            /**
+             * Format: date-time
+             * @description Momento del nacimiento (la aprobación del expediente de origen)
+             * @example 2026-11-12T10:30:00+00:00
+             */
+            created_at?: string;
+            /**
+             * Format: date-time
+             * @description Última escritura (la liquidación a done)
+             * @example 2026-11-12T10:30:00+00:00
+             */
+            updated_at?: string;
+        };
+        /**
          * Pensionado
          * @description Pensionado (RF-PEN-001/RF-PEN-002): la fila nace de la aprobación del expediente con la cuantía congelada EXACTA y espeja su ciclo administrativo. La persona viaja como proyección COMPLETA, tipo y régimen como {id, code, name} y el expediente de origen como referencia mínima {id, number, status}. La ficha añade status_history (la línea de tiempo derivada de la bitácora, ADR-42); bank_control viaja en TODO GET del pensionado — proyección mínima en las filas (el número GLOBAL siempre legible, corrección de usuario de Task 63) y completa en la ficha (RF-PAG-002).
          */
@@ -2980,8 +3088,11 @@ export interface components {
              *     the user correction: the GLOBAL number must be readable from the
              *     pensioner GETs): the MINIMAL projection {id, number, agency,
              *     electronic_payroll} on listing rows, the full projection (+
-             *     account and write timestamps) on the ficha shapes, null while
-             *     the nested PUT has not provisioned the control (RF-PAG-002).
+             *     account and write timestamps) on the ficha shapes, null ONLY in
+             *     the surviving catalog edge of the birth (Task 72c/D-118: the
+             *     collection agency vanished mid-review — the control stays
+             *     pending for the operator PUT; a case without account births the
+             *     control with the cuenta NULL, D-117) (RF-PAG-002).
              * @example 1
              */
             id?: number;
@@ -3052,7 +3163,7 @@ export interface components {
             } | null;
             /** @description FICHA: línea de tiempo de estados derivada de la bitácora (ADR-42) — el nacimiento más una fila por cambio de estado; ausente en las filas del listado */
             status_history?: components["schemas"]["PensionerStatusHistory"][];
-            /** @description EL control bancario del cobro (RF-PAG-001/002, Task 63/SGP-48): relación 1:1 — número GLOBAL del scope bank_control (ADR-17), agencia {id, code, name} y marcador derivado del tipo de la agencia (electronic_payroll, D-64). Proyección mínima en las filas del listado; la ficha añade account, created_at y updated_at. null mientras PUT /pensioners/{id}/bank-control no haya provisto el control. */
+            /** @description EL control bancario del cobro (RF-PAG-001/002, Task 63/SGP-48): relación 1:1 — número GLOBAL del scope bank_control (ADR-17), agencia {id, code, name} y marcador derivado del tipo de la agencia (electronic_payroll, D-64). Nace CON el pensionado de la aprobación del expediente (Task 67) — sin cuenta utilizable la cuenta viaja null, la «cuenta nula/vacía» del D-117 (Task 72c/72e, en cualquier forma de cobro). Proyección mínima en las filas del listado; la ficha añade account, created_at y updated_at. null cuando la agencia de cobro dejó el catálogo vivo durante la revisión (D-118) — el único nacimiento sin control, que queda pendiente para el PUT del operador. */
             bank_control?: {
                 /**
                  * Format: int64
@@ -3078,10 +3189,10 @@ export interface components {
                  */
                 electronic_payroll?: boolean;
                 /**
-                 * @description FICHA: cuenta bancaria (10-34 alfanumérica)
+                 * @description FICHA: cuenta bancaria (10-34 alfanumérica cuando existe) — null es la «cuenta nula/vacía» del nacimiento sin cuenta utilizable (D-117, Task 72c/72e, en cualquier forma de cobro), el operador la completa por el PUT
                  * @example 02000012345678901234
                  */
-                account?: string;
+                account?: string | null;
                 /**
                  * Format: date-time
                  * @description FICHA: momento de la creación del control
@@ -3387,6 +3498,11 @@ export interface components {
             person?: components["schemas"]["LinkedPerson"] | null;
             /** @description Oficina territorial de pertenencia (ADR-29): /auth/me y la gestión de cuentas la devuelven; null si la cuenta no pertenece a ninguna oficina activa */
             office?: components["schemas"]["Office"] | null;
+            /**
+             * @description Idioma seleccionado para los mensajes de la API (Task 72/SGP-56): es institucional por defecto; el middleware SetAppLocale lo aplica a toda respuesta que constituya un mensaje
+             * @enum {string}
+             */
+            language?: "es" | "en";
             /**
              * @description Ciclo de vida de la cuenta: inactive = desactivada (borrado lógico, RF-AUD-004)
              * @enum {string}
@@ -4730,7 +4846,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @example Signature revoked. */
+                        /** @example Firma revocada. */
                         message?: string;
                     };
                 };
@@ -4989,7 +5105,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @example Entity deactivated. */
+                        /** @example Entidad desactivada. */
                         message?: string;
                     };
                 };
@@ -5234,7 +5350,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @example Office deactivated. */
+                        /** @example Oficina desactivada. */
                         message?: string;
                     };
                 };
@@ -6582,6 +6698,16 @@ export interface operations {
                      * @example false
                      */
                     force?: boolean | null;
+                    /**
+                     * @description Task 73 (Bloque B-3): monto del pago inicial — OBLIGATORIO en la aprobación de un NUEVO expediente (422 pension_cases.initial_payment_required si falta), opcional en la re-aprobación tras reapertura y PROHIBIDO en las demás transiciones. La pareja es todo-o-nada con initial_payment_description; el pago inicial nace con amount = cuantía + monto (D-7311, literal CONFIRMADO)
+                     * @example 800.50
+                     */
+                    initial_payment_amount?: string | null;
+                    /**
+                     * @description Task 73 (Bloque B-3): la evidencia del operador que instruye el pago inicial — misma regla todo-o-nada y de prohibición que el monto
+                     * @example Pago inicial por la aprobación del expediente.
+                     */
+                    initial_payment_description?: string | null;
                 };
             };
         };
@@ -6623,7 +6749,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Fuera de la matriz (con el estado actual y el destino intentado), evidencia exigida ausente o corta, base legal no vigente o checklist de completitud (lista missing) */
+            /** @description Fuera de la matriz (con el estado actual y el destino intentado), evidencia exigida ausente o corta, base legal no vigente, instrucción de pago inicial ausente (Task 73, aprobación de un nuevo expediente) o checklist de completitud (lista missing) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6639,10 +6765,27 @@ export interface operations {
                         /**
                          * @example [
                          *       "service_records",
-                         *       "salary_records"
+                         *       "salary_records",
+                         *       "salary_records_years",
+                         *       "salary_records_out_of_window",
+                         *       "imputable_salary_months"
                          *     ]
                          */
                         missing?: string[];
+                        /**
+                         * @description Task 73 (Bloque B-1): los años de la ventana cubiertos por un servicio que aún deben su registro de salario (viaja con el ítem salary_records_years)
+                         * @example [
+                         *       2024
+                         *     ]
+                         */
+                        missing_salary_years?: number[];
+                        /**
+                         * @description Task 73 (Bloque B-1): los años declarados POR DEBAJO de la ventana del régimen — el operador los elimina por el DELETE del subrecurso (viaja con el ítem salary_records_out_of_window)
+                         * @example [
+                         *       2018
+                         *     ]
+                         */
+                        out_of_window_salary_years?: number[];
                     };
                 };
             };
@@ -7093,6 +7236,44 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionersInitialPaymentsIndex: {
+        parameters: {
+            query?: {
+                /** @example 1 */
+                page?: number;
+                /** @example 15 */
+                per_page?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Los pagos adicionales del pensionado, los más recientes primero */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InitialPayment"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Pensionado inexistente o desactivado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     pensionersShow: {
@@ -7840,6 +8021,53 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @example Unauthenticated. */
+                        message?: string;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    authUpdateLanguage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Idioma a seleccionar */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Uno de los idiomas soportados del registro (config/app.php supported_locales) — es institucional por defecto
+                     * @example en
+                     * @enum {string}
+                     */
+                    language: "es" | "en";
+                };
+            };
+        };
+        responses: {
+            /** @description Idioma seleccionado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["User"];
+                    };
+                };
+            };
+            /** @description Token ausente, inválido o ya revocado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example No autenticado. */
                         message?: string;
                     };
                 };
