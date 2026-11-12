@@ -658,7 +658,7 @@ export interface paths {
         put?: never;
         /**
          * Apertura de un expediente
-         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Task 37: la marca internacionalista del promovente es booleana OBLIGATORIA (paralelo del par rebelde) y el par de contacto (phone, popular_council) viaja opcional; los subregistros de servicio exigen end_date OBLIGATORIA, estrictamente posterior a start_date y SIN solapamiento entre filas (422 con nada creado). Task 42: el domicilio y cobro del promovente viajan en el alta — dirección actual, provincia y municipio de residencia (coherentes, RN-04), tipo de agencia de cobro, agencia de cobro (del tipo declarado) y cuenta bancaria OBLIGATORIA CONDICIONAL a la forma de pago del tipo de agencia (exigida con tarjeta magnetica, opcional con nomina electronica: 422 sobre bank_account) — y cada concepto de ingreso declarado viaja con su porciento a aplicar (0-100, dos decimales). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
+         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Task 37: la marca internacionalista del promovente es booleana OBLIGATORIA (paralelo del par rebelde) y el par de contacto (phone, popular_council) viaja opcional; los subregistros de servicio exigen end_date OBLIGATORIA, estrictamente posterior a start_date y SIN solapamiento entre filas (422 con nada creado). Task 42: el domicilio y cobro del promovente viajan en el alta — dirección actual, provincia y municipio de residencia (coherentes, RN-04), tipo de agencia de cobro, agencia de cobro (del tipo declarado) y cuenta bancaria OBLIGATORIA CONDICIONAL a la forma de pago del tipo de agencia (exigida con tarjeta magnetica, opcional con nomina electronica: 422 sobre bank_account) — y cada concepto de ingreso declarado viaja con su porciento a aplicar (0-100, dos decimales). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). Task 74: cuando el tipo de jubilación del tipo de pensión declarado es invalidez, el BLOQUE DE INVALIDEZ viaja OBLIGATORIO en el alta — enfermedad (id del catálogo diseases, activa), requiere cuidado de otra persona, origen de la enfermedad (comun|profesional|accidente_trabajo|accidente_trayecto), temporal y — solo si temporal=true — la fecha de re-peritaje, estrictamente futura (422 clave por clave si falta; prohibido con cualquier otra rama, D-7408). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
          */
         post: operations["pensionCasesStore"];
         delete?: never;
@@ -681,7 +681,7 @@ export interface paths {
         get: operations["pensionCasesShow"];
         /**
          * Edición del expediente (promovente inmutable)
-         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario, la fecha de solicitud y la declaración de imputabilidad de los salarios ausentes (Task 52/S8.8, D-3: missing_salaries_attributable, PATCH — null explícito la limpia) — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Task 42: el grupo de DOMICILIO y COBRO del promovente — dirección actual, provincia y municipio de residencia, tipo de agencia de cobro, agencia de cobro y cuenta bancaria — SÍ es editable (decisión explícita del usuario: pueden modificarse) con probes espejo del alta y la exigencia condicional de la cuenta re-evaluada contra el estado RESULTANTE (cambiar el tipo de agencia de cobro a uno con forma de pago tarjeta magnetica exige la cuenta si acabó en null). Las advertencias de la serie salarial viajan junto a data.
+         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario, la fecha de solicitud y la declaración de imputabilidad de los salarios ausentes (Task 52/S8.8, D-3: missing_salaries_attributable, PATCH — null explícito la limpia) — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Task 42: el grupo de DOMICILIO y COBRO del promovente — dirección actual, provincia y municipio de residencia, tipo de agencia de cobro, agencia de cobro y cuenta bancaria — SÍ es editable (decisión explícita del usuario: pueden modificarse) con probes espejo del alta y la exigencia condicional de la cuenta re-evaluada contra el estado RESULTANTE (cambiar el tipo de agencia de cobro a uno con forma de pago tarjeta magnetica exige la cuenta si acabó en null). Task 74 (D-7407): el BLOQUE DE INVALIDEZ también es editable en submitted contra el estado RESULTANTE — cambiar el tipo de pensión a una rama invalidez exige el bloque completo (422 clave por clave), cambiarlo a una rama no-invalidez exige limpiar el bloque (422 si queda presente; los nulls explícitos limpian, nunca un descarte silencioso). Las advertencias de la serie salarial viajan junto a data.
          */
         put: operations["pensionCasesUpdate"];
         post?: never;
@@ -1580,10 +1580,11 @@ export interface components {
              */
             sector?: number | null;
             /**
-             * @description Solo pension-types (Task 38): persona fallecida, booleano con default false, devuelto por todos los endpoints
-             * @example false
+             * @description Solo pension-types (Task 74, ajuste de usuario 2026-11-12): tipo de jubilación del tipo de pensión — eje de clasificación que sustituyó al booleano fallecido (Task 38); la rama invalidez exige el bloque de invalidez del expediente
+             * @example invalidez
+             * @enum {string}
              */
-            deceased_person?: boolean;
+            retirement_type?: "edad" | "invalidez" | "fallecimiento";
             /**
              * @description Solo agency-types (Task 42): forma de pago del cobro, devuelta por todos los endpoints
              * @example tarjeta magnetica
@@ -2687,7 +2688,12 @@ export interface components {
              *     geography and the collection point with their projections
              *     (province, municipality, agency type carrying its payment form,
              *     full agency) and the bank account, null when the payment form of
-             *     the collection agency type leaves it optional.
+             *     the collection agency type leaves it optional. Since Task 74
+             *     (ajuste de usuario 2026-11-12, Bloque C) the case answers the
+             *     DISABILITY BLOCK of the invalidez retirement — the five SCALAR
+             *     fields only (D-7410): disease_id travels as the bare integer id
+             *     with NO disease projection and no eager load; whoever needs the
+             *     name consults the diseases catalog by the id.
              * @example 1
              */
             id?: number;
@@ -2755,6 +2761,34 @@ export interface components {
              * @example 1
              */
             pension_regime_id?: number;
+            /**
+             * Format: int64
+             * @description Task 74 (ajuste de usuario 2026-11-12, Bloque C): enfermedad del bloque de invalidez — SOLO el id del catálogo diseases, sin proyección (D-7410); obligatoria cuando el tipo de jubilación del tipo de pensión es invalidez, prohibida en el resto de las ramas
+             * @example 3
+             */
+            disease_id?: number | null;
+            /**
+             * @description Task 74 (Bloque C): ¿requiere cuidado de otra persona? — obligatoria con invalidez, prohibida en el resto
+             * @example true
+             */
+            requires_personal_care?: boolean | null;
+            /**
+             * @description Task 74 (Bloque C): origen de la enfermedad — los cuatro valores fijados por el usuario, snake_case sin tildes
+             * @example accidente_trabajo
+             * @enum {string|null}
+             */
+            disease_origin?: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | null;
+            /**
+             * @description Task 74 (Bloque C): ¿la invalidez es temporal? — obligatoria con invalidez, prohibida en el resto
+             * @example true
+             */
+            temporary_disability?: boolean | null;
+            /**
+             * Format: date
+             * @description Task 74 (Bloque C, D-7409): fecha de re-peritaje — obligatoria solo con temporary_disability=true y estrictamente FUTURA contra el reloj (422 si es hoy o pasada); prohibida con false o sin invalidez
+             * @example 2027-05-31
+             */
+            re_assessment_date?: string | null;
             /**
              * @description Último salario, DECIMAL(12,2) no negativo (RN-005)
              * @example 5000.00
@@ -3963,11 +3997,11 @@ export interface operations {
                      */
                     sector?: number | null;
                     /**
-                     * @description Solo pension-types (Task 38): persona fallecida; la omisión persiste el default false
-                     * @default false
-                     * @example false
+                     * @description Solo pension-types (Task 74, ajuste de usuario 2026-11-12): tipo de jubilación — OBLIGATORIO en el alta (422 si se omite, sin default) y editable en PATCH; la rama invalidez exige el bloque de invalidez del expediente
+                     * @example invalidez
+                     * @enum {string}
                      */
-                    deceased_person?: boolean;
+                    retirement_type?: "edad" | "invalidez" | "fallecimiento";
                     /**
                      * @description Solo agency-types (Task 42): forma de pago del cobro — la omisión persiste el default tarjeta magnetica; decide la exigencia de la cuenta bancaria del cobro del expediente
                      * @default tarjeta magnetica
@@ -4165,8 +4199,11 @@ export interface operations {
                     applies_base_salary?: boolean;
                     /** @description Solo pension-regimes (Task 38): null desarraiga el sector */
                     sector?: number | null;
-                    /** @description Solo pension-types (Task 38): persona fallecida */
-                    deceased_person?: boolean;
+                    /**
+                     * @description Solo pension-types (Task 74): tipo de jubilación, editable como el resto de los campos del catálogo (D-7405)
+                     * @enum {string}
+                     */
+                    retirement_type?: "edad" | "invalidez" | "fallecimiento";
                     /**
                      * @description Solo agency-types (Task 42): forma de pago del cobro
                      * @enum {string}
@@ -6174,7 +6211,7 @@ export interface operations {
                     /** @example 2 */
                     scientific_category_id: number;
                     /**
-                     * @description Tipo de pensión del catálogo (regla 4)
+                     * @description Tipo de pensión del catálogo (regla 4); su tipo de jubilación decide la exigencia del bloque de invalidez (Task 74)
                      * @example 1
                      */
                     pension_type_id: number;
@@ -6183,6 +6220,33 @@ export interface operations {
                      * @example 1
                      */
                     pension_regime_id: number;
+                    /**
+                     * @description Task 74 (ajuste de usuario 2026-11-12, Bloque C): enfermedad del catálogo diseases — OBLIGATORIA cuando el tipo de jubilación del tipo de pensión es invalidez (422 clave por clave si falta el bloque), PROHIBIDA en el resto de las ramas (422, D-7408); el detalle devuelve SOLO el id, sin proyección (D-7410)
+                     * @example 3
+                     */
+                    disease_id?: number | null;
+                    /**
+                     * @description Task 74 (Bloque C): ¿requiere cuidado de otra persona? — obligatoria con invalidez, prohibida en el resto
+                     * @example true
+                     */
+                    requires_personal_care?: boolean | null;
+                    /**
+                     * @description Task 74 (Bloque C): origen de la enfermedad — los cuatro valores fijados por el usuario, sin tildes
+                     * @example accidente_trabajo
+                     * @enum {string|null}
+                     */
+                    disease_origin?: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | null;
+                    /**
+                     * @description Task 74 (Bloque C): ¿la invalidez es temporal? — obligatoria con invalidez, prohibida en el resto
+                     * @example true
+                     */
+                    temporary_disability?: boolean | null;
+                    /**
+                     * Format: date
+                     * @description Task 74 (Bloque C, D-7409): fecha de re-peritaje — obligatoria solo si temporary_disability=true (422 si falta), prohibida si false, y estrictamente FUTURA contra el reloj (422 si es hoy o pasada)
+                     * @example 2027-05-31
+                     */
+                    re_assessment_date?: string | null;
                     /**
                      * @description Pertenece al Ejército Rebelde (regla 4)
                      * @example false
@@ -6447,6 +6511,33 @@ export interface operations {
                      * @example 1
                      */
                     pension_regime_id?: number;
+                    /**
+                     * @description Task 74 (Bloque C, D-7407): enfermedad del bloque de invalidez — EDITABLE con semántica PATCH contra el estado RESULTANTE; null explícito limpia el campo; cambiar el tipo a una rama no-invalidez exige limpiar el bloque completo (422 si queda presente, se limpia con nulls explícitos)
+                     * @example 3
+                     */
+                    disease_id?: number | null;
+                    /**
+                     * @description Task 74 (Bloque C): ¿requiere cuidado de otra persona? — editable en submitted contra el estado resultante
+                     * @example true
+                     */
+                    requires_personal_care?: boolean | null;
+                    /**
+                     * @description Task 74 (Bloque C): origen de la enfermedad — editable en submitted
+                     * @example accidente_trabajo
+                     * @enum {string|null}
+                     */
+                    disease_origin?: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | null;
+                    /**
+                     * @description Task 74 (Bloque C): ¿la invalidez es temporal? — editable en submitted; el par con la fecha de re-peritaje se exige coherente (null explícito para limpiar)
+                     * @example true
+                     */
+                    temporary_disability?: boolean | null;
+                    /**
+                     * Format: date
+                     * @description Task 74 (Bloque C, D-7409): fecha de re-peritaje — solo con temporary_disability resultante true y estrictamente FUTURA cuando se declara (una fecha almacenada que envejece no bloquea PATCHes ajenos al bloque)
+                     * @example 2027-05-31
+                     */
+                    re_assessment_date?: string | null;
                     /**
                      * @description Último salario, decimal exacto no negativo (RN-005, editable)
                      * @example 6200.00
