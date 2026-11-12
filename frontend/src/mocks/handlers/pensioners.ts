@@ -2,8 +2,47 @@ import { http, HttpResponse } from 'msw';
 import type { components } from '@/types/api';
 
 type Pensioner = components['schemas']['Pensioner'];
+type InitialPayment = components['schemas']['InitialPayment'];
 
 const API_BASE = 'http://localhost:8000/api/v1';
+
+// Task 73/Bloque A: seeds de pagos iniciales por pensionado.
+// Cada fila nace con la aprobación del expediente (amount = cuantía + monto introducido, D-7311;
+// status pending) y se liquida (status → done) cuando la generación mensual la consume.
+// Varias filas por pensionado son legítimas (reapertura + re-aprobación).
+const initialPayments = new Map<number, InitialPayment[]>([
+  [1, [
+    {
+      id: 1,
+      pensioner_id: 1,
+      amount: '4050.50',
+      status: 'done',
+      description: 'Pago inicial por la aprobación del expediente (cuantía 3250.00 + monto introducido 800.50).',
+      created_at: '2026-09-20T10:00:00+00:00',
+      updated_at: '2026-10-15T12:00:00+00:00',
+    } as InitialPayment,
+    {
+      id: 2,
+      pensioner_id: 1,
+      amount: '3300.00',
+      status: 'pending',
+      description: 'Pago inicial tras reapertura y re-aprobación con nueva instrucción (D-7310(a)).',
+      created_at: '2026-11-01T09:30:00+00:00',
+      updated_at: '2026-11-01T09:30:00+00:00',
+    } as InitialPayment,
+  ]],
+  [2, [
+    {
+      id: 3,
+      pensioner_id: 2,
+      amount: '3600.00',
+      status: 'pending',
+      description: 'Pago inicial por la aprobación del expediente (cuantía 2800.00 + monto introducido 800.00).',
+      created_at: '2026-08-15T12:00:00+00:00',
+      updated_at: '2026-08-15T12:00:00+00:00',
+    } as InitialPayment,
+  ]],
+]);
 
 // Seeds: 2 pensionados (uno activo del caso 3 aprobado, uno suspendido)
 const pensioners = new Map<number, Pensioner>([
@@ -184,5 +223,21 @@ export const pensionersHandlers = [
     };
     pensioners.set(id, updated);
     return HttpResponse.json({ data: updated });
+  }),
+
+  // GET /pensioners/{id}/initial-payments — pagos adicionales del pensionado (Task 73, Bloque A)
+  // Lista los pagos iniciales del pensionado, los más recientes primero.
+  // Cada fila nace de la aprobación del expediente y se liquida (pending → done) con la
+  // primera fila de pagos generada. Read-only: sin endpoint de creación (nace del backend).
+  http.get(`${API_BASE}/pensioners/:id/initial-payments`, ({ params }) => {
+    const id = parseInt(params.id as string, 10);
+    // 404 si el pensionado no existe en seeds
+    if (!pensioners.has(id)) {
+      return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    }
+    const items = initialPayments.get(id) ?? [];
+    // Ordenar por created_at DESC (más recientes primero)
+    const sorted = [...items].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+    return HttpResponse.json({ data: sorted });
   }),
 ];

@@ -493,6 +493,8 @@ export const pensionCasesHandlers = [
       average_years_effective: 5,
       // Task 52/S8.8 V-8: declaración congelada con la resolución (null sin déficit)
       missing_salaries_attributable: null as boolean | null,
+      // Task 73/B-2: meses imputables congelados (null ⇒ divisor fue N_eff × 12, D-7308(a))
+      imputable_salary_months: null as number | null,
       average_monthly_salary: c.last_salary ?? '0.00',
       excess_years: Math.max(0, Math.floor(((c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0)) / 12) - 25),
       amount: c.computed_amount ?? '0.00',
@@ -515,6 +517,8 @@ export const pensionCasesHandlers = [
         birth_date: '1960-02-03',
         sex: 'M',
         missing_salaries_attributable: null as boolean | null,
+        // Task 73/B-2: meses imputables en inputs congelados
+        imputable_salary_months: null as number | null,
         salaries: (c.salary_records ?? []).map((r) => ({ id: r.id, year: r.year, earned_salary: r.earned_salary })),
         // Task 53/S8.9: lista income_concepts[] congelada con el porciento (sin amount desde Task 54)
         income_concepts: (c.income_concept_records ?? []).map((icr) => ({
@@ -612,6 +616,17 @@ export const pensionCasesHandlers = [
       average_years_used: salaryCount >= 5 ? 5 : salaryCount,
       // Task 52/S8.8 V-6: declaración de imputabilidad (null sin déficit)
       missing_salaries_attributable: salaryCount < 5 ? (c.missing_salaries_attributable ?? null) : null,
+      // Task 73/B-2: meses imputables declarados por el expediente (null ⇒ divisor = N_eff × 12).
+      // Solo declarable cuando missing_salaries_attributable === false; en mock lo dejamos null
+      // salvo cuando el expediente lo trae explícito.
+      imputable_salary_months: (salaryCount < 5 && c.missing_salaries_attributable === false)
+        ? (c.imputable_salary_months ?? null)
+        : null,
+      // Task 73/B-2: meses EXACTOS que dividieron el SPM — los imputable_salary_months en la rama
+      // no imputable, N_eff × 12 en el resto.
+      average_divisor_months: (salaryCount < 5 && c.missing_salaries_attributable === false && c.imputable_salary_months != null)
+        ? c.imputable_salary_months
+        : (salaryCount >= 5 ? 5 : Math.max(salaryCount, 1)) * 12,
       // Task 53/S8.9 V-11: conceptos APLICABLES (applies_base_salary) que el motor consumió como incrementos
       income_concept_terms: (c.income_concept_records ?? []).map((icr) => ({
         income_concept_id: icr.income_concept_id,

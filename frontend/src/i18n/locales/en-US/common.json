@@ -73,7 +73,9 @@
     "label": "Language",
     "es-CU": "Español (Cuba)",
     "es-ES": "Español (España)",
-    "en-US": "English (US)"
+    "en-US": "English (US)",
+    "change_success": "Language updated",
+    "change_error": "Could not update the language"
   },
   "module_placeholder": {
     "coming_soon": "Coming soon",

@@ -78,6 +78,7 @@
       "missing_salaries_attributable_unset": "Sin declaración",
       "missing_salaries_attributable_true": "Sí, imputables",
       "missing_salaries_attributable_false": "No, no imputables",
+      "imputable_salary_months": "Meses imputables",
       "current_address": "Dirección actual",
       "residence_province": "Provincia de residencia",
       "residence_municipality": "Municipio de residencia",
@@ -129,7 +130,9 @@
     "missing_salaries_attributable_unset": "Sin declaración (sin déficit)",
     "missing_salaries_attributable_true": "Sí, imputables al trabajador",
     "missing_salaries_attributable_false": "No, no imputables al trabajador",
-    "missing_salaries_attributable_help": "Obligatorio cuando la serie salarial declarada es menor que el N de la estrategia del régimen. Sin déficit, déjalo en 'Sin declaración'."
+    "missing_salaries_attributable_help": "Obligatorio cuando la serie salarial declarada es menor que el N de la estrategia del régimen. Sin déficit, déjalo en 'Sin declaración'.",
+    "imputable_salary_months": "Meses de salarios imputables",
+    "imputable_salary_months_help": "Divisor EXPLÍCITO del salario promedio (Task 73/B-2). Solo declarable cuando los salarios ausentes NO son imputables. 1..180 (techo de 15 años en meses). Vacío ⇒ divisor = N efectivo × 12 (semántica histórica). El backend valida la coherencia (422 imputable_months_indeterminate, D-7307(a))."
   },
   "salary": {
     "title": "Registros de salario",
@@ -278,6 +281,8 @@
       "average_monthly_salary": "SPM",
       "excess_years": "Años excedentes",
       "average_years_used": "N efectivo divisor",
+      "imputable_salary_months": "Meses imputables",
+      "average_divisor_months": "Meses divisores del SPM",
       "income_concept_percent": "Σ % conceptos",
       "internationalist_applied": "Incremento internacionalista",
       "minimum_increment_applied": "Incremento pensión mín.",

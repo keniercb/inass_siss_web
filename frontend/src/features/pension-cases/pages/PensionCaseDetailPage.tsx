@@ -276,6 +276,12 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
               : pensionCase.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
               : t('detail.fields.missing_salaries_attributable_false')
           } />
+          {/* Task 73/B-2: meses de salarios imputables declarados en el expediente */}
+          <Field label={t('detail.fields.imputable_salary_months')} value={
+            pensionCase.imputable_salary_months != null
+              ? String(pensionCase.imputable_salary_months)
+              : '—'
+          } mono />
         </div>
       </div>
 
@@ -433,6 +439,12 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
               : calculation.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
               : t('detail.fields.missing_salaries_attributable_false')
           } />
+          {/* Task 73/B-2: meses de salarios imputables congelados con la resolución (D-7308(a)) */}
+          <Field label={t('calculation.fields.imputable_salary_months')} value={
+            calculation.imputable_salary_months != null
+              ? String(calculation.imputable_salary_months)
+              : '—'
+          } mono />
         </div>
       </div>
 
@@ -666,6 +678,18 @@ function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; o
                     : preview.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
                     : t('detail.fields.missing_salaries_attributable_false')
                 } />
+                {/* Task 73/B-2: meses de salarios imputables declarados (divisor explícito del SPM) */}
+                <Field label={t('calculation.fields.imputable_salary_months')} value={
+                  preview.imputable_salary_months != null
+                    ? String(preview.imputable_salary_months)
+                    : '—'
+                } mono />
+                {/* Task 73/B-2: meses EXACTOS que dividieron el SPM (imputable_salary_months o N_eff × 12) */}
+                <Field label={t('calculation.fields.average_divisor_months')} value={
+                  preview.average_divisor_months != null
+                    ? String(preview.average_divisor_months)
+                    : '—'
+                } mono />
                 {/* Task 53/S8.9: porciento total de conceptos aplicables */}
                 <Field label={t('calculation.fields.income_concept_percent')} value={preview.income_concept_percent != null ? `${preview.income_concept_percent}%` : '—'} mono />
                 {/* Task 57-58/SGP-42-43: indicadores de la fórmula */}

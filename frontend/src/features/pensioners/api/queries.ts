@@ -6,6 +6,7 @@ import type { components } from '@/types/api';
 import type { AxiosError } from 'axios';
 
 type Pensioner = components['schemas']['Pensioner'];
+type InitialPayment = components['schemas']['InitialPayment'];
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -40,6 +41,24 @@ export function usePensioner(id?: number | string) {
       return response.data.data;
     },
     enabled: !!id,
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * GET /pensioners/{id}/initial-payments — pagos adicionales del pensionado (Task 73, Bloque A).
+ * Cada fila nace de la aprobación del expediente (amount = cuantía + monto introducido, D-7311;
+ * status pending) y pasa a done cuando la generación mensual de pagos la liquida.
+ * Read-only en el frontend — sin UI de creación (nace del backend).
+ */
+export function useInitialPayments(pensionerId?: number | string) {
+  return useQuery({
+    queryKey: ['pensioners', 'detail', pensionerId, 'initial-payments'],
+    queryFn: async () => {
+      const response = await http.get<{ data: InitialPayment[] }>(`/pensioners/${pensionerId}/initial-payments`);
+      return response.data.data;
+    },
+    enabled: !!pensionerId,
     staleTime: 60_000,
   });
 }

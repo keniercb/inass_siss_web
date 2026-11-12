@@ -78,6 +78,7 @@
       "missing_salaries_attributable_unset": "Undeclared",
       "missing_salaries_attributable_true": "Yes, attributable",
       "missing_salaries_attributable_false": "No, not attributable",
+      "imputable_salary_months": "Imputable months",
       "current_address": "Current address",
       "residence_province": "Residence province",
       "residence_municipality": "Residence municipality",
@@ -129,7 +130,9 @@
     "missing_salaries_attributable_unset": "Undeclared (no deficit)",
     "missing_salaries_attributable_true": "Yes, attributable to the worker",
     "missing_salaries_attributable_false": "No, not attributable to the worker",
-    "missing_salaries_attributable_help": "Required when the declared salary series is smaller than the strategy's N of the regime. With no deficit, leave it as 'Undeclared'."
+    "missing_salaries_attributable_help": "Required when the declared salary series is smaller than the strategy's N of the regime. With no deficit, leave it as 'Undeclared'.",
+    "imputable_salary_months": "Imputable salary months",
+    "imputable_salary_months_help": "EXPLICIT divisor of the average salary (Task 73/B-2). Only declarable when missing salaries are NOT attributable. 1..180 (15-year ceiling in months). Empty ⇒ divisor = effective N × 12 (historical semantics). The backend validates consistency (422 imputable_months_indeterminate, D-7307(a))."
   },
   "salary": {
     "title": "Salary records",
@@ -278,6 +281,8 @@
       "average_monthly_salary": "AMS",
       "excess_years": "Excess years",
       "average_years_used": "Effective N divisor",
+      "imputable_salary_months": "Imputable months",
+      "average_divisor_months": "SPM divisor months",
       "income_concept_percent": "Σ % concepts",
       "internationalist_applied": "Internationalist increment applied",
       "minimum_increment_applied": "Min. pension increment applied",

@@ -90,6 +90,17 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
     pensionCase?.missing_salaries_attributable == null ? 'unset'
       : pensionCase.missing_salaries_attributable ? 'true' : 'false'
   );
+  // Task 73/B-2: meses de salarios imputables — divisor EXPLÍCITO del SPM.
+  // Solo declarable cuando missing_salaries_attributable === 'false' (no imputable).
+  // null ⇒ divisor = N_eff × 12 (semántica histórica).
+  const [imputableSalaryMonths, setImputableSalaryMonths] = useState<string>(
+    pensionCase?.imputable_salary_months != null ? String(pensionCase.imputable_salary_months) : ''
+  );
+  // Reset del divisor cuando la declaración cambia a un estado donde no es declarable
+  const handleAttributableChange = (next: 'unset' | 'true' | 'false') => {
+    setMissingSalariesAttributable(next);
+    if (next !== 'false') setImputableSalaryMonths('');
+  };
 
   // Cargar provincias y municipios de residencia (cascading)
   const { data: provincesData } = useQuery({ queryKey: ['catalogs', 'provinces', 'all'], queryFn: async () => { const r = await http.get<{ data: { id: number; name: string }[] }>('/catalogs/provinces', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
@@ -125,6 +136,11 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
       bank_account: bankAccount || null,
       // Task 52/S8.8: solo se envía si el usuario lo declara explícitamente
       ...(missingSalariesAttributable !== 'unset' ? { missing_salaries_attributable: missingSalariesAttributable === 'true' } : {}),
+      // Task 73/B-2: solo se envía si la rama es 'false' (no imputable) y el usuario lo declaró.
+      // Ausente ⇒ backend usa N_eff × 12 (semántica histórica). La validación cruzada la hace el backend (422).
+      ...(missingSalariesAttributable === 'false' && imputableSalaryMonths !== ''
+        ? { imputable_salary_months: Number(imputableSalaryMonths) }
+        : {}),
     };
     try {
       if (isEdit && pensionCase) {
@@ -140,6 +156,11 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           requested_at: requestedAt || null,
           // Task 52/S8.8: PATCH — enviamos siempre (null limpia la declaración previa)
           missing_salaries_attributable: missingSalariesAttributable === 'unset' ? null : missingSalariesAttributable === 'true',
+          // Task 73/B-2: PATCH — null explícito limpia el divisor; la omisión no toca el valor almacenado.
+          // Solo se acepta cuando missing_salaries_attributable = false (422 en el resto, D-7307(a)).
+          imputable_salary_months: missingSalariesAttributable === 'false' && imputableSalaryMonths !== ''
+            ? Number(imputableSalaryMonths)
+            : null,
         };
         await updateMutation.mutateAsync({ id: pensionCase.id!, input: updateInput });
       } else {
@@ -318,7 +339,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           <div><label className="block text-sm font-medium mb-1">{t('form.missing_salaries_attributable')}</label>
             <SearchSelect
               value={missingSalariesAttributable}
-              onChange={(v) => setMissingSalariesAttributable(v as 'unset' | 'true' | 'false')}
+              onChange={(v) => handleAttributableChange(v as 'unset' | 'true' | 'false')}
               options={[
                 { value: 'unset', label: t('form.missing_salaries_attributable_unset') },
                 { value: 'true', label: t('form.missing_salaries_attributable_true') },
@@ -328,6 +349,24 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
             />
             <p className="text-xs text-muted-foreground mt-1">{t('form.missing_salaries_attributable_help')}</p>
           </div>
+          {/* Task 73/B-2: meses de salarios imputables — divisor EXPLÍCITO del SPM.
+              Solo se puede declarar cuando missing_salaries_attributable === 'false' (no imputable).
+              null ⇒ divisor = N_eff × 12 (semántica histórica). El backend valida la coherencia (422). */}
+          {missingSalariesAttributable === 'false' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('form.imputable_salary_months')}</label>
+              <Input
+                type="number"
+                min="1"
+                max="180"
+                step="1"
+                placeholder="58"
+                value={imputableSalaryMonths}
+                onChange={(e) => setImputableSalaryMonths(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{t('form.imputable_salary_months_help')}</p>
+            </div>
+          )}
         </div>
         {/* Ejército Rebelde + Internacionalista */}
         <div className="p-3 rounded-md border border-border space-y-3">

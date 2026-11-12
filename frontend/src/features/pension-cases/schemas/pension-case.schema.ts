@@ -34,6 +34,10 @@ export const createCaseSchema = z.object({
   bank_account: z.string().max(34).optional().nullable(),
   // Task 52/S8.8: declaración de imputabilidad de salarios ausentes (null válido sin déficit)
   missing_salaries_attributable: z.boolean().optional().nullable(),
+  // Task 73/B-2: meses de salarios imputables — divisor EXPLÍCITO del SPM.
+  // Solo declarable cuando missing_salaries_attributable = false; 1..180 (techo de 15 años en meses).
+  // null ⇒ divisor = N_eff × 12 (semántica histórica). La validación cruzada la hace el backend (422).
+  imputable_salary_months: z.number().int().min(1).max(180).optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
@@ -66,6 +70,9 @@ export const updateCaseSchema = z.object({
   bank_account: z.string().max(34).optional().nullable(),
   // Task 52/S8.8: PATCH (null explícito limpia; la omisión no toca el valor almacenado)
   missing_salaries_attributable: z.boolean().optional().nullable(),
+  // Task 73/B-2: PATCH — null explícito limpia el divisor; la omisión no toca el valor almacenado.
+  // Solo se acepta cuando missing_salaries_attributable = false (422 en el resto, D-7307(a)).
+  imputable_salary_months: z.number().int().min(1).max(180).optional().nullable(),
 });
 export type UpdateCaseInput = z.infer<typeof updateCaseSchema>;
 

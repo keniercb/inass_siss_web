@@ -13,6 +13,8 @@ export interface MockUser {
   email: string;
   roles: string[];
   permissions: string[];
+  // Task 72/SGP-56: idioma de la cuenta para los mensajes de la API (es|en). Default 'es'.
+  language: 'es' | 'en';
 }
 
 export interface MockAuthUser extends MockUser {
@@ -65,6 +67,7 @@ export const MOCK_USERS: Record<string, MockAuthUser> = {
     email: 'admin@sgp.local',
     roles: ['admin'],
     permissions: [], // admin tiene todos los permisos implícitamente
+    language: 'es',
     token: 'mock-token-admin-1|9QsTjXxaYl2nW8kJ',
     token_type: 'Bearer',
   },
@@ -74,6 +77,7 @@ export const MOCK_USERS: Record<string, MockAuthUser> = {
     email: 'director@sgp.local',
     roles: ['director'],
     permissions: [...DIRECTOR_PERMISSIONS],
+    language: 'es',
     token: 'mock-token-director-2|Dkt7Vx3qJn8mLp2Z',
     token_type: 'Bearer',
   },
@@ -83,6 +87,7 @@ export const MOCK_USERS: Record<string, MockAuthUser> = {
     email: 'specialist@sgp.local',
     roles: ['specialist'],
     permissions: [...SPECIALIST_PERMISSIONS],
+    language: 'es',
     token: 'mock-token-specialist-3|ZyR2c1pTn4oVmKwE',
     token_type: 'Bearer',
   },
@@ -92,6 +97,7 @@ export const MOCK_USERS: Record<string, MockAuthUser> = {
     email: 'operator@sgp.local',
     roles: ['operator'],
     permissions: [...OPERATOR_PERMISSIONS],
+    language: 'es',
     token: 'mock-token-operator-4|JnP8tRsYqX3bLdCw',
     token_type: 'Bearer',
   },
@@ -101,6 +107,7 @@ export const MOCK_USERS: Record<string, MockAuthUser> = {
     email: 'auditor@sgp.local',
     roles: ['auditor'],
     permissions: [...AUDITOR_PERMISSIONS],
+    language: 'es',
     token: 'mock-token-auditor-5|KzW4sNvYpL2xFqMe',
     token_type: 'Bearer',
   },
