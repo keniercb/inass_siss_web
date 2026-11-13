@@ -33,11 +33,9 @@ export const createSettingSchemaWithValidation = createSettingSchema.refine(
 
 export type CreateSettingInput = z.infer<typeof createSettingSchemaWithValidation>;
 
-// Helper para formatear fechas
+// Helper para formatear fechas — delega al formatDate central de lib/utils.ts
+// para evitar el off-by-one del parsing UTC en cadenas date-only ('YYYY-MM-DD').
+import { formatDate } from '@/lib/utils';
 export function formatEffectiveDate(dateStr: string, locale = 'es-CU'): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(dateStr));
+  return formatDate(dateStr, locale);
 }

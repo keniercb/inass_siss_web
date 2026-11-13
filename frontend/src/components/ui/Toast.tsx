@@ -4,7 +4,11 @@ import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 /**
  * Container global de toasts.
  * Renderizado una sola vez en main.tsx, fuera de cualquier layout.
- * Posición: top-right fijo, debajo del TopNavbar (top: 64px), z-index 9999.
+ * Posición: top-right fijo, debajo del TopNavbar (top: 64px).
+ *
+ * Z-INDEX: 10100 — por encima del Dialog (z-[10000]) y del portal del SearchSelect
+ * (z-index: 10050) para que los toasts sean visibles sobre cualquier modal o dropdown
+ * abierto. Antes era 9999 y quedaba tapado por el overlay del Dialog.
  *
  * Reglas del sistema de toasts (ver ADR-FE-19):
  *  - 5s auto-dismiss para success/info/warning
@@ -19,7 +23,7 @@ export function ToastContainer() {
       containerStyle={{
         top: 64,
         right: 16,
-        zIndex: 9999,
+        zIndex: 10100,
       }}
       toastOptions={{
         duration: 5000,
