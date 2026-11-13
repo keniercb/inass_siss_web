@@ -84,13 +84,23 @@
       "residence_municipality": "Residence municipality",
       "collection_agency_type": "Collection agency type",
       "collection_agency": "Collection agency",
-      "bank_account": "Bank account"
+      "bank_account": "Bank account",
+      "disease_id": "Disease",
+      "disease_origin": "Disease origin",
+      "disease_origin_comun": "Common",
+      "disease_origin_profesional": "Professional",
+      "disease_origin_accidente_trabajo": "Work accident",
+      "disease_origin_accidente_trayecto": "Commuting accident",
+      "requires_personal_care": "Requires personal care",
+      "temporary_disability": "Temporary disability",
+      "re_assessment_date": "Re-assessment date"
     },
     "section": {
       "case_data": "Case data",
       "rebel_army": "Rebel Army",
       "decision": "Decision",
-      "residence": "Residence and collection"
+      "residence": "Residence and collection",
+      "invalidez_block": "Disability block"
     }
   },
   "form": {
@@ -132,7 +142,19 @@
     "missing_salaries_attributable_false": "No, not attributable to the worker",
     "missing_salaries_attributable_help": "Required when the declared salary series is smaller than the strategy's N of the regime. With no deficit, leave it as 'Undeclared'.",
     "imputable_salary_months": "Imputable salary months",
-    "imputable_salary_months_help": "EXPLICIT divisor of the average salary (Task 73/B-2). Only declarable when missing salaries are NOT attributable. 1..180 (15-year ceiling in months). Empty ⇒ divisor = effective N × 12 (historical semantics). The backend validates consistency (422 imputable_months_indeterminate, D-7307(a))."
+    "imputable_salary_months_help": "EXPLICIT divisor of the average salary (Task 73/B-2). Only declarable when missing salaries are NOT attributable. 1..180 (15-year ceiling in months). Empty ⇒ divisor = effective N × 12 (historical semantics). The backend validates consistency (422 imputable_months_indeterminate, D-7307(a)).",
+    "bloque_invalidez_title": "Disability block",
+    "bloque_invalidez_help": "Required when the pension type is disability (Task 74/Block C). Forbidden in other branches (422, D-7408).",
+    "disease_id": "Disease",
+    "disease_origin": "Disease origin",
+    "disease_origin_comun": "Common",
+    "disease_origin_profesional": "Professional",
+    "disease_origin_accidente_trabajo": "Work accident",
+    "disease_origin_accidente_trayecto": "Commuting accident",
+    "requires_personal_care": "Requires personal care",
+    "temporary_disability": "Temporary disability",
+    "re_assessment_date": "Re-assessment date",
+    "re_assessment_date_help": "Required only with temporary disability. Must be strictly FUTURE against the clock (422 if today or past — D-7409)."
   },
   "salary": {
     "title": "Salary records",

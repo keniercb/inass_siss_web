@@ -84,13 +84,23 @@
       "residence_municipality": "Municipio de residencia",
       "collection_agency_type": "Tipo de agencia de cobro",
       "collection_agency": "Agencia de cobro",
-      "bank_account": "Cuenta bancaria"
+      "bank_account": "Cuenta bancaria",
+      "disease_id": "Enfermedad",
+      "disease_origin": "Origen de la enfermedad",
+      "disease_origin_comun": "Común",
+      "disease_origin_profesional": "Profesional",
+      "disease_origin_accidente_trabajo": "Accidente de trabajo",
+      "disease_origin_accidente_trayecto": "Accidente de trayecto",
+      "requires_personal_care": "Requiere cuidado personal",
+      "temporary_disability": "Invalidez temporal",
+      "re_assessment_date": "Fecha de re-peritaje"
     },
     "section": {
       "case_data": "Datos del expediente",
       "rebel_army": "Ejército Rebelde",
       "decision": "Decisión",
-      "residence": "Domicilio y cobro"
+      "residence": "Domicilio y cobro",
+      "invalidez_block": "Bloque de invalidez"
     }
   },
   "form": {
@@ -132,7 +142,19 @@
     "missing_salaries_attributable_false": "No, no imputables al trabajador",
     "missing_salaries_attributable_help": "Obligatorio cuando la serie salarial declarada es menor que el N de la estrategia del régimen. Sin déficit, déjalo en 'Sin declaración'.",
     "imputable_salary_months": "Meses de salarios imputables",
-    "imputable_salary_months_help": "Divisor EXPLÍCITO del salario promedio (Task 73/B-2). Solo declarable cuando los salarios ausentes NO son imputables. 1..180 (techo de 15 años en meses). Vacío ⇒ divisor = N efectivo × 12 (semántica histórica). El backend valida la coherencia (422 imputable_months_indeterminate, D-7307(a))."
+    "imputable_salary_months_help": "Divisor EXPLÍCITO del salario promedio (Task 73/B-2). Solo declarable cuando los salarios ausentes NO son imputables. 1..180 (techo de 15 años en meses). Vacío ⇒ divisor = N efectivo × 12 (semántica histórica). El backend valida la coherencia (422 imputable_months_indeterminate, D-7307(a)).",
+    "bloque_invalidez_title": "Bloque de invalidez",
+    "bloque_invalidez_help": "Obligatorio cuando el tipo de pensión es invalidez (Task 74/Bloque C). Prohibido en las demás ramas (422, D-7408).",
+    "disease_id": "Enfermedad",
+    "disease_origin": "Origen de la enfermedad",
+    "disease_origin_comun": "Común",
+    "disease_origin_profesional": "Profesional",
+    "disease_origin_accidente_trabajo": "Accidente de trabajo",
+    "disease_origin_accidente_trayecto": "Accidente de trayecto",
+    "requires_personal_care": "Requiere cuidado de otra persona",
+    "temporary_disability": "Invalidez temporal",
+    "re_assessment_date": "Fecha de re-peritaje",
+    "re_assessment_date_help": "Obligatoria solo con invalidez temporal. Debe ser estrictamente FUTURA contra el reloj (422 si es hoy o pasada — D-7409)."
   },
   "salary": {
     "title": "Registros de salario",

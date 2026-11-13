@@ -102,6 +102,34 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
     if (next !== 'false') setImputableSalaryMonths('');
   };
 
+  // Task 74/Bloque C: bloque de invalidez del expediente. Los 5 campos son obligatorios
+  // cuando el pension_type.retirement_type === 'invalidez' y prohibidos en el resto (422, D-7408).
+  // El frontend NO valida esa coherencia — la hace el backend. Solo captura y transmite.
+  const [diseaseId, setDiseaseId] = useState<number | null>(pensionCase?.disease_id ?? null);
+  const [diseaseOrigin, setDiseaseOrigin] = useState<'comun' | 'profesional' | 'accidente_trabajo' | 'accidente_trayecto' | ''>(
+    pensionCase?.disease_origin ?? ''
+  );
+  const [requiresPersonalCare, setRequiresPersonalCare] = useState<boolean>(
+    pensionCase?.requires_personal_care ?? false
+  );
+  const [temporaryDisability, setTemporaryDisability] = useState<boolean>(
+    pensionCase?.temporary_disability ?? false
+  );
+  const [reAssessmentDate, setReAssessmentDate] = useState<string>(pensionCase?.re_assessment_date ?? '');
+
+  // Para mostrar el bloque de invalidez necesitamos conocer el retirement_type del pension_type
+  // seleccionado. El objeto PensionCase del OpenAPI no embebe pension_type (solo pension_type_id),
+  // así que en AMBOS modos (create y edit) hacemos fetch del catálogo pension-types y lookup por id.
+  // Mismo patrón que PensionCaseDetailPage con su useCatalog('pension-types').
+  const { data: pensionTypesData } = useQuery<{ data: Array<{ id: number; retirement_type?: 'edad' | 'invalidez' | 'fallecimiento' }> }>({
+    queryKey: ['catalogs', 'pension-types', 'all'],
+    queryFn: async () => { const r = await http.get('/catalogs/pension-types', { params: { per_page: 100 } }); return r.data; },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!pensionTypeId,
+  });
+  const selectedPensionTypeRetirement = pensionTypesData?.data.find((pt) => pt.id === pensionTypeId)?.retirement_type;
+  const isInvalidezCase = selectedPensionTypeRetirement === 'invalidez';
+
   // Cargar provincias y municipios de residencia (cascading)
   const { data: provincesData } = useQuery({ queryKey: ['catalogs', 'provinces', 'all'], queryFn: async () => { const r = await http.get<{ data: { id: number; name: string }[] }>('/catalogs/provinces', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
   const { data: residenceMunisData } = useQuery({ queryKey: ['municipalities', 'residence', { province_id: residenceProvinceId }], queryFn: async () => { if (!residenceProvinceId) return { data: [] }; const r = await http.get<{ data: { id: number; name: string }[] }>('/municipalities', { params: { per_page: 100, province_id: residenceProvinceId } }); return r.data; }, enabled: !!residenceProvinceId, staleTime: 60_000 });
@@ -141,6 +169,17 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
       ...(missingSalariesAttributable === 'false' && imputableSalaryMonths !== ''
         ? { imputable_salary_months: Number(imputableSalaryMonths) }
         : {}),
+      // Task 74/Bloque C: solo se envía el bloque de invalidez si el pension_type es invalidez.
+      // En las demás ramas el backend lo prohibe (422, D-7408); no los enviamos.
+      ...(isInvalidezCase ? {
+        disease_id: diseaseId,
+        disease_origin: diseaseOrigin || null,
+        requires_personal_care: requiresPersonalCare,
+        temporary_disability: temporaryDisability,
+        // re_assessment_date: obligatoria solo con temporary_disability=true (D-7409).
+        // Se envía siempre que esté seteada; el backend valida la futuridad.
+        re_assessment_date: temporaryDisability ? (reAssessmentDate || null) : null,
+      } : {}),
     };
     try {
       if (isEdit && pensionCase) {
@@ -161,6 +200,13 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           imputable_salary_months: missingSalariesAttributable === 'false' && imputableSalaryMonths !== ''
             ? Number(imputableSalaryMonths)
             : null,
+          // Task 74/Bloque C: PATCH del bloque de invalidez. Si el pension_type resultante es
+          // invalidez, enviamos los campos; si no lo es, enviamos null para limpiarlos (D-7407).
+          disease_id: isInvalidezCase ? diseaseId : null,
+          disease_origin: isInvalidezCase ? (diseaseOrigin || null) : null,
+          requires_personal_care: isInvalidezCase ? requiresPersonalCare : null,
+          temporary_disability: isInvalidezCase ? temporaryDisability : null,
+          re_assessment_date: isInvalidezCase && temporaryDisability ? (reAssessmentDate || null) : null,
         };
         await updateMutation.mutateAsync({ id: pensionCase.id!, input: updateInput });
       } else {
@@ -368,6 +414,58 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
             </div>
           )}
         </div>
+        {/* Task 74/Bloque C: bloque de invalidez del expediente.
+            Visible solo cuando el pension_type seleccionado tiene retirement_type === 'invalidez'.
+            En las demás ramas el backend prohíbe estos campos (422, D-7408); no se envían.
+            re_assessment_date solo se muestra si temporary_disability === true (D-7409,
+            estrictamente futura). El frontend NO bloquea el submit — el backend valida. */}
+        {isInvalidezCase && (
+          <div className="p-3 rounded-md border border-primary/40 bg-primary/5 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">{t('form.bloque_invalidez_title')}</h3>
+            <p className="text-xs text-muted-foreground">{t('form.bloque_invalidez_help')}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <CatalogSearchSelect
+                type="diseases"
+                label={t('form.disease_id')}
+                placeholder={tc('actions.search') + '…'}
+                required
+                onSelect={(item) => setDiseaseId(item.id)}
+              />
+              <div>
+                <label className="block text-sm font-medium mb-1">{t('form.disease_origin')} *</label>
+                <SearchSelect
+                  value={diseaseOrigin || undefined}
+                  onChange={(v) => setDiseaseOrigin(v as 'comun' | 'profesional' | 'accidente_trabajo' | 'accidente_trayecto')}
+                  options={[
+                    { value: 'comun', label: t('form.disease_origin_comun') },
+                    { value: 'profesional', label: t('form.disease_origin_profesional') },
+                    { value: 'accidente_trabajo', label: t('form.disease_origin_accidente_trabajo') },
+                    { value: 'accidente_trayecto', label: t('form.disease_origin_accidente_trayecto') },
+                  ]}
+                  placeholder={tc('actions.select')}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={requiresPersonalCare} onChange={(e) => setRequiresPersonalCare(e.target.checked)} className="w-4 h-4 rounded border-input" />
+                <span className="text-sm font-medium">{t('form.requires_personal_care')}</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={temporaryDisability} onChange={(e) => { setTemporaryDisability(e.target.checked); if (!e.target.checked) setReAssessmentDate(''); }} className="w-4 h-4 rounded border-input" />
+                <span className="text-sm font-medium">{t('form.temporary_disability')}</span>
+              </label>
+            </div>
+            {temporaryDisability && (
+              <div>
+                <label className="block text-sm font-medium mb-1">{t('form.re_assessment_date')} *</label>
+                <DatePickerField value={reAssessmentDate} onChange={setReAssessmentDate} />
+                <p className="text-xs text-amber-700 mt-1">{t('form.re_assessment_date_help')}</p>
+              </div>
+            )}
+          </div>
+        )}
         {/* Ejército Rebelde + Internacionalista */}
         <div className="p-3 rounded-md border border-border space-y-3">
           <label className="flex items-center gap-2">

@@ -199,6 +199,8 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
   const { data: occCatsData } = useCatalog('occupational-categories');
   const { data: eduLevelsData } = useCatalog('educational-levels');
   const { data: sciCatsData } = useCatalog('scientific-categories');
+  // Task 74/Bloque C: catálogo diseases — para lookup del disease_id del bloque de invalidez
+  const { data: diseasesData } = useCatalog('diseases');
   const { data: entitiesData } = useQuery({
     queryKey: ['entities', 'all'],
     queryFn: async () => { const r = await http.get<EntityListResponse>('/entities', { params: { per_page: 100 } }); return r.data; },
@@ -284,6 +286,38 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
           } mono />
         </div>
       </div>
+
+      {/* Task 74/Bloque C: bloque de invalidez del expediente.
+          Se muestra solo si disease_id != null (indicador de que el expediente tiene el bloque).
+          Los 5 campos son obligatorios con invalidez y prohibidos en el resto (D-7408). */}
+      {pensionCase.disease_id != null && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.invalidez_block')}</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <Field label={t('detail.fields.disease_id')} value={lookup(diseasesData, pensionCase.disease_id)} />
+            <Field label={t('detail.fields.disease_origin')} value={
+              pensionCase.disease_origin
+                ? t(`detail.fields.disease_origin_${pensionCase.disease_origin}`)
+                : '—'
+            } />
+            <Field label={t('detail.fields.requires_personal_care')} value={
+              pensionCase.requires_personal_care != null
+                ? (pensionCase.requires_personal_care ? tc('booleans.yes') : tc('booleans.no'))
+                : '—'
+            } />
+            <Field label={t('detail.fields.temporary_disability')} value={
+              pensionCase.temporary_disability != null
+                ? (pensionCase.temporary_disability ? tc('booleans.yes') : tc('booleans.no'))
+                : '—'
+            } />
+            {pensionCase.temporary_disability === true && (
+              <Field label={t('detail.fields.re_assessment_date')} value={
+                pensionCase.re_assessment_date ? formatDate(pensionCase.re_assessment_date) : '—'
+              } mono />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Decisión (solo si hay datos de decisión) */}
       {isApproved && (
