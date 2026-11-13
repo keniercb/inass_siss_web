@@ -15,6 +15,7 @@ import {
   FolderOpen,
   MapPin,
   Banknote,
+  HeartPulse,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -23,11 +24,14 @@ export interface SidebarItem {
   path: string;
   icon: LucideIcon;
   permiso: string;
-  /** Sub-items para menús colapsables (ej. Catálogos con 16 tipos) */
+  /** Sub-items para menús colapsables (ej. Catálogos con 17 tipos) */
   children?: SidebarItem[];
 }
 
-// Sub-menú de catálogos: 16 tipos uniformes + municipios + agencias
+// Sub-menú de catálogos: 17 tipos uniformes + municipios + agencias.
+// Task 74 (Bloque C): catálogo `diseases` añadido — entidad uniforme para el bloque
+// de invalidez del expediente (D-7401). `payment-types` eliminado (Task 42: el cobro
+// se gestiona por agency-types.payment_form).
 const catalogChildren: SidebarItem[] = [
   { label: 'Provincias', path: '/catalogos/provinces', icon: MapPin, permiso: 'catalogs.view' },
   { label: 'Tipos de agencia', path: '/catalogos/agency-types', icon: Banknote, permiso: 'catalogs.view' },
@@ -43,8 +47,9 @@ const catalogChildren: SidebarItem[] = [
   { label: 'Razas', path: '/catalogos/races', icon: FolderOpen, permiso: 'catalogs.view' },
   { label: 'Cargos', path: '/catalogos/positions', icon: FolderOpen, permiso: 'catalogs.view' },
   { label: 'Régimenes de pensión', path: '/catalogos/pension-regimes', icon: FolderOpen, permiso: 'catalogs.view' },
-  { label: 'Tipos de pago', path: '/catalogos/payment-types', icon: FolderOpen, permiso: 'catalogs.view' },
   { label: 'Conceptos de ingreso', path: '/catalogos/income-concepts', icon: FolderOpen, permiso: 'catalogs.view' },
+  // Task 74 (Bloque C): catálogo de enfermedades — eje del bloque de invalidez.
+  { label: 'Enfermedades', path: '/catalogos/diseases', icon: HeartPulse, permiso: 'catalogs.view' },
   { label: 'Municipios', path: '/catalogos/municipios', icon: MapPin, permiso: 'catalogs.view' },
   { label: 'Agencias bancarias', path: '/catalogos/agencias', icon: Banknote, permiso: 'catalogs.view' },
 ];
