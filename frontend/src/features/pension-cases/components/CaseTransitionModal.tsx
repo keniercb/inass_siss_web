@@ -8,6 +8,7 @@ import { useCaseTransition } from '../api/mutations';
 import { CASE_STATUS_META, TRANSITION_MATRIX, type CaseStatus, type TransitionRule } from '../schemas/pension-case.schema';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
 import { SearchSelect } from '@/components/ui/SearchSelect';
 import { http } from '@/lib/http';
 import { formatDate } from '@/lib/utils';
@@ -61,6 +62,12 @@ export function CaseTransitionModal({ caseId, currentStatus, onClose }: CaseTran
   const [note, setNote] = useState('');
   const [legalBasisId, setLegalBasisId] = useState<number>(0);
   const [force, setForce] = useState(false);
+  // Task 73/Bloque B-3: pago inicial — obligatorio en aprobación de NUEVO expediente
+  // (422 pension_cases.initial_payment_required si falta). Pareja todo-o-nada con
+  // initial_payment_description. El pago inicial nace con amount = cuantía + monto (D-7311).
+  // Re-aprobación tras reapertura: opcional. Otras transiciones: prohibido (no se envía).
+  const [initialPaymentAmount, setInitialPaymentAmount] = useState<string>('');
+  const [initialPaymentDescription, setInitialPaymentDescription] = useState<string>('');
 
   // Cargar bases legales para el selector (solo si la transición seleccionada las exige)
   const needsLegalBasis = useMemo(() => {
@@ -81,10 +88,14 @@ export function CaseTransitionModal({ caseId, currentStatus, onClose }: CaseTran
   const noteRequired = selectedRule?.noteRequired ?? false;
   const noteTooShort = note.length > 0 && note.length < 10;
   const noteMissing = noteRequired && note.length === 0;
+  // El pago inicial solo aplica en aprobación. La regla todo-o-nada exige ambos campos.
+  const isApproval = selectedTo === 'approved';
+  const initialPaymentMissing = isApproval && (initialPaymentAmount === '' || initialPaymentDescription.trim() === '');
   const canSubmit = selectedTo != null
     && (!noteRequired || (note.length >= 10))
     && (!needsLegalBasis || legalBasisId !== 0)
     && !noteTooShort
+    && !initialPaymentMissing
     && !mutation.isPending;
 
   const handleSubmit = async () => {
@@ -93,6 +104,11 @@ export function CaseTransitionModal({ caseId, currentStatus, onClose }: CaseTran
     if (note) payload.note = note;
     if (needsLegalBasis && legalBasisId) payload.legal_basis_id = legalBasisId;
     if (needsLegalBasis && force) payload.force = true;
+    // Task 73/Bloque B-3: pago inicial solo en aprobación. Pareja todo-o-nada.
+    if (isApproval && initialPaymentAmount !== '' && initialPaymentDescription.trim() !== '') {
+      payload.initial_payment_amount = initialPaymentAmount;
+      payload.initial_payment_description = initialPaymentDescription.trim();
+    }
     try {
       await mutation.mutateAsync(payload as never);
       onClose();
@@ -129,7 +145,7 @@ export function CaseTransitionModal({ caseId, currentStatus, onClose }: CaseTran
                   <button
                     key={`${currentStatus}-${rule.to}`}
                     type="button"
-                    onClick={() => { setSelectedTo(rule.to); setNote(''); setLegalBasisId(0); setForce(false); }}
+                    onClick={() => { setSelectedTo(rule.to); setNote(''); setLegalBasisId(0); setForce(false); setInitialPaymentAmount(''); setInitialPaymentDescription(''); }}
                     className={cn(
                       'flex items-start gap-3 p-3 rounded-md border text-left transition-colors',
                       isSelected
@@ -157,7 +173,7 @@ export function CaseTransitionModal({ caseId, currentStatus, onClose }: CaseTran
         )}
 
         {/* Evidencia exigida */}
-        {selectedRule && (noteRequired || needsLegalBasis) && (
+        {selectedRule && (noteRequired || needsLegalBasis || isApproval) && (
           <div className="border-t border-border pt-4 space-y-3">
             <h3 className="text-sm font-semibold text-foreground mb-3">{t('transition.evidence_section')}</h3>
 
@@ -206,6 +222,40 @@ export function CaseTransitionModal({ caseId, currentStatus, onClose }: CaseTran
                       <span className="block">{t('transition.force_help')}</span>
                     </span>
                   </label>
+                )}
+              </div>
+            )}
+
+            {/* Task 73/Bloque B-3: pago inicial — obligatorio en aprobación de nuevo expediente.
+                El pago inicial nace con amount = cuantía + monto introducido (D-7311, literal CONFIRMADO).
+                Pareja todo-o-nada: ambos campos o ninguno. En re-aprobación tras reapertura es opcional. */}
+            {isApproval && (
+              <div className="space-y-3 p-3 rounded-md bg-muted/30 border border-border">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t('transition.initial_payment_amount')} *</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="800.50"
+                    value={initialPaymentAmount}
+                    onChange={(e) => setInitialPaymentAmount(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{t('transition.initial_payment_amount_help')}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t('transition.initial_payment_description')} *</label>
+                  <Input
+                    type="text"
+                    maxLength={255}
+                    placeholder={t('transition.initial_payment_description_placeholder')}
+                    value={initialPaymentDescription}
+                    onChange={(e) => setInitialPaymentDescription(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1 text-right">{initialPaymentDescription.length}/255</p>
+                </div>
+                {initialPaymentMissing && (
+                  <p className="text-xs text-destructive">{t('transition.initial_payment_required')}</p>
                 )}
               </div>
             )}
