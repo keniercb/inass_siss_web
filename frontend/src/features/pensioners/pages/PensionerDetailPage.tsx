@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, Clock, ArrowRight, GitBranch, CreditCard, Wallet } from 'lucide-react';
 import { usePayments } from '@/features/payments/api/queries';
-import { usePensioner, useUpdatePensionerStatus, useUpdateBankControl } from '../api/queries';
+import { usePensioner, useUpdatePensionerStatus, useUpdateBankControl, useInitialPayments } from '../api/queries';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
@@ -322,6 +322,64 @@ const MONTH_OPTIONS = [
 ];
 const PAYMENT_STATUS_BADGE: Record<string, string> = { pending: 'badge-submitted', paid: 'badge-approved', cancelled: 'badge-rejected', provitional: 'badge-under_review', expired: 'badge-rejected' };
 
+// Task 73/Bloque A: badges para el estado de los pagos iniciales (pending | done)
+const INITIAL_PAYMENT_STATUS_BADGE: Record<string, string> = { pending: 'badge-submitted', done: 'badge-approved' };
+
+/**
+ * Sección «Pagos iniciales» del pensionado (Task 73, Bloque A).
+ *
+ * Cada fila nace con la aprobación del expediente (amount = cuantía + monto introducido,
+ * D-7311; status pending) y se liquida (status → done) cuando la generación mensual
+ * de pagos la consume sobre la primera fila del período (Bloque C-1, D-7312(a)).
+ *
+ * Varias filas por pensionado son legítimas — una reapertura + re-aprobación con nueva
+ * instrucción agrega otra (D-7310(a)). Evidencia financiera append-only: sin anulaciones.
+ *
+ * Read-only en el frontend — sin UI de creación o edición (nace del backend).
+ */
+function PensionerInitialPaymentsSection({ pensionerId, t, tc }: { pensionerId: string; t: (k: string) => string; tc: (k: string) => string }) {
+  const { data: initialPayments, isLoading } = useInitialPayments(pensionerId);
+  const items = initialPayments ?? [];
+
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.initial_payments')}</h3>
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
+              <th className="text-left px-4 py-3 font-medium">{t('detail.fields.initial_payment_created_at')}</th>
+              <th className="text-right px-4 py-3 font-medium">{t('detail.fields.initial_payment_amount')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('detail.fields.initial_payment_status')}</th>
+              <th className="text-left px-4 py-3 font-medium">{t('detail.fields.initial_payment_description')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {isLoading ? (
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">{tc('status.loading')}…</td></tr>
+            ) : items.length === 0 ? (
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">{t('detail.initial_payments_empty')}</td></tr>
+            ) : (
+              items.map((ip) => (
+                <tr key={ip.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="px-4 py-3 text-muted-foreground">{ip.created_at ? formatDate(ip.created_at) : '—'}</td>
+                  <td className="px-4 py-3 font-mono text-right">{ip.amount != null ? formatCUP(Number(ip.amount)) : '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn('badge', INITIAL_PAYMENT_STATUS_BADGE[ip.status ?? 'pending'] ?? '')}>
+                      {t(`detail.fields.initial_payment_status_${ip.status ?? 'pending'}`)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{ip.description ?? '—'}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Tab Pagos del pensionado — lista los pagos del pensionado ordenados
  * cronológicamente de mayor a menor fecha, con filtros por mes, año y estado.
@@ -348,7 +406,12 @@ function PensionerPaymentsTab({ pensionerId, t, tc }: { pensionerId: string; t: 
   allPayments.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Task 73/Bloque A: Pagos iniciales del pensionado — nacen con la aprobación del
+          expediente (amount = cuantía + monto introducido, D-7311) y se liquidan (pending → done)
+          con la primera fila de pagos generada. Read-only en el frontend. */}
+      <PensionerInitialPaymentsSection pensionerId={pensionerId} t={t} tc={tc} />
+
       {/* Filtros */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="w-32">

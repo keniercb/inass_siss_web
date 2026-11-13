@@ -49,15 +49,23 @@
       "birth_date": "Fecha de nacimiento",
       "address": "Dirección",
       "deceased": "Fallecido",
-      "paid_at": "Fecha de pago"
+      "paid_at": "Fecha de pago",
+      "initial_payment_created_at": "Fecha",
+      "initial_payment_amount": "Monto",
+      "initial_payment_status": "Estado",
+      "initial_payment_description": "Descripción",
+      "initial_payment_status_pending": "Pendiente",
+      "initial_payment_status_done": "Liquidado"
     },
     "section": {
       "person_data": "Datos de la persona",
       "pension_data": "Datos de la pensión",
       "status_history": "Línea de tiempo de estados",
-      "bank_controls": "Controles bancarios"
+      "bank_controls": "Controles bancarios",
+      "initial_payments": "Pagos iniciales"
     },
-    "bank_controls_empty": "Sin controles bancarios asignados (disponible a partir del Sprint 10)"
+    "bank_controls_empty": "Sin controles bancarios asignados (disponible a partir del Sprint 10)",
+    "initial_payments_empty": "Sin pagos iniciales"
   },
   "status_change": {
     "button": "Cambiar estado",

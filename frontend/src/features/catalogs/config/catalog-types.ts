@@ -1,5 +1,8 @@
-// 16 catálogos uniformes cubiertos por el endpoint genérico /api/v1/catalogs/{type}
+// 17 catálogos uniformes cubiertos por el endpoint genérico /api/v1/catalogs/{type}
 // (ver docs.json → /catalogs/{type} → operationId: catalogsIndex)
+//
+// Task 74 (Bloque C): catálogo `diseases` añadido — entidad uniforme, nace VACÍA y se
+// llena por CRUD (D-7401). Solo el ID viaja al expediente (D-7410, sin proyección).
 //
 // Los catálogos NO incluidos aquí (municipalities, agencies) tienen endpoints
 // dedicados con claves compuestas y reglas de coherencia geográfica (RN-04).
@@ -20,6 +23,7 @@ export const VALID_CATALOG_TYPES = [
   'positions',
   'pension-regimes',
   'income-concepts',
+  'diseases',
 ] as const;
 
 export type CatalogType = (typeof VALID_CATALOG_TYPES)[number];
@@ -45,4 +49,5 @@ export const CATALOG_TYPE_LABELS: Record<CatalogType, { es: string; en: string }
   positions: { es: 'Cargos', en: 'Positions' },
   'pension-regimes': { es: 'Régimenes de pensión', en: 'Pension regimes' },
   'income-concepts': { es: 'Conceptos de ingreso', en: 'Income concepts' },
+  diseases: { es: 'Enfermedades', en: 'Diseases' },
 };

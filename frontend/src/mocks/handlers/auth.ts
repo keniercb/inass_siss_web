@@ -104,6 +104,7 @@ export const authHandlers = [
           email: user.email,
           roles: user.roles,
           permissions: user.permissions,
+          language: user.language,
         },
       },
     });
@@ -137,6 +138,7 @@ export const authHandlers = [
         email: user.email,
         roles: user.roles,
         permissions: user.permissions,
+        language: user.language,
       },
     });
   }),
@@ -145,6 +147,45 @@ export const authHandlers = [
   http.post(`${API_BASE}/auth/logout`, () => {
     // El backend real siempre retorna 200 incluso con token inválido (Sanctum)
     return HttpResponse.json({ message: 'Token revoked.' });
+  }),
+
+  // PATCH /auth/language — cambiar el propio idioma de respuesta (Task 72/SGP-56, D-110)
+  // El idioma pertenece a la cuenta; el middleware SetAppLocale lo aplica a la próxima solicitud.
+  http.patch(`${API_BASE}/auth/language`, async ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return HttpResponse.json({ message: 'Unauthenticated.' }, { status: 401 });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const user = findUserByToken(token);
+    if (!user) {
+      return HttpResponse.json({ message: 'Unauthenticated.' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as { language?: string };
+    if (!body.language || !['es', 'en'].includes(body.language)) {
+      return HttpResponse.json(
+        {
+          message: 'El idioma es obligatorio y debe ser uno de: es, en.',
+          errors: { language: ['El idioma es obligatorio y debe ser uno de: es, en.'] },
+        },
+        { status: 422 },
+      );
+    }
+
+    // Mutar el usuario en memoria — la próxima llamada a /auth/me refleja el cambio
+    user.language = body.language as 'es' | 'en';
+
+    return HttpResponse.json({
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        roles: user.roles,
+        permissions: user.permissions,
+        language: user.language,
+      },
+    });
   }),
 ];
 

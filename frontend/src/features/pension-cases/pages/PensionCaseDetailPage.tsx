@@ -199,6 +199,8 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
   const { data: occCatsData } = useCatalog('occupational-categories');
   const { data: eduLevelsData } = useCatalog('educational-levels');
   const { data: sciCatsData } = useCatalog('scientific-categories');
+  // Task 74/Bloque C: catálogo diseases — para lookup del disease_id del bloque de invalidez
+  const { data: diseasesData } = useCatalog('diseases');
   const { data: entitiesData } = useQuery({
     queryKey: ['entities', 'all'],
     queryFn: async () => { const r = await http.get<EntityListResponse>('/entities', { params: { per_page: 100 } }); return r.data; },
@@ -276,8 +278,46 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
               : pensionCase.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
               : t('detail.fields.missing_salaries_attributable_false')
           } />
+          {/* Task 73/B-2: meses de salarios imputables declarados en el expediente */}
+          <Field label={t('detail.fields.imputable_salary_months')} value={
+            pensionCase.imputable_salary_months != null
+              ? String(pensionCase.imputable_salary_months)
+              : '—'
+          } mono />
         </div>
       </div>
+
+      {/* Task 74/Bloque C: bloque de invalidez del expediente.
+          Se muestra solo si disease_id != null (indicador de que el expediente tiene el bloque).
+          Los 5 campos son obligatorios con invalidez y prohibidos en el resto (D-7408). */}
+      {pensionCase.disease_id != null && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.invalidez_block')}</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <Field label={t('detail.fields.disease_id')} value={lookup(diseasesData, pensionCase.disease_id)} />
+            <Field label={t('detail.fields.disease_origin')} value={
+              pensionCase.disease_origin
+                ? t(`detail.fields.disease_origin_${pensionCase.disease_origin}`)
+                : '—'
+            } />
+            <Field label={t('detail.fields.requires_personal_care')} value={
+              pensionCase.requires_personal_care != null
+                ? (pensionCase.requires_personal_care ? tc('booleans.yes') : tc('booleans.no'))
+                : '—'
+            } />
+            <Field label={t('detail.fields.temporary_disability')} value={
+              pensionCase.temporary_disability != null
+                ? (pensionCase.temporary_disability ? tc('booleans.yes') : tc('booleans.no'))
+                : '—'
+            } />
+            {pensionCase.temporary_disability === true && (
+              <Field label={t('detail.fields.re_assessment_date')} value={
+                pensionCase.re_assessment_date ? formatDate(pensionCase.re_assessment_date) : '—'
+              } mono />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Decisión (solo si hay datos de decisión) */}
       {isApproved && (
@@ -433,6 +473,12 @@ function CalculationTab({ caseId, currentStatus, t }: { caseId: string; currentS
               : calculation.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
               : t('detail.fields.missing_salaries_attributable_false')
           } />
+          {/* Task 73/B-2: meses de salarios imputables congelados con la resolución (D-7308(a)) */}
+          <Field label={t('calculation.fields.imputable_salary_months')} value={
+            calculation.imputable_salary_months != null
+              ? String(calculation.imputable_salary_months)
+              : '—'
+          } mono />
         </div>
       </div>
 
@@ -666,6 +712,18 @@ function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; o
                     : preview.missing_salaries_attributable ? t('detail.fields.missing_salaries_attributable_true')
                     : t('detail.fields.missing_salaries_attributable_false')
                 } />
+                {/* Task 73/B-2: meses de salarios imputables declarados (divisor explícito del SPM) */}
+                <Field label={t('calculation.fields.imputable_salary_months')} value={
+                  preview.imputable_salary_months != null
+                    ? String(preview.imputable_salary_months)
+                    : '—'
+                } mono />
+                {/* Task 73/B-2: meses EXACTOS que dividieron el SPM (imputable_salary_months o N_eff × 12) */}
+                <Field label={t('calculation.fields.average_divisor_months')} value={
+                  preview.average_divisor_months != null
+                    ? String(preview.average_divisor_months)
+                    : '—'
+                } mono />
                 {/* Task 53/S8.9: porciento total de conceptos aplicables */}
                 <Field label={t('calculation.fields.income_concept_percent')} value={preview.income_concept_percent != null ? `${preview.income_concept_percent}%` : '—'} mono />
                 {/* Task 57-58/SGP-42-43: indicadores de la fórmula */}

@@ -430,7 +430,7 @@ export interface paths {
         put?: never;
         /**
          * Pagos periódicos: generación mensual a dos niveles (período AUTOMÁTICO)
-         * @description RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5; Task 71/SGP-55, D-106/D-108): SIN CUERPO — el período NO se recibe, se resuelve AUTOMÁTICO para el MES SIGUIENTE a la fecha actual contra el reloj compartido. Nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control y el calendario NACE ESTAMPADO: `payment_day` (el día de pago de la configuración ACTIVA sobre el mes/año del pago, D-107) y `set_provitional_at`/`set_expired_at` (Task 70); el activo SIN control se OMITE y se reporta `skipped_no_control`; re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. La validación de fecha futura SE ELIMINÓ (D-108): el sistema trabaja un mes por adelantado. Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).
+         * @description RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5; Task 71/SGP-55, D-106/D-108): SIN CUERPO — el período NO se recibe, se resuelve AUTOMÁTICO para el MES SIGUIENTE a la fecha actual contra el reloj compartido. Nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control (la cuenta puede ser null — la «cuenta nula/vacía» del control nacido de un expediente sin cuenta utilizable, Task 72c/72e/D-117, en cualquier forma de cobro) y el calendario NACE ESTAMPADO: `payment_day` (el día de pago de la configuración ACTIVA sobre el mes/año del pago, D-107) y `set_provitional_at`/`set_expired_at` (Task 70); el activo SIN control se OMITE y se reporta `skipped_no_control` (alcanzable SOLO con la agencia de cobro desaparecida del catálogo vivo, D-118 — la arista D-119 de la Task 72d quedó derogada por la Task 72e); re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. La validación de fecha futura SE ELIMINÓ (D-108): el sistema trabaja un mes por adelantado. Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).
          */
         post: operations["paymentsGenerate"];
         delete?: never;
@@ -658,7 +658,7 @@ export interface paths {
         put?: never;
         /**
          * Apertura de un expediente
-         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Task 37: la marca internacionalista del promovente es booleana OBLIGATORIA (paralelo del par rebelde) y el par de contacto (phone, popular_council) viaja opcional; los subregistros de servicio exigen end_date OBLIGATORIA, estrictamente posterior a start_date y SIN solapamiento entre filas (422 con nada creado). Task 42: el domicilio y cobro del promovente viajan en el alta — dirección actual, provincia y municipio de residencia (coherentes, RN-04), tipo de agencia de cobro, agencia de cobro (del tipo declarado) y cuenta bancaria OBLIGATORIA CONDICIONAL a la forma de pago del tipo de agencia (exigida con tarjeta magnetica, opcional con nomina electronica: 422 sobre bank_account) — y cada concepto de ingreso declarado viaja con su porciento a aplicar (0-100, dos decimales). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
+         * @description Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Task 37: la marca internacionalista del promovente es booleana OBLIGATORIA (paralelo del par rebelde) y el par de contacto (phone, popular_council) viaja opcional; los subregistros de servicio exigen end_date OBLIGATORIA, estrictamente posterior a start_date y SIN solapamiento entre filas (422 con nada creado). Task 42: el domicilio y cobro del promovente viajan en el alta — dirección actual, provincia y municipio de residencia (coherentes, RN-04), tipo de agencia de cobro, agencia de cobro (del tipo declarado) y cuenta bancaria OBLIGATORIA CONDICIONAL a la forma de pago del tipo de agencia (exigida con tarjeta magnetica, opcional con nomina electronica: 422 sobre bank_account) — y cada concepto de ingreso declarado viaja con su porciento a aplicar (0-100, dos decimales). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). Task 74: cuando el tipo de jubilación del tipo de pensión declarado es invalidez, el BLOQUE DE INVALIDEZ viaja OBLIGATORIO en el alta — enfermedad (id del catálogo diseases, activa), requiere cuidado de otra persona, origen de la enfermedad (comun|profesional|accidente_trabajo|accidente_trayecto), temporal y — solo si temporal=true — la fecha de re-peritaje, estrictamente futura (422 clave por clave si falta; prohibido con cualquier otra rama, D-7408). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.
          */
         post: operations["pensionCasesStore"];
         delete?: never;
@@ -681,7 +681,7 @@ export interface paths {
         get: operations["pensionCasesShow"];
         /**
          * Edición del expediente (promovente inmutable)
-         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario, la fecha de solicitud y la declaración de imputabilidad de los salarios ausentes (Task 52/S8.8, D-3: missing_salaries_attributable, PATCH — null explícito la limpia) — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Task 42: el grupo de DOMICILIO y COBRO del promovente — dirección actual, provincia y municipio de residencia, tipo de agencia de cobro, agencia de cobro y cuenta bancaria — SÍ es editable (decisión explícita del usuario: pueden modificarse) con probes espejo del alta y la exigencia condicional de la cuenta re-evaluada contra el estado RESULTANTE (cambiar el tipo de agencia de cobro a uno con forma de pago tarjeta magnetica exige la cuenta si acabó en null). Las advertencias de la serie salarial viajan junto a data.
+         * @description PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario, la fecha de solicitud y la declaración de imputabilidad de los salarios ausentes (Task 52/S8.8, D-3: missing_salaries_attributable, PATCH — null explícito la limpia) — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Task 42: el grupo de DOMICILIO y COBRO del promovente — dirección actual, provincia y municipio de residencia, tipo de agencia de cobro, agencia de cobro y cuenta bancaria — SÍ es editable (decisión explícita del usuario: pueden modificarse) con probes espejo del alta y la exigencia condicional de la cuenta re-evaluada contra el estado RESULTANTE (cambiar el tipo de agencia de cobro a uno con forma de pago tarjeta magnetica exige la cuenta si acabó en null). Task 74 (D-7407): el BLOQUE DE INVALIDEZ también es editable en submitted contra el estado RESULTANTE — cambiar el tipo de pensión a una rama invalidez exige el bloque completo (422 clave por clave), cambiarlo a una rama no-invalidez exige limpiar el bloque (422 si queda presente; los nulls explícitos limpian, nunca un descarte silencioso). Las advertencias de la serie salarial viajan junto a data.
          */
         put: operations["pensionCasesUpdate"];
         post?: never;
@@ -891,6 +891,26 @@ export interface paths {
          * @description Directorio de pensionados (RF-PEN-002, Task 60/SGP-45): filtrable por estado (enum normativo active/suspended/terminated), tipo y régimen de pensión — ids sin sonda: un id desconocido responde una página VACÍA, jamás 422 (el patrón de los filtros del listado de expedientes) —; paginado (per_page ≤ 100, default 15), ordenado por fecha de alta (created_at/id DESC, los más recientes primero) y SIN alcance territorial (RF-PEN-002 no lo exige: el scope de oficina de expedientes es la corrección de usuario de RF-EXP-011). El filtro «provincia del control bancario» del requisito queda como dependencia del Sprint 10: bank_controls (RF-PAG-001) aún no existe (D-47 (a)). Cada fila viaja con la proyección COMPLETA de la persona (regla de usuario 3), tipo/régimen {id, code, name} y la referencia mínima al expediente de origen {id, number, status} — cargas anticipadas, sin segunda consulta por fila. Las filas NO llevan status_history ni bank_controls: esa evidencia es exclusiva de la ficha.
          */
         get: operations["pensionersIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pensioners/{id}/initial-payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pagos adicionales del pensionado
+         * @description Task 73 (ajuste de usuario 2026-11-12, Bloque A-2): todos los pagos adicionales de un pensionado, los más recientes primero, paginados (page, per_page ≤ 100). Cada fila nace de la instrucción de pago inicial de una aprobación (amount = cuantía + monto introducido, D-7311; status pending al nacer) y pasa a done cuando la generación mensual de pagos la liquida sobre la fila del período (Bloque C-1, D-7312 (a)) — el listado es la superficie de control del operador antes de aprobar una reapertura con pendientes vivos. 404 para un pensionado inexistente o soft-deleted.
+         */
+        get: operations["pensionersInitialPaymentsIndex"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1149,6 +1169,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/language": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cambiar el propio idioma de respuesta
+         * @description Primera superficie de autoedición de perfil (Task 72/SGP-56, D-110): cada cuenta autenticada cambia SU idioma de respuesta — «el idioma seleccionado» pertenece a la cuenta, no al navegador, por lo que NO exige permiso alguno. A partir de la siguiente solicitud el middleware SetAppLocale compone TODA la envolvente de mensajes en ese idioma (éxitos, 422 campo a campo, aborts). El cambio queda en la bitácora como cualquier otra escritura de cuenta.
+         */
+        patch: operations["authUpdateLanguage"];
         trace?: never;
     };
     "/api/v1/permissions": {
@@ -1540,10 +1580,11 @@ export interface components {
              */
             sector?: number | null;
             /**
-             * @description Solo pension-types (Task 38): persona fallecida, booleano con default false, devuelto por todos los endpoints
-             * @example false
+             * @description Solo pension-types (Task 74, ajuste de usuario 2026-11-12): tipo de jubilación del tipo de pensión — eje de clasificación que sustituyó al booleano fallecido (Task 38); la rama invalidez exige el bloque de invalidez del expediente
+             * @example invalidez
+             * @enum {string}
              */
-            deceased_person?: boolean;
+            retirement_type?: "edad" | "invalidez" | "fallecimiento";
             /**
              * @description Solo agency-types (Task 42): forma de pago del cobro, devuelta por todos los endpoints
              * @example tarjeta magnetica
@@ -2133,8 +2174,11 @@ export interface components {
                  * @example 1
                  */
                 number?: number;
-                /** @example 02000012345678901234 */
-                account?: string;
+                /**
+                 * @description La cuenta del control VIVO — null cuando nació con la «cuenta nula/vacía» (D-117, cualquier forma de cobro desde Task 72e)
+                 * @example 02000012345678901234
+                 */
+                account?: string | null;
                 /** @description Marcador DERIVADO del tipo de la agencia (D-64) */
                 electronic_payroll?: boolean;
                 agency?: {
@@ -2154,10 +2198,10 @@ export interface components {
                 name?: string;
             } | null;
             /**
-             * @description La cuenta CONGELADA del control al generar
+             * @description La cuenta CONGELADA del control al generar — null cuando el control nació sin cuenta utilizable (D-117, cualquier forma de cobro)
              * @example 02000012345678901234
              */
-            account?: string;
+            account?: string | null;
             /**
              * @description La cuantía CONGELADA al generar el período (DECIMAL(12,2) como cadena, RN-005)
              * @example 2127.00
@@ -2263,6 +2307,16 @@ export interface components {
              * @example 5
              */
             average_years_used: number;
+            /**
+             * @description Task 73 (ajuste de usuario 2026-11-12, Bloque B-2): los meses de salarios imputables declarados por el expediente — null ⇒ el divisor es N_ef × 12
+             * @example 58
+             */
+            imputable_salary_months: number | null;
+            /**
+             * @description Task 73 (Bloque B-2): los MESES EXACTOS que dividieron el SPM — los imputable_salary_months declarados en la rama no imputable, N_ef × 12 en el resto
+             * @example 60
+             */
+            average_divisor_months: number;
             /**
              * @description Task 52/S8.8, V-6: declaración de imputabilidad de los salarios ausentes — null sin déficit; obligatoria con déficit (422 si falta, D-4)
              * @example null
@@ -2480,6 +2534,11 @@ export interface components {
              * @example null
              */
             missing_salaries_attributable: boolean | null;
+            /**
+             * @description Task 73 (ajuste de usuario 2026-11-12, Bloque B-2, D-7308 (a)): los meses de salarios imputables congelados con la resolución — null ⇒ el divisor fue N_ef × 12 (la semántica histórica); el valor también viaja dentro de inputs
+             * @example null
+             */
+            imputable_salary_months: number | null;
             /** @example 475.00 */
             average_monthly_salary: string;
             /** @example 0 */
@@ -2629,7 +2688,12 @@ export interface components {
              *     geography and the collection point with their projections
              *     (province, municipality, agency type carrying its payment form,
              *     full agency) and the bank account, null when the payment form of
-             *     the collection agency type leaves it optional.
+             *     the collection agency type leaves it optional. Since Task 74
+             *     (ajuste de usuario 2026-11-12, Bloque C) the case answers the
+             *     DISABILITY BLOCK of the invalidez retirement — the five SCALAR
+             *     fields only (D-7410): disease_id travels as the bare integer id
+             *     with NO disease projection and no eager load; whoever needs the
+             *     name consults the diseases catalog by the id.
              * @example 1
              */
             id?: number;
@@ -2698,6 +2762,34 @@ export interface components {
              */
             pension_regime_id?: number;
             /**
+             * Format: int64
+             * @description Task 74 (ajuste de usuario 2026-11-12, Bloque C): enfermedad del bloque de invalidez — SOLO el id del catálogo diseases, sin proyección (D-7410); obligatoria cuando el tipo de jubilación del tipo de pensión es invalidez, prohibida en el resto de las ramas
+             * @example 3
+             */
+            disease_id?: number | null;
+            /**
+             * @description Task 74 (Bloque C): ¿requiere cuidado de otra persona? — obligatoria con invalidez, prohibida en el resto
+             * @example true
+             */
+            requires_personal_care?: boolean | null;
+            /**
+             * @description Task 74 (Bloque C): origen de la enfermedad — los cuatro valores fijados por el usuario, snake_case sin tildes
+             * @example accidente_trabajo
+             * @enum {string|null}
+             */
+            disease_origin?: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | null;
+            /**
+             * @description Task 74 (Bloque C): ¿la invalidez es temporal? — obligatoria con invalidez, prohibida en el resto
+             * @example true
+             */
+            temporary_disability?: boolean | null;
+            /**
+             * Format: date
+             * @description Task 74 (Bloque C, D-7409): fecha de re-peritaje — obligatoria solo con temporary_disability=true y estrictamente FUTURA contra el reloj (422 si es hoy o pasada); prohibida con false o sin invalidez
+             * @example 2027-05-31
+             */
+            re_assessment_date?: string | null;
+            /**
              * @description Último salario, DECIMAL(12,2) no negativo (RN-005)
              * @example 5000.00
              */
@@ -2707,6 +2799,11 @@ export interface components {
              * @example null
              */
             missing_salaries_attributable?: boolean | null;
+            /**
+             * @description Task 73 (ajuste de usuario 2026-11-12, Bloque B-2): meses de salarios imputables — el divisor EXPLÍCITO del salario promedio. Solo declarable cuando missing_salaries_attributable = false (422 en el resto de las ramas, nunca descarte silencioso); obligatorio en esa rama al pasar a revisión, previsualizar y aprobar (422 imputable_months_indeterminate, D-7307 (a)). 1..180 = el techo de quince años de la serie en meses; null ⇒ el divisor es N_ef × 12
+             * @example 58
+             */
+            imputable_salary_months?: number | null;
             /**
              * @description Pertenece al Ejército Rebelde (regla 4)
              * @example false
@@ -2956,6 +3053,51 @@ export interface components {
             cycles_count?: number;
         };
         /**
+         * Pago inicial del pensionado
+         * @description Task 73 (ajuste de usuario 2026-11-12, Bloque A): el pago inicial de un pensionado — nace con la aprobación del expediente (amount = cuantía + monto introducido, la fórmula literal CONFIRMADA por el negocio, D-7311; description = la evidencia del operador; status = pending) y se liquida con la primera fila del registro de pagos que el pensionado genere: el monto viaja en la fila y el estado pasa a done (Bloque C-1, D-7312 (a)). Varias filas por pensionado son legítimas — una reapertura + re-aprobación con nueva instrucción agrega otra (D-7310 (a)). Evidencia financiera append-only: sin anulaciones, cada escritura aterriza en la bitácora.
+         */
+        InitialPayment: {
+            /**
+             * Format: int64
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @description El pensionado dueño del pago inicial (nace en su transición de aprobación)
+             * @example 3
+             */
+            pensioner_id?: number;
+            /**
+             * @description cuantía + monto introducido (D-7311, literal CONFIRMADO): DECIMAL(12,2) exacto, Money bcmath — ej.: cuantía 2500.00 + monto 800.50
+             * @example 3300.50
+             */
+            amount?: string;
+            /**
+             * @description pending al nacer; done cuando la generación de pagos lo liquidó sobre la fila del período (terminal)
+             * @example pending
+             * @enum {string}
+             */
+            status?: "pending" | "done";
+            /**
+             * @description La evidencia del operador que instruyó el pago (máx. 255)
+             * @example Pago inicial por la aprobación del expediente.
+             */
+            description?: string;
+            /**
+             * Format: date-time
+             * @description Momento del nacimiento (la aprobación del expediente de origen)
+             * @example 2026-11-12T10:30:00+00:00
+             */
+            created_at?: string;
+            /**
+             * Format: date-time
+             * @description Última escritura (la liquidación a done)
+             * @example 2026-11-12T10:30:00+00:00
+             */
+            updated_at?: string;
+        };
+        /**
          * Pensionado
          * @description Pensionado (RF-PEN-001/RF-PEN-002): la fila nace de la aprobación del expediente con la cuantía congelada EXACTA y espeja su ciclo administrativo. La persona viaja como proyección COMPLETA, tipo y régimen como {id, code, name} y el expediente de origen como referencia mínima {id, number, status}. La ficha añade status_history (la línea de tiempo derivada de la bitácora, ADR-42); bank_control viaja en TODO GET del pensionado — proyección mínima en las filas (el número GLOBAL siempre legible, corrección de usuario de Task 63) y completa en la ficha (RF-PAG-002).
          */
@@ -2980,8 +3122,11 @@ export interface components {
              *     the user correction: the GLOBAL number must be readable from the
              *     pensioner GETs): the MINIMAL projection {id, number, agency,
              *     electronic_payroll} on listing rows, the full projection (+
-             *     account and write timestamps) on the ficha shapes, null while
-             *     the nested PUT has not provisioned the control (RF-PAG-002).
+             *     account and write timestamps) on the ficha shapes, null ONLY in
+             *     the surviving catalog edge of the birth (Task 72c/D-118: the
+             *     collection agency vanished mid-review — the control stays
+             *     pending for the operator PUT; a case without account births the
+             *     control with the cuenta NULL, D-117) (RF-PAG-002).
              * @example 1
              */
             id?: number;
@@ -3052,7 +3197,7 @@ export interface components {
             } | null;
             /** @description FICHA: línea de tiempo de estados derivada de la bitácora (ADR-42) — el nacimiento más una fila por cambio de estado; ausente en las filas del listado */
             status_history?: components["schemas"]["PensionerStatusHistory"][];
-            /** @description EL control bancario del cobro (RF-PAG-001/002, Task 63/SGP-48): relación 1:1 — número GLOBAL del scope bank_control (ADR-17), agencia {id, code, name} y marcador derivado del tipo de la agencia (electronic_payroll, D-64). Proyección mínima en las filas del listado; la ficha añade account, created_at y updated_at. null mientras PUT /pensioners/{id}/bank-control no haya provisto el control. */
+            /** @description EL control bancario del cobro (RF-PAG-001/002, Task 63/SGP-48): relación 1:1 — número GLOBAL del scope bank_control (ADR-17), agencia {id, code, name} y marcador derivado del tipo de la agencia (electronic_payroll, D-64). Nace CON el pensionado de la aprobación del expediente (Task 67) — sin cuenta utilizable la cuenta viaja null, la «cuenta nula/vacía» del D-117 (Task 72c/72e, en cualquier forma de cobro). Proyección mínima en las filas del listado; la ficha añade account, created_at y updated_at. null cuando la agencia de cobro dejó el catálogo vivo durante la revisión (D-118) — el único nacimiento sin control, que queda pendiente para el PUT del operador. */
             bank_control?: {
                 /**
                  * Format: int64
@@ -3078,10 +3223,10 @@ export interface components {
                  */
                 electronic_payroll?: boolean;
                 /**
-                 * @description FICHA: cuenta bancaria (10-34 alfanumérica)
+                 * @description FICHA: cuenta bancaria (10-34 alfanumérica cuando existe) — null es la «cuenta nula/vacía» del nacimiento sin cuenta utilizable (D-117, Task 72c/72e, en cualquier forma de cobro), el operador la completa por el PUT
                  * @example 02000012345678901234
                  */
-                account?: string;
+                account?: string | null;
                 /**
                  * Format: date-time
                  * @description FICHA: momento de la creación del control
@@ -3387,6 +3532,11 @@ export interface components {
             person?: components["schemas"]["LinkedPerson"] | null;
             /** @description Oficina territorial de pertenencia (ADR-29): /auth/me y la gestión de cuentas la devuelven; null si la cuenta no pertenece a ninguna oficina activa */
             office?: components["schemas"]["Office"] | null;
+            /**
+             * @description Idioma seleccionado para los mensajes de la API (Task 72/SGP-56): es institucional por defecto; el middleware SetAppLocale lo aplica a toda respuesta que constituya un mensaje
+             * @enum {string}
+             */
+            language?: "es" | "en";
             /**
              * @description Ciclo de vida de la cuenta: inactive = desactivada (borrado lógico, RF-AUD-004)
              * @enum {string}
@@ -3847,11 +3997,11 @@ export interface operations {
                      */
                     sector?: number | null;
                     /**
-                     * @description Solo pension-types (Task 38): persona fallecida; la omisión persiste el default false
-                     * @default false
-                     * @example false
+                     * @description Solo pension-types (Task 74, ajuste de usuario 2026-11-12): tipo de jubilación — OBLIGATORIO en el alta (422 si se omite, sin default) y editable en PATCH; la rama invalidez exige el bloque de invalidez del expediente
+                     * @example invalidez
+                     * @enum {string}
                      */
-                    deceased_person?: boolean;
+                    retirement_type?: "edad" | "invalidez" | "fallecimiento";
                     /**
                      * @description Solo agency-types (Task 42): forma de pago del cobro — la omisión persiste el default tarjeta magnetica; decide la exigencia de la cuenta bancaria del cobro del expediente
                      * @default tarjeta magnetica
@@ -4049,8 +4199,11 @@ export interface operations {
                     applies_base_salary?: boolean;
                     /** @description Solo pension-regimes (Task 38): null desarraiga el sector */
                     sector?: number | null;
-                    /** @description Solo pension-types (Task 38): persona fallecida */
-                    deceased_person?: boolean;
+                    /**
+                     * @description Solo pension-types (Task 74): tipo de jubilación, editable como el resto de los campos del catálogo (D-7405)
+                     * @enum {string}
+                     */
+                    retirement_type?: "edad" | "invalidez" | "fallecimiento";
                     /**
                      * @description Solo agency-types (Task 42): forma de pago del cobro
                      * @enum {string}
@@ -4730,7 +4883,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @example Signature revoked. */
+                        /** @example Firma revocada. */
                         message?: string;
                     };
                 };
@@ -4989,7 +5142,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @example Entity deactivated. */
+                        /** @example Entidad desactivada. */
                         message?: string;
                     };
                 };
@@ -5234,7 +5387,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @example Office deactivated. */
+                        /** @example Oficina desactivada. */
                         message?: string;
                     };
                 };
@@ -6058,7 +6211,7 @@ export interface operations {
                     /** @example 2 */
                     scientific_category_id: number;
                     /**
-                     * @description Tipo de pensión del catálogo (regla 4)
+                     * @description Tipo de pensión del catálogo (regla 4); su tipo de jubilación decide la exigencia del bloque de invalidez (Task 74)
                      * @example 1
                      */
                     pension_type_id: number;
@@ -6067,6 +6220,33 @@ export interface operations {
                      * @example 1
                      */
                     pension_regime_id: number;
+                    /**
+                     * @description Task 74 (ajuste de usuario 2026-11-12, Bloque C): enfermedad del catálogo diseases — OBLIGATORIA cuando el tipo de jubilación del tipo de pensión es invalidez (422 clave por clave si falta el bloque), PROHIBIDA en el resto de las ramas (422, D-7408); el detalle devuelve SOLO el id, sin proyección (D-7410)
+                     * @example 3
+                     */
+                    disease_id?: number | null;
+                    /**
+                     * @description Task 74 (Bloque C): ¿requiere cuidado de otra persona? — obligatoria con invalidez, prohibida en el resto
+                     * @example true
+                     */
+                    requires_personal_care?: boolean | null;
+                    /**
+                     * @description Task 74 (Bloque C): origen de la enfermedad — los cuatro valores fijados por el usuario, sin tildes
+                     * @example accidente_trabajo
+                     * @enum {string|null}
+                     */
+                    disease_origin?: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | null;
+                    /**
+                     * @description Task 74 (Bloque C): ¿la invalidez es temporal? — obligatoria con invalidez, prohibida en el resto
+                     * @example true
+                     */
+                    temporary_disability?: boolean | null;
+                    /**
+                     * Format: date
+                     * @description Task 74 (Bloque C, D-7409): fecha de re-peritaje — obligatoria solo si temporary_disability=true (422 si falta), prohibida si false, y estrictamente FUTURA contra el reloj (422 si es hoy o pasada)
+                     * @example 2027-05-31
+                     */
+                    re_assessment_date?: string | null;
                     /**
                      * @description Pertenece al Ejército Rebelde (regla 4)
                      * @example false
@@ -6332,6 +6512,33 @@ export interface operations {
                      */
                     pension_regime_id?: number;
                     /**
+                     * @description Task 74 (Bloque C, D-7407): enfermedad del bloque de invalidez — EDITABLE con semántica PATCH contra el estado RESULTANTE; null explícito limpia el campo; cambiar el tipo a una rama no-invalidez exige limpiar el bloque completo (422 si queda presente, se limpia con nulls explícitos)
+                     * @example 3
+                     */
+                    disease_id?: number | null;
+                    /**
+                     * @description Task 74 (Bloque C): ¿requiere cuidado de otra persona? — editable en submitted contra el estado resultante
+                     * @example true
+                     */
+                    requires_personal_care?: boolean | null;
+                    /**
+                     * @description Task 74 (Bloque C): origen de la enfermedad — editable en submitted
+                     * @example accidente_trabajo
+                     * @enum {string|null}
+                     */
+                    disease_origin?: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | null;
+                    /**
+                     * @description Task 74 (Bloque C): ¿la invalidez es temporal? — editable en submitted; el par con la fecha de re-peritaje se exige coherente (null explícito para limpiar)
+                     * @example true
+                     */
+                    temporary_disability?: boolean | null;
+                    /**
+                     * Format: date
+                     * @description Task 74 (Bloque C, D-7409): fecha de re-peritaje — solo con temporary_disability resultante true y estrictamente FUTURA cuando se declara (una fecha almacenada que envejece no bloquea PATCHes ajenos al bloque)
+                     * @example 2027-05-31
+                     */
+                    re_assessment_date?: string | null;
+                    /**
                      * @description Último salario, decimal exacto no negativo (RN-005, editable)
                      * @example 6200.00
                      */
@@ -6582,6 +6789,16 @@ export interface operations {
                      * @example false
                      */
                     force?: boolean | null;
+                    /**
+                     * @description Task 73 (Bloque B-3): monto del pago inicial — OBLIGATORIO en la aprobación de un NUEVO expediente (422 pension_cases.initial_payment_required si falta), opcional en la re-aprobación tras reapertura y PROHIBIDO en las demás transiciones. La pareja es todo-o-nada con initial_payment_description; el pago inicial nace con amount = cuantía + monto (D-7311, literal CONFIRMADO)
+                     * @example 800.50
+                     */
+                    initial_payment_amount?: string | null;
+                    /**
+                     * @description Task 73 (Bloque B-3): la evidencia del operador que instruye el pago inicial — misma regla todo-o-nada y de prohibición que el monto
+                     * @example Pago inicial por la aprobación del expediente.
+                     */
+                    initial_payment_description?: string | null;
                 };
             };
         };
@@ -6623,7 +6840,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Fuera de la matriz (con el estado actual y el destino intentado), evidencia exigida ausente o corta, base legal no vigente o checklist de completitud (lista missing) */
+            /** @description Fuera de la matriz (con el estado actual y el destino intentado), evidencia exigida ausente o corta, base legal no vigente, instrucción de pago inicial ausente (Task 73, aprobación de un nuevo expediente) o checklist de completitud (lista missing) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6639,10 +6856,27 @@ export interface operations {
                         /**
                          * @example [
                          *       "service_records",
-                         *       "salary_records"
+                         *       "salary_records",
+                         *       "salary_records_years",
+                         *       "salary_records_out_of_window",
+                         *       "imputable_salary_months"
                          *     ]
                          */
                         missing?: string[];
+                        /**
+                         * @description Task 73 (Bloque B-1): los años de la ventana cubiertos por un servicio que aún deben su registro de salario (viaja con el ítem salary_records_years)
+                         * @example [
+                         *       2024
+                         *     ]
+                         */
+                        missing_salary_years?: number[];
+                        /**
+                         * @description Task 73 (Bloque B-1): los años declarados POR DEBAJO de la ventana del régimen — el operador los elimina por el DELETE del subrecurso (viaja con el ítem salary_records_out_of_window)
+                         * @example [
+                         *       2018
+                         *     ]
+                         */
+                        out_of_window_salary_years?: number[];
                     };
                 };
             };
@@ -7093,6 +7327,44 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             422: components["responses"]["ValidationError"];
+        };
+    };
+    pensionersInitialPaymentsIndex: {
+        parameters: {
+            query?: {
+                /** @example 1 */
+                page?: number;
+                /** @example 15 */
+                per_page?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Los pagos adicionales del pensionado, los más recientes primero */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InitialPayment"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Pensionado inexistente o desactivado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     pensionersShow: {
@@ -7840,6 +8112,53 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @example Unauthenticated. */
+                        message?: string;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    authUpdateLanguage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Idioma a seleccionar */
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Uno de los idiomas soportados del registro (config/app.php supported_locales) — es institucional por defecto
+                     * @example en
+                     * @enum {string}
+                     */
+                    language: "es" | "en";
+                };
+            };
+        };
+        responses: {
+            /** @description Idioma seleccionado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["User"];
+                    };
+                };
+            };
+            /** @description Token ausente, inválido o ya revocado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example No autenticado. */
                         message?: string;
                     };
                 };

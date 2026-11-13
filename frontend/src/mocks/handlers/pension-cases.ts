@@ -47,6 +47,12 @@ const cases = new Map<number, PensionCase>([
   [2, baseCase({ id: 2, number: '11-2026-00002', requested_at: '2026-09-14', status: 'under_review', applicant_person_id: 1, office_id: 2, employer_entity_id: 2, position_id: 2, occupational_category_id: 2, educational_level_id: 3, scientific_category_id: 2, last_salary: '4800.00', approval_legal_basis_id: null, decision_notes: null, decided_at: null, decided_by: null, computed_amount: null, salary_records: [{ id: 1, pension_case_id: 2, year: 2023, earned_salary: '4500.00' } as SalaryRecord, { id: 2, pension_case_id: 2, year: 2024, earned_salary: '4800.00' } as SalaryRecord], service_records: [{ id: 1, pension_case_id: 2, entity_id: 1, entity: { id: 1, code: 'EMP001', name: 'Empresa Nacional de Servicios Técnicos', tax_id_number: 'NIT-001-123456' } as never, start_date: '2010-01-01', end_date: '2024-12-31', is_appendix: false, declaration_form: 'Documental', worked_months: 179, worked_years: 15 } as ServiceRecord], work_cycles: [{ id: 1, pension_case_id: 2, planned_days: 365, actual_days: 350, cycles_count: 1 } as WorkCycle], income_concept_records: [{ id: 1, pension_case_id: 2, income_concept_id: 3, amount: '150.00', applied_percent: '100.00' } as IncomeConceptRecord], applicant: { id: 1, identity_number: '85061547812', first_name: 'Ana', first_surname: 'Pérez' } as never })],
   [3, baseCase({ id: 3, number: '11-2026-00003', requested_at: '2026-09-10', status: 'approved', applicant_person_id: 3, office_id: 1, employer_entity_id: 1, position_id: 1, occupational_category_id: 1, educational_level_id: 5, scientific_category_id: 1, last_salary: '6500.00', approval_legal_basis_id: 1, decision_notes: 'Aprobado conforme ley 105', decided_at: '2026-09-20T10:00:00Z', decided_by: 2, computed_amount: '3250.00', salary_records: [{ id: 3, pension_case_id: 3, year: 2024, earned_salary: '6500.00' } as SalaryRecord], service_records: [{ id: 2, pension_case_id: 3, entity_id: 1, entity: { id: 1, code: 'EMP001', name: 'Empresa Nacional de Servicios Técnicos', tax_id_number: 'NIT-001-123456' } as never, start_date: '2005-01-01', end_date: '2024-12-31', is_appendix: false, declaration_form: 'Documental', worked_months: 239, worked_years: 20 } as ServiceRecord], work_cycles: [], applicant: { id: 3, identity_number: '65112845679', first_name: 'Josefa', first_surname: 'Martínez' } as never })],
   [4, baseCase({ id: 4, number: '11-2026-00004', requested_at: '2026-09-08', status: 'rejected', applicant_person_id: 5, office_id: 3, employer_entity_id: 3, position_id: 3, occupational_category_id: 3, educational_level_id: 2, scientific_category_id: 3, last_salary: '3200.00', approval_legal_basis_id: null, decision_notes: 'No cumple años mínimos de trabajo', decided_at: '2026-09-15T14:00:00Z', decided_by: 2, computed_amount: null, salary_records: [], service_records: [], work_cycles: [], applicant: { id: 5, identity_number: '72051548124', first_name: 'Roberto', first_surname: 'Hernández' } as never })],
+  // Task 74/Bloque C: expediente de invalidez (pension_type_id=2, retirement_type=invalidez).
+  // Bloque de invalidez completo: enfermedad, origen profesional, requiere cuidado,
+  // NO temporal (no lleva re_assessment_date).
+  [5, baseCase({ id: 5, number: '11-2026-00005', requested_at: '2026-10-01', status: 'submitted', applicant_person_id: 6, office_id: 1, employer_entity_id: 1, position_id: 1, occupational_category_id: 1, educational_level_id: 5, scientific_category_id: 1, last_salary: '5800.00', pension_type_id: 2, approval_legal_basis_id: null, decision_notes: null, decided_at: null, decided_by: null, computed_amount: null, salary_records: [{ id: 10, pension_case_id: 5, year: 2024, earned_salary: '5800.00' } as SalaryRecord], service_records: [{ id: 5, pension_case_id: 5, entity_id: 1, entity: { id: 1, code: 'EMP001', name: 'Empresa Nacional de Servicios Técnicos', tax_id_number: 'NIT-001-123456' } as never, start_date: '2008-01-01', end_date: '2026-09-30', is_appendix: false, declaration_form: 'Documental', worked_months: 224, worked_years: 19 } as ServiceRecord], work_cycles: [], disease_id: 3, disease_origin: 'profesional', requires_personal_care: true, temporary_disability: false, re_assessment_date: null, applicant: { id: 6, identity_number: '89040567890', first_name: 'Luis', first_surname: 'García' } as never })],
+  // Task 74/Bloque C: expediente de invalidez TEMPORAL — lleva re_assessment_date FUTURA.
+  [6, baseCase({ id: 6, number: '11-2026-00006', requested_at: '2026-10-15', status: 'under_review', applicant_person_id: 7, office_id: 2, employer_entity_id: 2, position_id: 2, occupational_category_id: 2, educational_level_id: 3, scientific_category_id: 2, last_salary: '4500.00', pension_type_id: 2, approval_legal_basis_id: null, decision_notes: null, decided_at: null, decided_by: null, computed_amount: null, salary_records: [{ id: 11, pension_case_id: 6, year: 2024, earned_salary: '4500.00' } as SalaryRecord], service_records: [{ id: 6, pension_case_id: 6, entity_id: 2, entity: { id: 2, code: 'EMP002', name: 'Constructora Nacional', tax_id_number: 'NIT-002-789012' } as never, start_date: '2012-01-01', end_date: '2026-09-30', is_appendix: false, declaration_form: 'Documental', worked_months: 176, worked_years: 15 } as ServiceRecord], work_cycles: [], disease_id: 4, disease_origin: 'accidente_trabajo', requires_personal_care: false, temporary_disability: true, re_assessment_date: '2027-06-15', applicant: { id: 7, identity_number: '76081234567', first_name: 'Elena', first_surname: 'Suárez' } as never })],
 ]);
 
 let nextCaseId = 100;
@@ -493,6 +499,8 @@ export const pensionCasesHandlers = [
       average_years_effective: 5,
       // Task 52/S8.8 V-8: declaración congelada con la resolución (null sin déficit)
       missing_salaries_attributable: null as boolean | null,
+      // Task 73/B-2: meses imputables congelados (null ⇒ divisor fue N_eff × 12, D-7308(a))
+      imputable_salary_months: null as number | null,
       average_monthly_salary: c.last_salary ?? '0.00',
       excess_years: Math.max(0, Math.floor(((c.service_records ?? []).reduce((acc, r) => acc + (r.worked_months ?? 0), 0)) / 12) - 25),
       amount: c.computed_amount ?? '0.00',
@@ -515,6 +523,8 @@ export const pensionCasesHandlers = [
         birth_date: '1960-02-03',
         sex: 'M',
         missing_salaries_attributable: null as boolean | null,
+        // Task 73/B-2: meses imputables en inputs congelados
+        imputable_salary_months: null as number | null,
         salaries: (c.salary_records ?? []).map((r) => ({ id: r.id, year: r.year, earned_salary: r.earned_salary })),
         // Task 53/S8.9: lista income_concepts[] congelada con el porciento (sin amount desde Task 54)
         income_concepts: (c.income_concept_records ?? []).map((icr) => ({
@@ -612,6 +622,17 @@ export const pensionCasesHandlers = [
       average_years_used: salaryCount >= 5 ? 5 : salaryCount,
       // Task 52/S8.8 V-6: declaración de imputabilidad (null sin déficit)
       missing_salaries_attributable: salaryCount < 5 ? (c.missing_salaries_attributable ?? null) : null,
+      // Task 73/B-2: meses imputables declarados por el expediente (null ⇒ divisor = N_eff × 12).
+      // Solo declarable cuando missing_salaries_attributable === false; en mock lo dejamos null
+      // salvo cuando el expediente lo trae explícito.
+      imputable_salary_months: (salaryCount < 5 && c.missing_salaries_attributable === false)
+        ? (c.imputable_salary_months ?? null)
+        : null,
+      // Task 73/B-2: meses EXACTOS que dividieron el SPM — los imputable_salary_months en la rama
+      // no imputable, N_eff × 12 en el resto.
+      average_divisor_months: (salaryCount < 5 && c.missing_salaries_attributable === false && c.imputable_salary_months != null)
+        ? c.imputable_salary_months
+        : (salaryCount >= 5 ? 5 : Math.max(salaryCount, 1)) * 12,
       // Task 53/S8.9 V-11: conceptos APLICABLES (applies_base_salary) que el motor consumió como incrementos
       income_concept_terms: (c.income_concept_records ?? []).map((icr) => ({
         income_concept_id: icr.income_concept_id,

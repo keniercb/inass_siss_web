@@ -35,7 +35,10 @@ const schemasByType: Record<string, z.ZodSchema> = {
     average_years_count: z.number().int().min(1).max(15).optional(),
   }),
   'pension-types': baseSchema.extend({
-    deceased_person: z.boolean().default(false),
+    // Task 74 (Bloque C): eje de clasificación que sustituye al booleano fallecido
+    // `deceased_person` de la Task 38. NOT NULL sin default (D-7403), editable en PATCH (D-7405).
+    // La rama invalidez exige el bloque de invalidez del expediente.
+    retirement_type: z.enum(['edad', 'invalidez', 'fallecimiento']),
   }),
   'income-concepts': baseSchema.extend({
     applies_base_salary: z.boolean().default(false),
@@ -43,6 +46,9 @@ const schemasByType: Record<string, z.ZodSchema> = {
   'educational-levels': baseSchema, // sin code
   'beneficiary-types': baseSchema, // sin code
   races: baseSchema, // sin code
+  // Task 74 (Bloque C): catálogo diseases — entidad uniforme, sin campos extra (D-7401).
+  // Solo el ID viaja al expediente (D-7410, sin proyección).
+  diseases: baseSchema,
 };
 
 // Columnas por tipo: code, name, description + extras
@@ -56,7 +62,7 @@ function getColumns(type: CatalogType): Array<{ id: string }> {
     cols.push({ id: 'min_age_women' });
     cols.push({ id: 'base_calc_percent' });
   }
-  if (type === 'pension-types') cols.push({ id: 'deceased_person' });
+  if (type === 'pension-types') cols.push({ id: 'retirement_type' });
   return cols;
 }
 
@@ -205,11 +211,20 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
   }
 
   if (type === 'pension-types') {
+    // Task 74 (Bloque C): sustituye al booleano fallecido `deceased_person`.
+    // Eje de clasificación: edad | invalidez | fallecimiento (D-7403, D-7404).
     baseFields.push({
-      name: 'deceased_person',
-      type: 'boolean',
-      label: 'catalogs:form.deceased_person',
-      help: 'Indica si el tipo de pensión aplica a persona fallecida',
+      name: 'retirement_type',
+      type: 'select',
+      label: 'catalogs:form.retirement_type',
+      help: 'catalogs:form.retirement_type_help',
+      required: true,
+      options: [
+        { value: 'edad', label: 'Edad' },
+        { value: 'invalidez', label: 'Invalidez' },
+        { value: 'fallecimiento', label: 'Fallecimiento' },
+      ],
+      default: 'edad',
     });
   }
 

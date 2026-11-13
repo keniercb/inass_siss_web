@@ -49,15 +49,23 @@
       "birth_date": "Birth date",
       "address": "Address",
       "deceased": "Deceased",
-      "paid_at": "Paid on"
+      "paid_at": "Paid on",
+      "initial_payment_created_at": "Date",
+      "initial_payment_amount": "Amount",
+      "initial_payment_status": "Status",
+      "initial_payment_description": "Description",
+      "initial_payment_status_pending": "Pending",
+      "initial_payment_status_done": "Settled"
     },
     "section": {
       "person_data": "Person data",
       "pension_data": "Pension data",
       "status_history": "Status timeline",
-      "bank_controls": "Bank controls"
+      "bank_controls": "Bank controls",
+      "initial_payments": "Initial payments"
     },
-    "bank_controls_empty": "No bank controls assigned (available from Sprint 10)"
+    "bank_controls_empty": "No bank controls assigned (available from Sprint 10)",
+    "initial_payments_empty": "No initial payments"
   },
   "status_change": {
     "button": "Change status",

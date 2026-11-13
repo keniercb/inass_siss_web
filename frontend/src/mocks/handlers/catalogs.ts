@@ -67,10 +67,12 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
     { code: 'TEC', name: 'Técnico' },
     { code: 'DIR', name: 'Dirigente' },
   ]),
+  // Task 74 (Bloque C): eje retirement_type sustituye al booleano fallecido.
+  // Mapeo D-7404: AGE→edad, DIS→invalidez, SUP→fallecimiento.
   'pension-types': seedCatalog('pension-types', [
-    { code: 'AGE', name: 'Por edad', extra: { deceased_person: false } },
-    { code: 'DIS', name: 'Por discapacidad', extra: { deceased_person: true } },
-    { code: 'SUP', name: 'Por sobrevivencia', extra: { deceased_person: true } },
+    { code: 'AGE', name: 'Por edad', extra: { retirement_type: 'edad' } },
+    { code: 'DIS', name: 'Por invalidez', extra: { retirement_type: 'invalidez' } },
+    { code: 'SUP', name: 'Por sobrevivencia', extra: { retirement_type: 'fallecimiento' } },
   ]),
   'beneficiary-types': seedCatalog('beneficiary-types', [
     { name: 'Titular' },
@@ -132,6 +134,15 @@ const catalogStore: Record<string, Map<number, CatalogItem>> = {
     { name: 'Salario base', extra: { applies_base_salary: true } },
     { name: 'Antigüedad', extra: { applies_base_salary: false } },
   ]),
+  // Task 74 (Bloque C): catálogo diseases — entidad uniforme, nace VACÍA según D-7401.
+  // Sembramos algunas filas para desarrollo local; en producción se llena por CRUD.
+  diseases: seedCatalog('diseases', [
+    { code: 'E001', name: 'Cardiopatía isquémica' },
+    { code: 'E002', name: 'Enfermedad cerebrovascular' },
+    { code: 'E003', name: 'Neuropatía periférica diabética' },
+    { code: 'E004', name: 'Traumatismo craneoencefálico severo' },
+    { code: 'E005', name: 'Nefropatía crónica terminal' },
+  ]),
 };
 
 let nextId = 1000;
@@ -163,6 +174,9 @@ function seedCatalog(
       average_strategy: item.extra?.average_strategy as 'best_n' | 'last_n' | 'all' | undefined,
       // Task 51 (S8.1): N propio de la estrategia, desacoplado del gate
       average_years_count: item.extra?.average_years_count as number | undefined,
+      // Task 74 (Bloque C): eje retirement_type sustituye a deceased_person (pension-types).
+      // NOT NULL sin default (D-7403); los catálogos que no lo definen lo dejan undefined.
+      retirement_type: item.extra?.retirement_type as 'edad' | 'invalidez' | 'fallecimiento' | undefined,
       deactivated_at: null,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
@@ -272,6 +286,8 @@ export const catalogsHandlers = [
       average_strategy: body.average_strategy as 'best_n' | 'last_n' | 'all' | undefined,
       // Task 51 (S8.1): N propio de la estrategia
       average_years_count: body.average_years_count as number | undefined,
+      // Task 74 (Bloque C): retirement_type (pension-types) — sustituye a deceased_person
+      retirement_type: body.retirement_type as 'edad' | 'invalidez' | 'fallecimiento' | undefined,
       deactivated_at: null,
       created_at: now,
       updated_at: now,
@@ -336,6 +352,8 @@ export const catalogsHandlers = [
       average_strategy: body.average_strategy !== undefined ? body.average_strategy as 'best_n' | 'last_n' | 'all' : item.average_strategy,
       // Task 51 (S8.1)
       average_years_count: body.average_years_count !== undefined ? body.average_years_count as number : item.average_years_count,
+      // Task 74 (Bloque C): retirement_type (pension-types) — editable en PATCH (D-7405)
+      retirement_type: body.retirement_type !== undefined ? body.retirement_type as 'edad' | 'invalidez' | 'fallecimiento' : item.retirement_type,
       updated_at: new Date().toISOString(),
     } as CatalogItem;
     store.set(id, updated);

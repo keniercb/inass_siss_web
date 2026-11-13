@@ -34,6 +34,21 @@ export const createCaseSchema = z.object({
   bank_account: z.string().max(34).optional().nullable(),
   // Task 52/S8.8: declaración de imputabilidad de salarios ausentes (null válido sin déficit)
   missing_salaries_attributable: z.boolean().optional().nullable(),
+  // Task 73/B-2: meses de salarios imputables — divisor EXPLÍCITO del SPM.
+  // Solo declarable cuando missing_salaries_attributable = false; 1..180 (techo de 15 años en meses).
+  // null ⇒ divisor = N_eff × 12 (semántica histórica). La validación cruzada la hace el backend (422).
+  imputable_salary_months: z.number().int().min(1).max(180).optional().nullable(),
+  // Task 74/Bloque C: bloque de invalidez del expediente. Los 5 campos son obligatorios
+  // cuando el pension_type.retirement_type === 'invalidez' y prohibidos en el resto (422, D-7408).
+  // El frontend NO valida esa coherencia — la hace el backend. Solo captura y transmite.
+  disease_id: z.number().int().positive().optional().nullable(),
+  disease_origin: z.enum(['comun', 'profesional', 'accidente_trabajo', 'accidente_trayecto']).optional().nullable(),
+  // re_assessment_date: obligatoria SOLO con temporary_disability=true y estrictamente
+  // FUTURA contra el reloj (422 si es hoy o pasada — D-7409). El frontend muestra helper
+  // pero no bloquea el submit; el backend valida.
+  re_assessment_date: z.string().optional().nullable(),
+  requires_personal_care: z.boolean().optional().nullable(),
+  temporary_disability: z.boolean().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
@@ -66,6 +81,17 @@ export const updateCaseSchema = z.object({
   bank_account: z.string().max(34).optional().nullable(),
   // Task 52/S8.8: PATCH (null explícito limpia; la omisión no toca el valor almacenado)
   missing_salaries_attributable: z.boolean().optional().nullable(),
+  // Task 73/B-2: PATCH — null explícito limpia el divisor; la omisión no toca el valor almacenado.
+  // Solo se acepta cuando missing_salaries_attributable = false (422 en el resto, D-7307(a)).
+  imputable_salary_months: z.number().int().min(1).max(180).optional().nullable(),
+  // Task 74/Bloque C: PATCH del bloque de invalidez. La omisión no toca el valor almacenado;
+  // null explícito lo limpia. La coherencia con retirement_type === 'invalidez' la valida el
+  // backend contra el estado RESULTANTE del expediente (D-7407, D-7408).
+  disease_id: z.number().int().positive().optional().nullable(),
+  disease_origin: z.enum(['comun', 'profesional', 'accidente_trabajo', 'accidente_trayecto']).optional().nullable(),
+  re_assessment_date: z.string().optional().nullable(),
+  requires_personal_care: z.boolean().optional().nullable(),
+  temporary_disability: z.boolean().optional().nullable(),
 });
 export type UpdateCaseInput = z.infer<typeof updateCaseSchema>;
 
