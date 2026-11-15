@@ -614,7 +614,7 @@ export interface paths {
         put?: never;
         /**
          * Vista previa del cálculo (RF-CAL-006)
-         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía de la VERSIÓN TRES (Task 57/SGP-42: F1 = SPM×(PCI + ATE×PIA + Σ aplicables + combatiente PAU/PPU por umbral), instantánea con los conceptos NO aplicables (RINSB) sobre CuantíaTmp, tope SPM×PIL, incremento internacionalista II, mínimo IPmin y tope final PMax — ADR-41), junto con los parámetros del régimen, el bloque general_settings de la doctrina ACTIVA usada y las advertencias (serie salarial incompleta, criterios de elegibilidad fallidos, tope del régimen o tope final que recortan — D-11 —, incremento de la pensión mínima). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
+         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN; Task 75/D-7501: los EXPEDIENTES DE INVALIDEZ añaden el criterio salary_records — la serie salarial contra la VENTANA del pase a revisión, con los años faltantes como detalle missing_salary_years), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía de la VERSIÓN TRES (Task 57/SGP-42: F1 = SPM×(PCI + ATE×PIA + Σ aplicables + combatiente PAU/PPU por umbral), instantánea con los conceptos NO aplicables (RINSB) sobre CuantíaTmp, tope SPM×PIL, incremento internacionalista II, mínimo IPmin y tope final PMax — ADR-41), junto con los parámetros del régimen, el bloque general_settings de la doctrina ACTIVA usada y las advertencias (serie salarial incompleta, criterios de elegibilidad fallidos, tope del régimen o tope final que recortan — D-11 —, incremento de la pensión mínima). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
          */
         post: operations["pensionCasesCalculationPreview"];
         delete?: never;
@@ -1419,6 +1419,162 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/beneficiary-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reglas de beneficiario (paginado)
+         * @description Lista las reglas de beneficiario — los rangos de cantidades [min, max] con su porciento aplicable (Task 76, permiso settings.view). Nacen vacías (D-7506): HOY ningún consumidor las lee — el motor de invalidez/fallecimiento no las usa y el expediente no captura beneficiarios.
+         */
+        get: operations["beneficiaryRulesIndex"];
+        put?: never;
+        /**
+         * Crear una regla de beneficiario
+         * @description Crea el rango de cantidades de beneficiarios con su porciento aplicable (Task 76, permiso settings.manage). Los rangos NUNCA se solapan (sonda semántica 422, molde D-7505) — un rango que cubra una cantidad de una regla existente responde 422. El porciento viaja en [0,100] con dos decimales (D-7504); ausente o null aterriza como 0.00 (confirmación 5.3).
+         */
+        post: operations["beneficiaryRulesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/beneficiary-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una regla de beneficiario
+         * @description Devuelve la regla de un rango de cantidades (Task 76, permiso settings.view).
+         */
+        get: operations["beneficiaryRulesShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Eliminar una regla de beneficiario
+         * @description Elimina la regla de un rango de cantidades (Task 76, permiso settings.manage). Ninguna fila la referencia hoy — la eliminación es libre.
+         */
+        delete: operations["beneficiaryRulesDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Actualizar una regla de beneficiario
+         * @description PATCH del rango de cantidades y/o el porciento (Task 76, permiso settings.manage). El servicio sondea el rango RESULTANTE contra las demás reglas — un rango que solape responde 422 (molde D-7505).
+         */
+        patch: operations["beneficiaryRulesUpdate"];
+        trace?: never;
+    };
+    "/api/v1/disability-increment-brackets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tramos de incremento (paginado)
+         * @description Lista los tramos de incremento de invalidez, opcionalmente filtrados por regla con ?disability_rule_id= (Task 75, permiso settings.view), ordenados por regla y año mínimo.
+         */
+        get: operations["disabilityIncrementBracketsIndex"];
+        put?: never;
+        /**
+         * Crear un tramo de incremento
+         * @description Crea el rango de años [min_years, max_years] (NULL max = sin techo) que activa el increment_percent de la regla (Task 75, permiso settings.manage). Reglas desconocidas responden 422 sobre disability_rule_id; los tramos de una misma regla NUNCA se solapan (D-7505) — un rango que cubra años de un tramo existente responde 422.
+         */
+        post: operations["disabilityIncrementBracketsStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/disability-increment-brackets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de un tramo
+         * @description Devuelve un tramo de incremento (Task 75, permiso settings.view).
+         */
+        get: operations["disabilityIncrementBracketsShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Eliminar un tramo
+         * @description Elimina el tramo de incremento (Task 75, permiso settings.manage).
+         */
+        delete: operations["disabilityIncrementBracketsDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Actualizar el rango de un tramo
+         * @description PATCH del rango de años (Task 75, permiso settings.manage). El tramo PERTENECE a su regla: la reasignación responde 422 (D-7505 — elimine el tramo y créelo bajo la regla correcta). El rango RESULTANTE se sondea contra los tramos hermanos: un solape responde 422.
+         */
+        patch: operations["disabilityIncrementBracketsUpdate"];
+        trace?: never;
+    };
+    "/api/v1/disability-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reglas de invalidez (paginado)
+         * @description Lista las reglas de invalidez — una por origen de la enfermedad (comun/profesional/accidente_trabajo/accidente_trayecto) más el quinto literal fallecimiento del motor de sobrevivientes (Task 76, confirmación 5.1) — con sus tramos de incremento anidados (Task 75 + Task 76, permiso settings.view). El Administrador las llena por CRUD (D-7506).
+         */
+        get: operations["disabilityRulesIndex"];
+        put?: never;
+        /**
+         * Crear una regla de invalidez
+         * @description Crea la regla de un origen (Task 75 + Task 76, permiso settings.manage): el porciento base y el multiplicador de la regla — la cuantía del invalidante se multiplica por (1 + increment_percent/100). UN origen, UNA regla — un origen ya reglado responde 422 (D-7503). Los porcientos viajan en [0,100] con dos decimales (D-7504: 100.00 es el todo); increment_percent es opcional — ausente o null aterriza como 0.00, el multiplicador neutro (confirmación 5.3).
+         */
+        post: operations["disabilityRulesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/disability-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una regla de invalidez
+         * @description Devuelve la regla de un origen con sus tramos de incremento anidados (Task 75, permiso settings.view).
+         */
+        get: operations["disabilityRulesShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Eliminar una regla de invalidez
+         * @description Elimina la regla y SUS TRAMOS mueren con ella (cascade, Task 75, permiso settings.manage).
+         */
+        delete: operations["disabilityRulesDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Actualizar los porcientos de una regla
+         * @description PATCH de los porcientos de la regla (Task 75 + Task 76, permiso settings.manage). El ORIGEN es inmutable tras el alta (D-7503): un payload que lo cambie responde 422 — el mismo valor es un no-op. Los porcientos viajan en [0,100] con dos decimales.
+         */
+        patch: operations["disabilityRulesUpdate"];
+        trace?: never;
+    };
     "/api/v1/general-settings": {
         parameters: {
             query?: never;
@@ -1485,6 +1641,58 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/special-disability-modifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Modificaciones especiales (paginado)
+         * @description Lista las modificaciones especiales de invalidez — los casos nominados con su porciento propio (Task 75, permiso settings.view), ordenadas por código.
+         */
+        get: operations["specialDisabilityModificationsIndex"];
+        put?: never;
+        /**
+         * Crear una modificación especial
+         * @description Crea el caso nominado con su porciento propio (Task 75, permiso settings.manage). El código es natural y único — un código tomado responde 422. El porciento viaja en [0,100] con dos decimales (D-7504).
+         */
+        post: operations["specialDisabilityModificationsStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/special-disability-modifications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una modificación especial
+         * @description Devuelve una modificación especial de invalidez (Task 75, permiso settings.view).
+         */
+        get: operations["specialDisabilityModificationsShow"];
+        put?: never;
+        post?: never;
+        /**
+         * Eliminar una modificación especial
+         * @description Elimina la modificación especial (Task 75, permiso settings.manage).
+         */
+        delete: operations["specialDisabilityModificationsDestroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Actualizar una modificación especial
+         * @description PATCH de la descripción y el porciento (Task 75, permiso settings.manage). El CÓDIGO es inmutable tras el alta (molde de catálogo, ADR-15): un payload que lo cambie responde 422 — el mismo valor es un no-op.
+         */
+        patch: operations["specialDisabilityModificationsUpdate"];
         trace?: never;
     };
 }
@@ -2258,7 +2466,7 @@ export interface components {
         };
         /**
          * Vista previa del cálculo
-         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía de la VERSIÓN TRES (Task 57/SGP-42: base del régimen + combatiente por umbral + conceptos aplicables + conceptos NO aplicables sobre la instantánea + tope del régimen + internacionalista + mínimo + tope final absoluto), los parámetros del régimen usados, la doctrina de la configuración ACTIVA usada (general_settings) y las advertencias.
+         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía de la VERSIÓN TRES (Task 57/SGP-42: base del régimen + combatiente por umbral + conceptos aplicables + conceptos NO aplicables sobre la instantánea + tope del régimen + internacionalista + mínimo + tope final absoluto), los parámetros del régimen usados, la doctrina de la configuración ACTIVA usada (general_settings) y las advertencias. Task 75 (D-7501): los EXPEDIENTES DE INVALIDEZ añaden el criterio salary_records — la serie salarial contra la VENTANA del pase a revisión, con los años faltantes como detalle estructurado missing_salary_years; en las demás ramas los criterios siguen siendo age y service.
          */
         CalculationPreview: {
             /**
@@ -2271,12 +2479,23 @@ export interface components {
                 /** @example true */
                 eligible?: boolean;
                 criteria?: {
-                    /** @example age */
+                    /**
+                     * @description Task 75: 'age' y 'service' en todas las ramas; los invalidantes añaden 'salary_records' (la serie contra la ventana del pase a revisión)
+                     * @example age
+                     */
                     criterion?: string;
                     /** @example true */
                     passes?: boolean;
                     /** @example El solicitante cumple 60 años el 2026-05-10, la edad mínima de los hombres del régimen. */
                     explanation?: string;
+                    /**
+                     * @description Task 75 (D-7501): SOLO el criterio salary_records de los invalidantes — los años de la ventana cubiertos por los servicios que aún deben su registro de salario; ausente cuando el criterio pasa y en los demás criterios
+                     * @example [
+                     *       2025,
+                     *       2026
+                     *     ]
+                     */
+                    missing_salary_years?: number[];
                 }[];
             };
             service_years: {
@@ -3560,6 +3779,94 @@ export interface components {
             password_expired?: boolean;
         };
         /**
+         * Regla de beneficiario
+         * @description Task 76 (ajuste de usuario 2026-11-15): la doctrina de rangos de CANTIDADES de beneficiarios — [min_quantity, max_quantity] (NULL max = sin techo) con el porciento aplicable al rango. Parte de la configuración general; nace VACÍA (D-7506) y HOY NO TIENE CONSUMIDOR: el motor de invalidez/fallecimiento de la Task 76 no la lee y el expediente no captura beneficiarios — el consumidor llega con la tarea de beneficiarios. Los rangos NUNCA se solapan (sonda semántica 422, molde D-7505).
+         */
+        BeneficiaryRule: {
+            /**
+             * Format: int64
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description La cantidad MÍNIMA de beneficiarios del rango (inclusive)
+             * @example 1
+             */
+            min_quantity: number;
+            /**
+             * @description La cantidad MÁXIMA del rango (inclusive); null = sin techo
+             * @example 2
+             */
+            max_quantity: number | null;
+            /**
+             * @description El porciento aplicable al rango en [0,100] — NOT NULL DEFAULT 0 (confirmación 5.3)
+             * @example 40.00
+             */
+            percent_to_apply: string;
+        };
+        /**
+         * Tramo de incremento de invalidez
+         * @description Task 75: el rango de años [min_years, max_years] (NULL max = sin techo) que activa el incremento de su regla de invalidez. Task 76 (confirmación 5.3): el tramo lleva su PROPIO porciento de incremento anual (annual_increment_percent, NOT NULL DEFAULT 0) — el motor de invalidez atribuye a cada tramo max(0, min(AT, max) − min) años y los multiplica por ese porciento (D-7606). Los tramos de una misma regla NUNCA se solapan (D-7505, sonda semántica 422) y pertenecen a su regla para siempre (la reasignación responde 422).
+         */
+        DisabilityIncrementBracket: {
+            /**
+             * Format: int64
+             * @example 1
+             */
+            id: number;
+            /**
+             * Format: int64
+             * @description La regla (el origen) a la que el tramo pertenece — inmutable tras el alta (D-7505)
+             * @example 1
+             */
+            disability_rule_id: number;
+            /**
+             * @description El año MÍNIMO del rango (inclusive)
+             * @example 25
+             */
+            min_years: number;
+            /**
+             * @description El año MÁXIMO del rango (inclusive); null = sin techo
+             * @example 35
+             */
+            max_years: number | null;
+            /**
+             * Format: double
+             * @description Task 76 (confirmación 5.3): el porciento de incremento ANUAL del tramo en [0,100] — NOT NULL DEFAULT 0
+             * @example 2
+             */
+            annual_increment_percent: number;
+        };
+        /**
+         * Regla de invalidez
+         * @description Task 75 (ajuste de usuario 2026-11-13): la doctrina de porcientos de un ORIGEN de la enfermedad — el eje del bloque de invalidez del expediente (Task 74). Task 76 (confirmación 5.1): el eje incluye el QUINTO literal fallecimiento — la regla del sobreviviente que el motor selecciona para un retirement_type = fallecimiento. Parte de la configuración general; la llena el Administrador por CRUD (D-7506). Los porcientos son DECIMAL(5,2) en [0,100] (D-7504: convención del porciento declarado — 100.00 es el todo).
+         */
+        DisabilityRule: {
+            /**
+             * Format: int64
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description El origen de la enfermedad (literales del enum DiseaseOrigin de la Task 74) o el quinto literal fallecimiento del motor de sobrevivientes (Task 76) — natural key ÚNICA e inmutable tras el alta: un origen, una regla (D-7503)
+             * @example accidente_trabajo
+             * @enum {string}
+             */
+            origin: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | "fallecimiento";
+            /**
+             * @description El porciento base de la pensión de invalidez del origen (en [0,100])
+             * @example 100.00
+             */
+            base_percent: string;
+            /**
+             * @description El multiplicador de la regla en [0,100] — la cuantía del invalidante se multiplica por (1 + increment_percent/100); NOT NULL DEFAULT 0 desde Task 76 (confirmación 5.3): 0.00 es el multiplicador neutro ×1
+             * @example 1.00
+             */
+            increment_percent: string;
+            /** @description Los tramos de incremento de la regla (mueren con ella) */
+            brackets: components["schemas"]["DisabilityIncrementBracket"][];
+        };
+        /**
          * Versión de configuración general
          * @description Los DIEZ campos de una versión de la configuración general (RF-CAT-005, Task 55/S9.1 + Task 70/SGP-54): los siete de doctrina 2026 y los tres del calendario de la ventana de cobro — payment_day (1–30), month_to_provitional y month_to_expired (ambos > 0, directriz «monthToProvitional y monthToExpired > 0 ambos»). Las versiones son append-only: publicar una nueva desactiva la anterior en la misma transacción. La vigencia es un hecho almacenado — effective_from (sello del Clock) y deactivated_at (baja de la versión) — y solo UNA versión está activa a la vez (garantizado en base de datos). Los montos se sirven como Double y se almacenan DECIMAL(12,2) exacto (RN-005).
          */
@@ -3650,6 +3957,32 @@ export interface components {
             created_by?: number | null;
             /** Format: date-time */
             created_at?: string | null;
+        };
+        /**
+         * Modificación especial de invalidez
+         * @description Task 75: el caso nominado que aplica un porciento propio sobre la pensión de invalidez (p. ej. el incremento del requiere-cuidado-de-otra-persona). Código natural ÚNICO e inmutable tras el alta (molde de catálogo, ADR-15) y porciento DECIMAL(5,2) en [0,100] (D-7504).
+         */
+        SpecialDisabilityModification: {
+            /**
+             * Format: int64
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description El código natural de la modificación — único e inmutable tras el alta
+             * @example CUIDADO
+             */
+            code: string;
+            /**
+             * @description La descripción legible del caso nominado
+             * @example Incremento por requerir cuidado de otra persona
+             */
+            description: string | null;
+            /**
+             * @description El porciento a aplicar (en [0,100])
+             * @example 50.00
+             */
+            percent_to_apply: string;
         };
     };
     responses: {
@@ -8908,6 +9241,642 @@ export interface operations {
             };
         };
     };
+    beneficiaryRulesIndex: {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listado paginado con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BeneficiaryRule"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 0 */
+                            total?: number;
+                            /** @example 1 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    beneficiaryRulesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example 1 */
+                    min_quantity: number;
+                    /**
+                     * @description Null = sin techo
+                     * @example 2
+                     */
+                    max_quantity?: number | null;
+                    /**
+                     * Format: double
+                     * @description Porciento aplicable al rango (en [0,100]) — ausente/null aterriza como 0.00
+                     * @example 40
+                     */
+                    percent_to_apply?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Regla creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BeneficiaryRule"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    beneficiaryRulesShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Regla encontrada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BeneficiaryRule"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Regla inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Regla de beneficiario no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    beneficiaryRulesDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Regla eliminada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Regla de beneficiario eliminada. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Regla inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Regla de beneficiario no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    beneficiaryRulesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example 3 */
+                    min_quantity?: number;
+                    /**
+                     * @description Null explícito quita el techo
+                     * @example 4
+                     */
+                    max_quantity?: number | null;
+                    /**
+                     * Format: double
+                     * @description Null explícito aterriza como 0.00 (Task 76)
+                     * @example 30
+                     */
+                    percent_to_apply?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Regla actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BeneficiaryRule"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Regla inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Regla de beneficiario no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    disabilityIncrementBracketsIndex: {
+        parameters: {
+            query?: {
+                /** @description Filtra los tramos de una regla concreta */
+                disability_rule_id?: number;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listado paginado con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisabilityIncrementBracket"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 2 */
+                            total?: number;
+                            /** @example 1 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    disabilityIncrementBracketsStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: int64
+                     * @example 1
+                     */
+                    disability_rule_id: number;
+                    /** @example 25 */
+                    min_years: number;
+                    /**
+                     * @description Null = sin techo
+                     * @example 35
+                     */
+                    max_years?: number | null;
+                    /**
+                     * Format: double
+                     * @description Task 76 (confirmación 5.3): porciento de incremento ANUAL del tramo en [0,100] — ausente/null aterriza como 0.00
+                     * @example 2
+                     */
+                    annual_increment_percent?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Tramo creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisabilityIncrementBracket"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    disabilityIncrementBracketsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tramo encontrado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisabilityIncrementBracket"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Tramo inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Tramo de incremento de invalidez no encontrado. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    disabilityIncrementBracketsDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tramo eliminado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Tramo de incremento eliminado. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Tramo inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Tramo de incremento de invalidez no encontrado. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    disabilityIncrementBracketsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example 30 */
+                    min_years?: number;
+                    /**
+                     * @description Null explícito quita el techo
+                     * @example 40
+                     */
+                    max_years?: number | null;
+                    /**
+                     * Format: double
+                     * @description Task 76: null explícito aterriza como 0.00
+                     * @example 3
+                     */
+                    annual_increment_percent?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Tramo actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisabilityIncrementBracket"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Tramo inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Tramo de incremento de invalidez no encontrado. */
+                        message?: string;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    disabilityRulesIndex: {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listado paginado con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisabilityRule"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 4 */
+                            total?: number;
+                            /** @example 1 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    disabilityRulesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @example comun
+                     * @enum {string}
+                     */
+                    origin: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | "fallecimiento";
+                    /**
+                     * Format: double
+                     * @description Porciento base del origen (en [0,100])
+                     * @example 60
+                     */
+                    base_percent: number;
+                    /**
+                     * Format: double
+                     * @description Multiplicador de la regla (en [0,100]) — la cuantía se multiplica por (1 + increment_percent/100); ausente/null aterriza como 0.00 (Task 76, confirmación 5.3)
+                     * @example 1
+                     */
+                    increment_percent?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Regla creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisabilityRule"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    disabilityRulesShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Regla encontrada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisabilityRule"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Regla inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Regla de invalidez no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    disabilityRulesDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Regla eliminada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Regla de invalidez eliminada (sus tramos mueren con ella). */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Regla inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Regla de invalidez no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    disabilityRulesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: double
+                     * @example 70
+                     */
+                    base_percent?: number;
+                    /**
+                     * Format: double
+                     * @description Null explícito aterriza como 0.00 (Task 76)
+                     * @example 2
+                     */
+                    increment_percent?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Regla actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DisabilityRule"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Regla inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Regla de invalidez no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
     generalSettingsIndex: {
         parameters: {
             query?: {
@@ -9151,6 +10120,205 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    specialDisabilityModificationsIndex: {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listado paginado con envelope RF-API-002 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SpecialDisabilityModification"][];
+                        meta?: {
+                            /** @example 1 */
+                            current_page?: number;
+                            /** @example 15 */
+                            per_page?: number;
+                            /** @example 1 */
+                            total?: number;
+                            /** @example 1 */
+                            last_page?: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    specialDisabilityModificationsStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example CUIDADO */
+                    code: string;
+                    /** @example Incremento por requerir cuidado de otra persona */
+                    description?: string | null;
+                    /**
+                     * Format: double
+                     * @example 50
+                     */
+                    percent_to_apply: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Modificación creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SpecialDisabilityModification"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    specialDisabilityModificationsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Modificación encontrada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SpecialDisabilityModification"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Modificación inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Modificación especial de invalidez no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    specialDisabilityModificationsDestroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Modificación eliminada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Modificación especial eliminada. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Modificación inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Modificación especial de invalidez no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    specialDisabilityModificationsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example Incremento actualizado por requerir cuidado permanente */
+                    description?: string | null;
+                    /**
+                     * Format: double
+                     * @example 60
+                     */
+                    percent_to_apply?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Modificación actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SpecialDisabilityModification"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Modificación inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Modificación especial de invalidez no encontrada. */
+                        message?: string;
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
         };
     };
 }

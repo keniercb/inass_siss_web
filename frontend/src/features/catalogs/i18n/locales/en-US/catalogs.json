@@ -54,7 +54,7 @@
     "sector_help": "Pension regime sector (optional)",
     "deceased_person": "Deceased person",
     "retirement_type": "Retirement type",
-    "retirement_type_help": "Classification axis of the pension type (Task 74, D-7403). The disability branch requires the case's disability block.",
+    "retirement_type_help": "Classification of the pension type. The disability branch requires completing the case's disability block.",
     "payment_form": "Payment form",
     "base_calc_percent": "Base calculation percent",
     "base_calc_percent_help": "Fraction [0–1] of the base salary used for calculation (e.g. 0.6 = 60%)",

@@ -16,6 +16,7 @@ import {
   MapPin,
   Banknote,
   HeartPulse,
+  Accessibility,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -133,6 +134,12 @@ export const sidebarConfig: SidebarItem[] = [
     label: 'Configuración general',
     path: '/configuracion-general',
     icon: Settings,
+    permiso: 'settings.view',
+  },
+  {
+    label: 'Configuración de invalidez',
+    path: '/configuracion-invalidez',
+    icon: Accessibility,
     permiso: 'settings.view',
   },
   {

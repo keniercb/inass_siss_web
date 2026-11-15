@@ -54,7 +54,7 @@
     "sector_help": "Sector del régimen de jubilación (opcional)",
     "deceased_person": "Persona fallecida",
     "retirement_type": "Tipo de jubilación",
-    "retirement_type_help": "Eje de clasificación del tipo de pensión (Task 74, D-7403). La rama invalidez exige el bloque de invalidez del expediente.",
+    "retirement_type_help": "Clasificación del tipo de pensión. La rama invalidez exige completar el bloque de invalidez del expediente.",
     "payment_form": "Forma de pago",
     "base_calc_percent": "Porciento base de cálculo",
     "base_calc_percent_help": "Fracción [0–1] del salario base para el cálculo (p. ej. 0.6 = 60%)",

@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "Configuración de invalidez",
+    "description": "Reglas de invalidez por origen, modificaciones especiales y reglas de beneficiario."
+  },
+  "section": {
+    "rules": "Reglas de invalidez por origen",
+    "special": "Modificaciones especiales",
+    "beneficiary": "Reglas de beneficiario"
+  },
+  "rule": {
+    "title": "Regla de invalidez",
+    "add": "Añadir regla",
+    "edit": "Editar regla",
+    "create_success": "Regla creada correctamente",
+    "create_error": "No se pudo crear la regla",
+    "update_success": "Regla actualizada correctamente",
+    "update_error": "No se pudo actualizar la regla",
+    "delete_success": "Regla eliminada correctamente",
+    "delete_error": "No se pudo eliminar la regla",
+    "fields": {
+      "origin": "Origen",
+      "base_percent": "Porciento base",
+      "increment_percent": "Porciento de incremento",
+      "brackets": "Tramos de incremento"
+    },
+    "origin": {
+      "comun": "Común",
+      "profesional": "Profesional",
+      "accidente_trabajo": "Accidente de trabajo",
+      "accidente_trayecto": "Accidente de trayecto",
+      "fallecimiento": "Fallecimiento"
+    },
+    "brackets": {
+      "title": "Tramos de incremento por años",
+      "add": "Añadir tramo",
+      "min_years": "Años mínimos",
+      "max_years": "Años máximos",
+      "max_years_unbounded": "Sin techo",
+      "annual_increment_percent": "Porciento anual"
+    }
+  },
+  "special": {
+    "title": "Modificación especial",
+    "add": "Añadir modificación",
+    "edit": "Editar modificación",
+    "create_success": "Modificación creada correctamente",
+    "create_error": "No se pudo crear la modificación",
+    "update_success": "Modificación actualizada correctamente",
+    "update_error": "No se pudo actualizar la modificación",
+    "delete_success": "Modificación eliminada correctamente",
+    "delete_error": "No se pudo eliminar la modificación",
+    "fields": {
+      "code": "Código",
+      "description": "Descripción",
+      "percent_to_apply": "Porciento a aplicar"
+    }
+  },
+  "beneficiary": {
+    "title": "Regla de beneficiario",
+    "add": "Añadir regla",
+    "edit": "Editar regla",
+    "create_success": "Regla creada correctamente",
+    "create_error": "No se pudo crear la regla",
+    "update_success": "Regla actualizada correctamente",
+    "update_error": "No se pudo actualizar la regla",
+    "delete_success": "Regla eliminada correctamente",
+    "delete_error": "No se pudo eliminar la regla",
+    "fields": {
+      "min_quantity": "Cantidad mínima",
+      "max_quantity": "Cantidad máxima",
+      "max_quantity_unbounded": "Sin techo",
+      "percent_to_apply": "Porciento a aplicar"
+    }
+  },
+  "empty": "No hay entradas para mostrar"
+}
