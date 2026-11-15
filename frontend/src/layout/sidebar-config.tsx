@@ -17,6 +17,7 @@ import {
   Banknote,
   HeartPulse,
   Accessibility,
+  Lock,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -131,27 +132,23 @@ export const sidebarConfig: SidebarItem[] = [
     children: catalogChildren,
   },
   {
-    label: 'Configuración general',
-    path: '/configuracion-general',
+    label: 'Configuración',
+    path: '/configuracion',
     icon: Settings,
     permiso: 'settings.view',
+    children: [
+      { label: 'Configuración general', path: '/configuracion-general', icon: Settings, permiso: 'settings.view' },
+      { label: 'Reglas de pensiones', path: '/configuracion-invalidez', icon: Accessibility, permiso: 'settings.view' },
+    ],
   },
   {
-    label: 'Configuración de invalidez',
-    path: '/configuracion-invalidez',
-    icon: Accessibility,
-    permiso: 'settings.view',
-  },
-  {
-    label: 'Usuarios',
-    path: '/usuarios',
-    icon: UserCog,
+    label: 'Seguridad',
+    path: '/seguridad',
+    icon: Lock,
     permiso: 'users.view',
-  },
-  {
-    label: 'Roles y permisos',
-    path: '/roles',
-    icon: KeyRound,
-    permiso: 'roles.view',
+    children: [
+      { label: 'Usuarios', path: '/usuarios', icon: UserCog, permiso: 'users.view' },
+      { label: 'Roles y permisos', path: '/roles', icon: KeyRound, permiso: 'roles.view' },
+    ],
   },
 ];
