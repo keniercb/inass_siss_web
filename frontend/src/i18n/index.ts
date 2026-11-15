@@ -64,6 +64,11 @@ import settings_esCU from '@/features/settings/i18n/locales/es-CU/settings.json'
 import settings_esES from '@/features/settings/i18n/locales/es-ES/settings.json';
 import settings_enUS from '@/features/settings/i18n/locales/en-US/settings.json';
 
+// Feature: disability-config
+import disabilityConfig_esCU from '@/features/disability-config/i18n/locales/es-CU/disability-config.json';
+import disabilityConfig_esES from '@/features/disability-config/i18n/locales/es-ES/disability-config.json';
+import disabilityConfig_enUS from '@/features/disability-config/i18n/locales/en-US/disability-config.json';
+
 export const SUPPORTED_LANGUAGES = ['es-CU', 'es-ES', 'en-US'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'es-CU';
@@ -85,6 +90,7 @@ void i18n
         settings: settings_esCU, people: people_esCU,
         organizations: organizations_esCU, 'legal-basis': legalBasis_esCU,
         users: users_esCU, roles: roles_esCU, 'pension-cases': pensionCases_esCU, pensioners: pensioners_esCU, payments: payments_esCU,
+        'disability-config': disabilityConfig_esCU,
       },
       'es-ES': {
         common: common_esES, auth: auth_esES, catalogs: catalogs_esES,
@@ -92,6 +98,7 @@ void i18n
         settings: settings_esES, people: people_esES,
         organizations: organizations_esES, 'legal-basis': legalBasis_esES,
         users: users_esES, roles: roles_esES, 'pension-cases': pensionCases_esES, pensioners: pensioners_esES, payments: payments_esES,
+        'disability-config': disabilityConfig_esES,
       },
       'en-US': {
         common: common_enUS, auth: auth_enUS, catalogs: catalogs_enUS,
@@ -99,13 +106,14 @@ void i18n
         settings: settings_enUS, people: people_enUS,
         organizations: organizations_enUS, 'legal-basis': legalBasis_enUS,
         users: users_enUS, roles: roles_enUS, 'pension-cases': pensionCases_enUS, pensioners: pensioners_enUS, payments: payments_enUS,
+        'disability-config': disabilityConfig_enUS,
       },
     },
     // En tests: forzar es-CU. En dev/prod: usar detector.
     lng: IS_TEST_ENV ? DEFAULT_LANGUAGE : undefined,
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: [...SUPPORTED_LANGUAGES],
-    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings', 'people', 'organizations', 'legal-basis', 'users', 'roles', 'pension-cases', 'pensioners', 'payments'],
+    ns: ['common', 'auth', 'catalogs', 'municipalities', 'agencies', 'settings', 'people', 'organizations', 'legal-basis', 'users', 'roles', 'pension-cases', 'pensioners', 'payments', 'disability-config'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,

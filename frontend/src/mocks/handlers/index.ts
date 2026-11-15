@@ -9,6 +9,8 @@ import { usersHandlers } from './users';
 import { rolesHandlers } from './roles';
 import { pensionCasesHandlers } from './pension-cases';
 import { pensionersHandlers } from './pensioners';
+import { paymentsHandlers } from './payments';
+import { disabilityConfigHandlers } from './disability-config';
 
 // Handlers MSW de todos los módulos
 export const handlers = [
@@ -23,6 +25,7 @@ export const handlers = [
   ...usersHandlers,
   ...rolesHandlers,
   ...pensionCasesHandlers,
-  ...pensionersHandlers, ...paymentsHandlers,
+  ...pensionersHandlers,
+  ...paymentsHandlers,
+  ...disabilityConfigHandlers,
 ];
-import { paymentsHandlers } from './payments';

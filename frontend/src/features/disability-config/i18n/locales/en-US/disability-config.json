@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "Disability configuration",
+    "description": "Disability rules by origin, special modifications and beneficiary rules."
+  },
+  "section": {
+    "rules": "Disability rules by origin",
+    "special": "Special modifications",
+    "beneficiary": "Beneficiary rules"
+  },
+  "rule": {
+    "title": "Disability rule",
+    "add": "Add rule",
+    "edit": "Edit rule",
+    "create_success": "Rule created successfully",
+    "create_error": "Could not create the rule",
+    "update_success": "Rule updated successfully",
+    "update_error": "Could not update the rule",
+    "delete_success": "Rule deleted successfully",
+    "delete_error": "Could not delete the rule",
+    "fields": {
+      "origin": "Origin",
+      "base_percent": "Base percent",
+      "increment_percent": "Increment percent",
+      "brackets": "Increment brackets"
+    },
+    "origin": {
+      "comun": "Common",
+      "profesional": "Professional",
+      "accidente_trabajo": "Work accident",
+      "accidente_trayecto": "Commuting accident",
+      "fallecimiento": "Death"
+    },
+    "brackets": {
+      "title": "Increment brackets by years",
+      "add": "Add bracket",
+      "min_years": "Min years",
+      "max_years": "Max years",
+      "max_years_unbounded": "No ceiling",
+      "annual_increment_percent": "Annual percent"
+    }
+  },
+  "special": {
+    "title": "Special modification",
+    "add": "Add modification",
+    "edit": "Edit modification",
+    "create_success": "Modification created successfully",
+    "create_error": "Could not create the modification",
+    "update_success": "Modification updated successfully",
+    "update_error": "Could not update the modification",
+    "delete_success": "Modification deleted successfully",
+    "delete_error": "Could not delete the modification",
+    "fields": {
+      "code": "Code",
+      "description": "Description",
+      "percent_to_apply": "Percent to apply"
+    }
+  },
+  "beneficiary": {
+    "title": "Beneficiary rule",
+    "add": "Add rule",
+    "edit": "Edit rule",
+    "create_success": "Rule created successfully",
+    "create_error": "Could not create the rule",
+    "update_success": "Rule updated successfully",
+    "update_error": "Could not update the rule",
+    "delete_success": "Rule deleted successfully",
+    "delete_error": "Could not delete the rule",
+    "fields": {
+      "min_quantity": "Min quantity",
+      "max_quantity": "Max quantity",
+      "max_quantity_unbounded": "No ceiling",
+      "percent_to_apply": "Percent to apply"
+    }
+  },
+  "empty": "No entries to show"
+}

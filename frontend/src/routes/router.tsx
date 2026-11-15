@@ -11,6 +11,7 @@ import { CatalogListPage } from '@/features/catalogs/pages/CatalogListPage';
 import { MunicipalitiesListPage } from '@/features/municipalities/pages/MunicipalitiesListPage';
 import { AgenciesListPage } from '@/features/agencies/pages/AgenciesListPage';
 import { GeneralSettingsListPage } from '@/features/settings/pages/GeneralSettingsListPage';
+import { DisabilityConfigPage } from '@/features/disability-config/pages/DisabilityConfigPage';
 import { PeopleListPage } from '@/features/people/pages/PeopleListPage';
 import { PersonDetailPage } from '@/features/people/pages/PersonDetailPage';
 import { EntitiesListPage } from '@/features/organizations/pages/EntitiesListPage';
@@ -87,6 +88,15 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute permiso="settings.view">
             <GeneralSettingsListPage />
+          </ProtectedRoute>
+        ),
+      },
+      // Configuración de invalidez (reglas por origen, modificaciones especiales, reglas de beneficiario)
+      {
+        path: 'configuracion-invalidez',
+        element: (
+          <ProtectedRoute permiso="settings.view">
+            <DisabilityConfigPage />
           </ProtectedRoute>
         ),
       },
