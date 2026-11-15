@@ -142,9 +142,9 @@
     "missing_salaries_attributable_false": "No, no imputables al trabajador",
     "missing_salaries_attributable_help": "Obligatorio cuando la serie salarial declarada es menor que el N de la estrategia del régimen. Sin déficit, déjalo en 'Sin declaración'.",
     "imputable_salary_months": "Meses de salarios imputables",
-    "imputable_salary_months_help": "Divisor EXPLÍCITO del salario promedio (Task 73/B-2). Solo declarable cuando los salarios ausentes NO son imputables. 1..180 (techo de 15 años en meses). Vacío ⇒ divisor = N efectivo × 12 (semántica histórica). El backend valida la coherencia (422 imputable_months_indeterminate, D-7307(a)).",
+    "imputable_salary_months_help": "Divisor explícito del salario promedio. Solo se declara cuando los salarios ausentes no son imputables. Entre 1 y 180 meses. Vacío: el divisor es el número efectivo de años × 12.",
     "bloque_invalidez_title": "Bloque de invalidez",
-    "bloque_invalidez_help": "Obligatorio cuando el tipo de pensión es invalidez (Task 74/Bloque C). Prohibido en las demás ramas (422, D-7408).",
+    "bloque_invalidez_help": "Obligatorio cuando el tipo de pensión es invalidez. Prohibido en las demás ramas.",
     "disease_id": "Enfermedad",
     "disease_origin": "Origen de la enfermedad",
     "disease_origin_comun": "Común",
@@ -154,7 +154,7 @@
     "requires_personal_care": "Requiere cuidado de otra persona",
     "temporary_disability": "Invalidez temporal",
     "re_assessment_date": "Fecha de re-peritaje",
-    "re_assessment_date_help": "Obligatoria solo con invalidez temporal. Debe ser estrictamente FUTURA contra el reloj (422 si es hoy o pasada — D-7409)."
+    "re_assessment_date_help": "Obligatoria solo con invalidez temporal. Debe ser una fecha futura."
   },
   "salary": {
     "title": "Registros de salario",
@@ -275,7 +275,7 @@
     "force_label": "Forzar base legal derogada",
     "force_help": "Disponible solo para Administrador. La advertencia queda en bitácora.",
     "initial_payment_amount": "Monto del pago inicial",
-    "initial_payment_amount_help": "Monto adicional que se suma a la cuantía para formar el pago inicial (D-7311). El pago inicial nace con amount = cuantía + monto introducido.",
+    "initial_payment_amount_help": "Monto adicional que se suma a la cuantía para formar el pago inicial. El pago inicial nace con monto = cuantía + monto introducido.",
     "initial_payment_description": "Descripción del pago inicial",
     "initial_payment_description_placeholder": "Pago inicial por la aprobación del expediente.",
     "initial_payment_required": "El monto y la descripción del pago inicial son obligatorios en la aprobación.",
@@ -320,7 +320,7 @@
       "age": "Edad",
       "work_years": "Años trabajados"
     },
-    "income_concept_terms_section": "Conceptos de ingreso aplicables (Task 53/S8.9)",
+    "income_concept_terms_section": "Conceptos de ingreso aplicables",
     "income_concept_terms": {
       "code": "Código",
       "name": "Nombre",
