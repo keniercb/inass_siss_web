@@ -33,7 +33,7 @@ export function DisabilityRuleFormModal({ rule, onClose }: Props) {
   const createBracketMutation = useCreateBracket();
   const deleteBracketMutation = useDeleteBracket();
 
-  const [origin, setOrigin] = useState<DisabilityOrigin>(rule?.origin as DisabilityOrigin ?? 'comun');
+  const [origin, setOrigin] = useState<DisabilityOrigin | null>(rule?.origin as DisabilityOrigin ?? null);
   // El backend devuelve base_percent e increment_percent como STRING (decimal precision).
   // El input del form es number — convertimos al cargar y al guardar.
   const [basePercent, setBasePercent] = useState<string>(rule ? String(rule.base_percent) : '50');
@@ -61,9 +61,10 @@ export function DisabilityRuleFormModal({ rule, onClose }: Props) {
   };
 
   const isPending = createRuleMutation.isPending || updateRuleMutation.isPending || createBracketMutation.isPending || deleteBracketMutation.isPending;
-  const canSubmit = !!origin && !!basePercent && !isPending;
+  const canSubmit = origin != null && !!basePercent && !isPending;
 
   const handleSubmit = async () => {
+    if (origin == null) return;
     const bp = Number(basePercent);
     const ip = Number(incrementPercent) || 0;
     try {
@@ -91,7 +92,7 @@ export function DisabilityRuleFormModal({ rule, onClose }: Props) {
         }
       } else {
         // 1. POST la regla (sin brackets)
-        const created = await createRuleMutation.mutateAsync({ origin, base_percent: bp, increment_percent: ip });
+        const created = await createRuleMutation.mutateAsync({ origin: origin!, base_percent: bp, increment_percent: ip });
         // 2. POST cada bracket con el disability_rule_id de la regla recién creada
         for (const b of brackets) {
           await createBracketMutation.mutateAsync({
@@ -113,7 +114,7 @@ export function DisabilityRuleFormModal({ rule, onClose }: Props) {
           <div>
             <label className="block text-sm font-medium mb-1">{t('rule.fields.origin')} *</label>
             <SearchSelect
-              value={origin}
+              value={origin ?? undefined}
               onChange={(v) => setOrigin(v as DisabilityOrigin)}
               options={DISABILITY_ORIGINS.map(o => ({ value: o, label: t(`rule.origin.${o}`) }))}
               placeholder={tc('actions.select')}
