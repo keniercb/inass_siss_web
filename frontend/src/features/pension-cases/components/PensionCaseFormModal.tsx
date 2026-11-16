@@ -84,10 +84,12 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
   const [collectionAgencyId, setCollectionAgencyId] = useState(pensionCase?.collection_agency_id ?? 0);
   const [bankAccount, setBankAccount] = useState(pensionCase?.bank_account ?? '');
   const [requestedAt, setRequestedAt] = useState(pensionCase?.requested_at ?? '');
-  // Task 52/S8.8: declaración de imputabilidad (null sin déficit, true/false con déficit)
-  // Estado triestado: 'unset' (null), 'true' (imputable), 'false' (no imputable)
-  const [missingSalariesAttributable, setMissingSalariesAttributable] = useState<'unset' | 'true' | 'false'>(
-    pensionCase?.missing_salaries_attributable == null ? 'unset'
+  // Declaración de imputabilidad de salarios ausentes.
+  // Estado: null = sin selección (dropdown vacío en creación), 'unset' = sin declaración
+  // (mapea a null en backend), 'true' = imputables, 'false' = no imputables.
+  const [missingSalariesAttributable, setMissingSalariesAttributable] = useState<'unset' | 'true' | 'false' | null>(
+    !isEdit ? null
+      : pensionCase?.missing_salaries_attributable == null ? 'unset'
       : pensionCase.missing_salaries_attributable ? 'true' : 'false'
   );
   // Task 73/B-2: meses de salarios imputables — divisor EXPLÍCITO del SPM.
@@ -162,8 +164,8 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
       collection_agency_type_id: collectionAgencyTypeId,
       collection_agency_id: collectionAgencyId,
       bank_account: bankAccount || null,
-      // Task 52/S8.8: solo se envía si el usuario lo declara explícitamente
-      ...(missingSalariesAttributable !== 'unset' ? { missing_salaries_attributable: missingSalariesAttributable === 'true' } : {}),
+      // Solo se envía si el usuario lo declara explícitamente (null = sin selección = omitir)
+      ...(missingSalariesAttributable != null && missingSalariesAttributable !== 'unset' ? { missing_salaries_attributable: missingSalariesAttributable === 'true' } : {}),
       // Task 73/B-2: solo se envía si la rama es 'false' (no imputable) y el usuario lo declaró.
       // Ausente ⇒ backend usa N_eff × 12 (semántica histórica). La validación cruzada la hace el backend (422).
       ...(missingSalariesAttributable === 'false' && imputableSalaryMonths !== ''
@@ -193,8 +195,8 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           pension_regime_id: pensionRegimeId,
           last_salary: Number(lastSalary) || 0,
           requested_at: requestedAt || null,
-          // Task 52/S8.8: PATCH — enviamos siempre (null limpia la declaración previa)
-          missing_salaries_attributable: missingSalariesAttributable === 'unset' ? null : missingSalariesAttributable === 'true',
+          // PATCH: si null (sin selección) no se envía; si 'unset' envía null; si true/false envía el valor
+          ...(missingSalariesAttributable != null ? { missing_salaries_attributable: missingSalariesAttributable === 'unset' ? null : missingSalariesAttributable === 'true' } : {}),
           // Task 73/B-2: PATCH — null explícito limpia el divisor; la omisión no toca el valor almacenado.
           // Solo se acepta cuando missing_salaries_attributable = false (422 en el resto, D-7307(a)).
           imputable_salary_months: missingSalariesAttributable === 'false' && imputableSalaryMonths !== ''
@@ -384,14 +386,14 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         <div className="p-3 rounded-md border border-border space-y-2">
           <div><label className="block text-sm font-medium mb-1">{t('form.missing_salaries_attributable')}</label>
             <SearchSelect
-              value={missingSalariesAttributable}
+              value={missingSalariesAttributable ?? undefined}
               onChange={(v) => handleAttributableChange(v as 'unset' | 'true' | 'false')}
               options={[
                 { value: 'unset', label: t('form.missing_salaries_attributable_unset') },
                 { value: 'true', label: t('form.missing_salaries_attributable_true') },
                 { value: 'false', label: t('form.missing_salaries_attributable_false') },
               ]}
-              placeholder={t('form.missing_salaries_attributable_unset')}
+              placeholder={tc('actions.select')}
             />
             <p className="text-xs text-muted-foreground mt-1">{t('form.missing_salaries_attributable_help')}</p>
           </div>
