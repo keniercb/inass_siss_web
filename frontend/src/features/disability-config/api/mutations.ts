@@ -6,11 +6,13 @@ import type { components } from '@/types/api';
 import type { AxiosError } from 'axios';
 import type {
   CreateDisabilityRuleInput, UpdateDisabilityRuleInput,
+  CreateBracketInput, UpdateBracketInput,
   CreateSpecialModificationInput, UpdateSpecialModificationInput,
   CreateBeneficiaryRuleInput, UpdateBeneficiaryRuleInput,
 } from '../schemas/disability-config.schema';
 
 type DisabilityRule = components['schemas']['DisabilityRule'];
+type DisabilityIncrementBracket = components['schemas']['DisabilityIncrementBracket'];
 type SpecialDisabilityModification = components['schemas']['SpecialDisabilityModification'];
 type BeneficiaryRule = components['schemas']['BeneficiaryRule'];
 
@@ -79,6 +81,75 @@ export function useDeleteDisabilityRule() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['disability-rules'] });
       toast.success(t('rule.delete_success'));
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ message?: string }>;
+      toast.error(ae.response?.data?.message ?? t('rule.delete_error'));
+    },
+  });
+}
+
+// === Brackets — gestionados via endpoint separado /disability-increment-brackets ===
+
+/** POST /disability-increment-brackets — crear tramo vinculado a una regla */
+export function useCreateBracket() {
+  const qc = useQueryClient();
+  const { t } = useTranslation('disability-config');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (input: CreateBracketInput) => {
+      const r = await http.post<ApiResponse<DisabilityIncrementBracket>>('/disability-increment-brackets', input);
+      return r.data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['disability-rules'] });
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        toast.errorDetail(t('rule.create_error'), Object.values(ae.response.data.errors).flat().join(' · '));
+        return;
+      }
+      toast.error(ae.response?.data?.message ?? t('rule.create_error'));
+    },
+  });
+}
+
+/** PATCH /disability-increment-brackets/{id} — actualizar rango o porciento del tramo */
+export function useUpdateBracket(id: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('disability-config');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (input: UpdateBracketInput) => {
+      const r = await http.patch<ApiResponse<DisabilityIncrementBracket>>(`/disability-increment-brackets/${id}`, input);
+      return r.data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['disability-rules'] });
+    },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        toast.errorDetail(t('rule.update_error'), Object.values(ae.response.data.errors).flat().join(' · '));
+        return;
+      }
+      toast.error(ae.response?.data?.message ?? t('rule.update_error'));
+    },
+  });
+}
+
+/** DELETE /disability-increment-brackets/{id} — eliminar tramo */
+export function useDeleteBracket() {
+  const qc = useQueryClient();
+  const { t } = useTranslation('disability-config');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (id: number | string) => {
+      await http.delete(`/disability-increment-brackets/${id}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['disability-rules'] });
     },
     onError: (err: unknown) => {
       const ae = err as AxiosError<{ message?: string }>;

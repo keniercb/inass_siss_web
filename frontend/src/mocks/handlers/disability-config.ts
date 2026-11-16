@@ -65,17 +65,17 @@ export const disabilityConfigHandlers = [
   }),
 
   http.post(`${API_BASE}/disability-rules`, async ({ request }) => {
-    const body = (await request.json()) as { origin?: string; base_percent?: string; increment_percent?: string; brackets?: Array<{ min_years: number; max_years: number | null; annual_increment_percent: number }> };
-    if (!body.origin || !body.base_percent || !body.increment_percent) {
-      return HttpResponse.json({ message: 'Faltan campos obligatorios.', errors: { origin: !body.origin ? ['El origen es obligatorio.'] : [], base_percent: !body.base_percent ? ['El porciento base es obligatorio.'] : [] } }, { status: 422 });
+    const body = (await request.json()) as { origin?: string; base_percent?: number; increment_percent?: number };
+    if (!body.origin || body.base_percent == null) {
+      return HttpResponse.json({ message: 'Faltan campos obligatorios.', errors: { origin: !body.origin ? ['El origen es obligatorio.'] : [], base_percent: body.base_percent == null ? ['El porciento base es obligatorio.'] : [] } }, { status: 422 });
     }
     // Unicidad de origen
     if (Array.from(rules.values()).some(r => r.origin === body.origin)) {
       return HttpResponse.json({ message: 'Ya existe una regla para ese origen.', errors: { origin: ['Ya existe una regla para ese origen.'] } }, { status: 422 });
     }
     const id = ++nextRuleId;
-    const brackets = (body.brackets ?? []).map(b => ({ id: ++nextBracketId, disability_rule_id: id, min_years: b.min_years, max_years: b.max_years, annual_increment_percent: b.annual_increment_percent }));
-    const rule = { id, origin: body.origin, base_percent: body.base_percent, increment_percent: body.increment_percent, brackets } as DisabilityRule;
+    // La regla nace SIN brackets — se añaden via /disability-increment-brackets
+    const rule = { id, origin: body.origin, base_percent: String(body.base_percent), increment_percent: String(body.increment_percent ?? 0), brackets: [] } as DisabilityRule;
     rules.set(id, rule);
     return HttpResponse.json({ data: rule }, { status: 201 });
   }),
@@ -91,12 +91,11 @@ export const disabilityConfigHandlers = [
     const id = parseInt(params.id as string, 10);
     const rule = rules.get(id);
     if (!rule) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
-    const body = (await request.json()) as { base_percent?: string; increment_percent?: string; brackets?: Array<{ min_years: number; max_years: number | null; annual_increment_percent: number }> };
+    const body = (await request.json()) as { base_percent?: number; increment_percent?: number };
     const updated = {
       ...rule,
-      ...(body.base_percent ? { base_percent: body.base_percent } : {}),
-      ...(body.increment_percent ? { increment_percent: body.increment_percent } : {}),
-      ...(body.brackets ? { brackets: body.brackets.map(b => ({ id: ++nextBracketId, disability_rule_id: id, min_years: b.min_years, max_years: b.max_years, annual_increment_percent: b.annual_increment_percent })) } : {}),
+      ...(body.base_percent != null ? { base_percent: String(body.base_percent) } : {}),
+      ...(body.increment_percent != null ? { increment_percent: String(body.increment_percent) } : {}),
     } as DisabilityRule;
     rules.set(id, updated);
     return HttpResponse.json({ data: updated });
@@ -105,8 +104,83 @@ export const disabilityConfigHandlers = [
   http.delete(`${API_BASE}/disability-rules/:id`, ({ params }) => {
     const id = parseInt(params.id as string, 10);
     if (!rules.has(id)) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    // Cascade: eliminar brackets de la regla
+    for (const [rId, r] of rules) {
+      if (rId === id) {
+        r.brackets = [];
+      }
+    }
     rules.delete(id);
     return HttpResponse.json({ message: 'Eliminado.' });
+  }),
+
+  // === Disability Increment Brackets — endpoint separado ===
+  http.get(`${API_BASE}/disability-increment-brackets`, ({ request }) => {
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') ?? '1', 10);
+    const perPage = parseInt(url.searchParams.get('per_page') ?? '15', 10);
+    // Recopilar todos los brackets de todas las reglas
+    const allBrackets: DisabilityIncrementBracket[] = [];
+    for (const r of rules.values()) {
+      allBrackets.push(...(r.brackets ?? []));
+    }
+    return HttpResponse.json(paginate(allBrackets, page, perPage));
+  }),
+
+  http.post(`${API_BASE}/disability-increment-brackets`, async ({ request }) => {
+    const body = (await request.json()) as { disability_rule_id?: number; min_years?: number; max_years?: number | null; annual_increment_percent?: number };
+    if (!body.disability_rule_id || body.min_years == null) {
+      return HttpResponse.json({ message: 'Faltan campos obligatorios.', errors: { disability_rule_id: !body.disability_rule_id ? ['La regla es obligatoria.'] : [], min_years: body.min_years == null ? ['Los años mínimos son obligatorios.'] : [] } }, { status: 422 });
+    }
+    const rule = rules.get(body.disability_rule_id);
+    if (!rule) return HttpResponse.json({ message: 'La regla no existe.' }, { status: 422 });
+    const bracketId = ++nextBracketId;
+    const bracket = { id: bracketId, disability_rule_id: body.disability_rule_id, min_years: body.min_years, max_years: body.max_years ?? null, annual_increment_percent: body.annual_increment_percent ?? 0 } as DisabilityIncrementBracket;
+    rule.brackets = [...(rule.brackets ?? []), bracket];
+    rules.set(rule.id!, rule);
+    return HttpResponse.json({ data: bracket }, { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/disability-increment-brackets/:id`, ({ params }) => {
+    const id = parseInt(params.id as string, 10);
+    for (const r of rules.values()) {
+      const bracket = (r.brackets ?? []).find(b => b.id === id);
+      if (bracket) return HttpResponse.json({ data: bracket });
+    }
+    return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+  }),
+
+  http.patch(`${API_BASE}/disability-increment-brackets/:id`, async ({ request, params }) => {
+    const id = parseInt(params.id as string, 10);
+    for (const r of rules.values()) {
+      const bracketIdx = (r.brackets ?? []).findIndex(b => b.id === id);
+      if (bracketIdx >= 0) {
+        const body = (await request.json()) as { min_years?: number; max_years?: number | null; annual_increment_percent?: number };
+        const updated = {
+          ...(r.brackets ?? [])[bracketIdx]!,
+          ...(body.min_years != null ? { min_years: body.min_years } : {}),
+          ...(body.max_years !== undefined ? { max_years: body.max_years } : {}),
+          ...(body.annual_increment_percent != null ? { annual_increment_percent: body.annual_increment_percent } : {}),
+        } as DisabilityIncrementBracket;
+        r.brackets = (r.brackets ?? []).map((b, i) => i === bracketIdx ? updated : b);
+        rules.set(r.id!, r);
+        return HttpResponse.json({ data: updated });
+      }
+    }
+    return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+  }),
+
+  http.delete(`${API_BASE}/disability-increment-brackets/:id`, ({ params }) => {
+    const id = parseInt(params.id as string, 10);
+    for (const r of rules.values()) {
+      const bracketIdx = (r.brackets ?? []).findIndex(b => b.id === id);
+      if (bracketIdx >= 0) {
+        r.brackets = (r.brackets ?? []).filter((_, i) => i !== bracketIdx);
+        rules.set(r.id!, r);
+        return HttpResponse.json({ message: 'Eliminado.' });
+      }
+    }
+    return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
   }),
 
   // === Special Disability Modifications ===
