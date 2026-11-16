@@ -28,8 +28,7 @@
       "comun": "Common",
       "profesional": "Professional",
       "accidente_trabajo": "Work accident",
-      "accidente_trayecto": "Commuting accident",
-      "fallecimiento": "Death"
+      "accidente_trayecto": "Commuting accident"
     },
     "brackets": {
       "title": "Increment brackets by years",

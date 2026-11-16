@@ -28,8 +28,7 @@
       "comun": "Común",
       "profesional": "Profesional",
       "accidente_trabajo": "Accidente de trabajo",
-      "accidente_trayecto": "Accidente de trayecto",
-      "fallecimiento": "Fallecimiento"
+      "accidente_trayecto": "Accidente de trayecto"
     },
     "brackets": {
       "title": "Tramos de incremento por años",
