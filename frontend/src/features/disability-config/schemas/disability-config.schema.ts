@@ -6,8 +6,8 @@ export type DisabilityIncrementBracket = components['schemas']['DisabilityIncrem
 export type SpecialDisabilityModification = components['schemas']['SpecialDisabilityModification'];
 export type BeneficiaryRule = components['schemas']['BeneficiaryRule'];
 
-// Los 5 orígenes de la regla de invalidez
-export const DISABILITY_ORIGINS = ['comun', 'profesional', 'accidente_trabajo', 'accidente_trayecto', 'fallecimiento'] as const;
+// Los 4 orígenes de la regla de invalidez
+export const DISABILITY_ORIGINS = ['comun', 'profesional', 'accidente_trabajo', 'accidente_trayecto'] as const;
 export type DisabilityOrigin = (typeof DISABILITY_ORIGINS)[number];
 
 // === DisabilityRule ===

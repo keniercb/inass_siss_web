@@ -26,7 +26,6 @@ const rules = new Map<number, DisabilityRule>([
   [4, { id: 4, origin: 'accidente_trayecto', base_percent: '60', increment_percent: '2', brackets: [
     { id: 8, disability_rule_id: 4, min_years: 0, max_years: 30, annual_increment_percent: 0.02 } as DisabilityIncrementBracket,
   ] } as DisabilityRule],
-  [5, { id: 5, origin: 'fallecimiento', base_percent: '50', increment_percent: '0', brackets: [] } as DisabilityRule],
 ]);
 
 // Seeds: modificaciones especiales
