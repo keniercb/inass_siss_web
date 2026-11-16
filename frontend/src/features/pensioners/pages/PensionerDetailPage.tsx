@@ -225,7 +225,7 @@ function StatusChangeModal({ currentStatus: _currentStatus, availableStatuses, t
   onClose: () => void;
   mutation: ReturnType<typeof useUpdatePensionerStatus>;
 }) {
-  const [status, setStatus] = useState<string | null>(availableStatuses.length > 0 ? availableStatuses[0]!.value : null);
+  const [status, setStatus] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const reasonTooShort = reason.length > 0 && reason.length < 10;
   const canSubmit = !!status && reason.length >= 10 && !mutation.isPending;
