@@ -1572,13 +1572,13 @@ export interface paths {
         };
         /**
          * Reglas de invalidez (paginado)
-         * @description Lista las reglas de invalidez — una por origen de la enfermedad (comun/profesional/accidente_trabajo/accidente_trayecto) más el quinto literal fallecimiento del motor de sobrevivientes (Task 76, confirmación 5.1) — con sus tramos de incremento anidados (Task 75 + Task 76, permiso settings.view). El Administrador las llena por CRUD (D-7506).
+         * @description Lista las reglas de invalidez — una por origen de la enfermedad (comun/profesional/accidente_trabajo/accidente_trayecto — el eje cerrado de la Task 83: el quinto literal fallecimiento de la Task 76 murió, la regla del sobreviviente es la del disease_origin del expediente) — con sus tramos de incremento anidados (Task 75 + Task 76, permiso settings.view). El Administrador las llena por CRUD (D-7506).
          */
         get: operations["disabilityRulesIndex"];
         put?: never;
         /**
          * Crear una regla de invalidez
-         * @description Crea la regla de un origen (Task 75 + Task 76, permiso settings.manage): el porciento base y el multiplicador de la regla — la cuantía del invalidante se multiplica por (1 + increment_percent/100). UN origen, UNA regla — un origen ya reglado responde 422 (D-7503). Los porcientos viajan en [0,100] con dos decimales (D-7504: 100.00 es el todo); increment_percent es opcional — ausente o null aterriza como 0.00, el multiplicador neutro (confirmación 5.3).
+         * @description Crea la regla de un origen (Task 75 + Task 76, permiso settings.manage): el porciento base y el multiplicador de la regla — la cuantía del invalidante se multiplica por (1 + increment_percent/100). UN origen, UNA regla — un origen ya reglado responde 422 (D-7503). Los porcientos viajan en [0,100] con dos decimales (D-7504: 100.00 es el todo); increment_percent es opcional — ausente o null aterriza como 0.00, el multiplicador neutro (confirmación 5.3). El eje es el enum cerrado de los cuatro orígenes de la enfermedad desde la Task 83 — el quinto literal fallecimiento responde 422.
          */
         post: operations["disabilityRulesStore"];
         delete?: never;
@@ -2848,16 +2848,27 @@ export interface components {
         };
         /**
          * Familiar con derecho
-         * @description Familiar con derecho del expediente (Task 80, nuevo requerimiento 2026-11-20; Task 81, nuevo requerimiento 2026-11-22): un beneficiario de la pensión con su parentezco, su punto de cobro propio y — cuando es menor de la edad de mayoría de edad de la configuración general activa — su tutor. El par expediente-beneficiario es único; la cuantía asignada nace en 0.00 (nunca viaja en el POST) y solo la escribe el reparto de la aprobación de la rama fallecimiento: cuantía del expediente × porciento de la regla de beneficiario del tamaño de la familia, repartida a partes iguales y con el tope del porciento máximo del parentezco cuando el catálogo lo configura; la cuenta de cobro viaja con la MISMA validación del grupo de cobro del expediente (exigida cuando la forma de pago del tipo de agencia es tarjeta magnetica).
+         * @description Familiar con derecho del expediente (Task 80, nuevo requerimiento 2026-11-20; Task 81, nuevo requerimiento 2026-11-22): un beneficiario de la pensión con su parentezco, su punto de cobro propio y — cuando es menor de la edad de mayoría de edad de la configuración general activa — su tutor. El par expediente-beneficiario es único; la cuantía asignada nace en 0.00 (nunca viaja en el POST) y solo la escribe el reparto de la aprobación de la rama fallecimiento: cuantía del expediente × porciento de la regla de beneficiario del tamaño de la familia, repartida a partes iguales y con el tope del porciento máximo del parentezco cuando el catálogo lo configura; la cuenta de cobro viaja con la MISMA validación del grupo de cobro del expediente (exigida cuando la forma de pago del tipo de agencia es tarjeta magnetica). Task 82 (corrección de usuario 2026-11-22): la fila viaja CON SUS DATOS — la persona COMPLETA del beneficiario y del tutor (regla de usuario 3), el parentezco con la forma del catálogo y el punto de cobro con las proyecciones del grupo de cobro del expediente — para que el front muestre a los familiares del GET del expediente sin consultas extra.
          */
         EntitledRelative: {
             /**
              * Format: int64
              * @description Entitled relative projection (FAMILIAR CON DERECHO, Task 80).
              *
-             *     The D-7410 mold: bare integer ids only — no person/catalog
-             *     projections and no eager loads; whoever needs the names consults
-             *     the registry/catalogs by the ids.
+             *     Task 82 (corrección de usuario 2026-11-22): the D-7410 mold —
+             *     bare integer ids only, "whoever needs the names consults the
+             *      * registry by the ids" — is REPEALED for this projection: the front
+             *     could not display the familiares of the case GET with ids alone.
+             *     The row now travels WITH its data, the shapes the case surface
+             *     already serves: the beneficiary and the tutor as the FULL person
+             *     projection (user rule 3, PersonResource reused so the familiar is
+             *     never a summary that drifts from the people surface), the
+             *     parentezco as the same catalog shape of beneficiary-types (its
+             *     optional maximum_percent included) and the collection point with
+             *     the SAME projections of the case's own collection group (Task 42
+             *     mold: the agency type carrying its payment form, the full agency
+             *     with geography and type). The scalar ids stay beside the
+             *     projections.
              * @example 1
              */
             id?: number;
@@ -2868,13 +2879,13 @@ export interface components {
             pension_case_id?: number;
             /**
              * Format: int64
-             * @description La persona beneficiaria (registro de personas) — solo el id (D-7410)
+             * @description La persona beneficiaria (registro de personas) — el id queda al lado de la proyección beneficiary
              * @example 12
              */
             beneficiary_person_id?: number;
             /**
              * Format: int64
-             * @description El parentezco (catálogo beneficiary-types) — su porciento máximo, cuando está configurado, tope la cuantía asignada en el reparto de la aprobación
+             * @description El parentezco (catálogo beneficiary-types) — el id queda al lado de la proyección beneficiary_type; su porciento máximo, cuando está configurado, tope la cuantía asignada en el reparto de la aprobación
              * @example 2
              */
             beneficiary_type_id?: number;
@@ -2906,6 +2917,16 @@ export interface components {
              * @example 15
              */
             tutor_person_id?: number | null;
+            /** @description Task 82 (corrección de usuario 2026-11-22): la persona beneficiaria — proyección COMPLETA (regla de usuario 3) para que el front muestre al familiar sin consultas extra; null — nunca un recurso roto — si la referencia ya no resuelve */
+            beneficiary?: components["schemas"]["Person"] | null;
+            /** @description Task 82: la persona tutora — proyección COMPLETA espejo del beneficiary; null cuando el familiar no lleva tutor */
+            tutor?: components["schemas"]["Person"] | null;
+            /** @description Task 82: el parentezco — la MISMA forma del catálogo beneficiary-types (con su maximum_percent cuando está configurado) */
+            beneficiary_type?: components["schemas"]["CatalogItem"] | null;
+            /** @description Task 82: el tipo de agencia de cobro del familiar con su payment_form — la misma forma del grupo de cobro del expediente */
+            agency_type?: components["schemas"]["CatalogItem"] | null;
+            /** @description Task 82: la agencia de cobro del familiar completa (geografía y tipo) — la misma forma del grupo de cobro del expediente */
+            agency?: components["schemas"]["Agency"] | null;
         };
         /**
          * Concepto de ingreso del expediente
@@ -3983,7 +4004,7 @@ export interface components {
         };
         /**
          * Regla de invalidez
-         * @description Task 75 (ajuste de usuario 2026-11-13): la doctrina de porcientos de un ORIGEN de la enfermedad — el eje del bloque de invalidez del expediente (Task 74). Task 76 (confirmación 5.1): el eje incluye el QUINTO literal fallecimiento — la regla del sobreviviente que el motor selecciona para un retirement_type = fallecimiento. Parte de la configuración general; la llena el Administrador por CRUD (D-7506). Los porcientos son DECIMAL(5,2) en [0,100] (D-7504: convención del porciento declarado — 100.00 es el todo).
+         * @description Task 75 (ajuste de usuario 2026-11-13): la doctrina de porcientos de un ORIGEN de la enfermedad — el eje del bloque de invalidez del expediente (Task 74). Task 83 (corrección de usuario 2026-11-23): el eje es el enum cerrado de los CUATRO orígenes de la enfermedad — el quinto literal fallecimiento de la Task 76 murió (la regla del sobreviviente es la regla del disease_origin del expediente en ambas ramas). Parte de la configuración general; la llena el Administrador por CRUD (D-7506). Los porcientos son DECIMAL(5,2) en [0,100] (D-7504: convención del porciento declarado — 100.00 es el todo).
          */
         DisabilityRule: {
             /**
@@ -3992,11 +4013,11 @@ export interface components {
              */
             id: number;
             /**
-             * @description El origen de la enfermedad (literales del enum DiseaseOrigin de la Task 74) o el quinto literal fallecimiento del motor de sobrevivientes (Task 76) — natural key ÚNICA e inmutable tras el alta: un origen, una regla (D-7503)
+             * @description El origen de la enfermedad (literales del enum DiseaseOrigin de la Task 74) — el eje cerrado de la Task 83 (el quinto literal fallecimiento de la Task 76 murió) — natural key ÚNICA e inmutable tras el alta: un origen, una regla (D-7503)
              * @example accidente_trabajo
              * @enum {string}
              */
-            origin: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | "fallecimiento";
+            origin: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto";
             /**
              * @description El porciento base de la pensión de invalidez del origen (en [0,100])
              * @example 100.00
@@ -9992,7 +10013,7 @@ export interface operations {
                      * @example comun
                      * @enum {string}
                      */
-                    origin: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto" | "fallecimiento";
+                    origin: "comun" | "profesional" | "accidente_trabajo" | "accidente_trayecto";
                     /**
                      * Format: double
                      * @description Porciento base del origen (en [0,100])
