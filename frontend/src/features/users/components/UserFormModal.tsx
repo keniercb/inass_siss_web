@@ -113,15 +113,15 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">{t('form.name')} *</label>
-            <Input type="text" error={!!form.formState.errors.name} {...form.register('name' as never)} />
+            <Input type="text" autoComplete="name" error={!!form.formState.errors.name} {...form.register('name' as never)} />
             {form.formState.errors.name && <p className="text-xs text-destructive mt-1">{String(form.formState.errors.name.message)}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('form.email')} {!isEdit && <span className="text-destructive">*</span>}</label>
             {!isEdit ? (
-              <Input type="email" error={!!(form.formState.errors as Record<string, unknown>).email} {...form.register('email' as never)} />
+              <Input type="email" autoComplete="email" error={!!(form.formState.errors as Record<string, unknown>).email} {...form.register('email' as never)} />
             ) : (
-              <Input type="email" value={user?.email ?? ''} disabled />
+              <Input type="email" autoComplete="email" value={user?.email ?? ''} disabled />
             )}
             {!isEdit ? (
               (form.formState.errors as Record<string, { message?: string }>).email && <p className="text-xs text-destructive mt-1">{String((form.formState.errors as Record<string, { message?: string }>).email?.message)}</p>

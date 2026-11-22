@@ -86,17 +86,17 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
         {/* Nombre denominativo (full width) */}
         <div>
           <label className="block text-sm font-medium mb-1">{t('entities.form.name')} *</label>
-          <Input type="text" placeholder="Empresa Nacional de Servicios Técnicos" error={!!form.formState.errors.name} {...form.register('name')} />
+          <Input type="text" autoComplete="organization" placeholder="Empresa Nacional de Servicios Técnicos" error={!!form.formState.errors.name} {...form.register('name')} />
           {form.formState.errors.name && <p className="text-xs text-destructive mt-1">{String(form.formState.errors.name.message)}</p>}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">{t('entities.form.code')} *</label>
-            <Input type="text" disabled={isEdit} error={!!form.formState.errors.code} {...form.register('code')} />
+            <Input type="text" autoComplete="off" disabled={isEdit} error={!!form.formState.errors.code} {...form.register('code')} />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('entities.form.tax_id_number')} *</label>
-            <Input type="text" disabled={isEdit} error={!!form.formState.errors.tax_id_number} {...form.register('tax_id_number')} />
+            <Input type="text" autoComplete="off" disabled={isEdit} error={!!form.formState.errors.tax_id_number} {...form.register('tax_id_number')} />
           </div>
         </div>
         {/* Organismo + Tipo de entidad (búsqueda con crear nuevo) + Provincia */}
@@ -148,11 +148,11 @@ export function EntityFormModal({ entity, onClose }: EntityFormModalProps) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('entities.form.address')} *</label>
-            <Input type="text" error={!!form.formState.errors.address} {...form.register('address')} />
+            <Input type="text" autoComplete="street-address" error={!!form.formState.errors.address} {...form.register('address')} />
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <div><label className="block text-sm font-medium mb-1">{t('entities.form.phone')}</label><Input type="text" {...form.register('phone')} /></div>
+          <div><label className="block text-sm font-medium mb-1">{t('entities.form.phone')}</label><Input type="text" autoComplete="tel" {...form.register('phone')} /></div>
           <div><label className="block text-sm font-medium mb-1">{t('entities.form.fax')}</label><Input type="text" {...form.register('fax')} /></div>
           <div><label className="block text-sm font-medium mb-1">{t('entities.form.email')}</label><Input type="email" error={!!form.formState.errors.email} {...form.register('email')} /></div>
         </div>

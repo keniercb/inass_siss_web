@@ -237,7 +237,7 @@ export const pensionersHandlers = [
     }
     const items = initialPayments.get(id) ?? [];
     // Ordenar por created_at DESC (más recientes primero)
-    const sorted = [...items].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+    const sorted = items.toSorted((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
     return HttpResponse.json({ data: sorted });
   }),
 ];

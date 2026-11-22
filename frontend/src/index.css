@@ -57,8 +57,20 @@
   .badge-approved     { @apply bg-emerald-100 text-emerald-800; }
   .badge-rejected     { @apply bg-red-100 text-red-800; }
 
-  .app-layout__main::-webkit-scrollbar { width: 8px; }
-  .app-layout__main::-webkit-scrollbar-track { background: transparent; }
-  .app-layout__main::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-  .app-layout__main::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  /* Standard scrollbar styling (Baseline since 2024-12) */
+  .app-layout__main {
+    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-width: thin;
+  }
+
+  /* Legacy fallback for browsers without scrollbar-color support */
+  @supports not (scrollbar-color: auto) {
+    .app-layout__main {
+      scrollbar-width: auto;
+    }
+    .app-layout__main::-webkit-scrollbar { width: 8px; }
+    .app-layout__main::-webkit-scrollbar-track { background: transparent; }
+    .app-layout__main::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .app-layout__main::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  }
 }
