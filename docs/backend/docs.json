@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.40.0"
+        "version": "1.41.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -10167,7 +10167,7 @@
                     "Settings"
                 ],
                 "summary": "Reglas de invalidez (paginado)",
-                "description": "Lista las reglas de invalidez — una por origen de la enfermedad (comun/profesional/accidente_trabajo/accidente_trayecto) más el quinto literal fallecimiento del motor de sobrevivientes (Task 76, confirmación 5.1) — con sus tramos de incremento anidados (Task 75 + Task 76, permiso settings.view). El Administrador las llena por CRUD (D-7506).",
+                "description": "Lista las reglas de invalidez — una por origen de la enfermedad (comun/profesional/accidente_trabajo/accidente_trayecto — el eje cerrado de la Task 83: el quinto literal fallecimiento de la Task 76 murió, la regla del sobreviviente es la del disease_origin del expediente) — con sus tramos de incremento anidados (Task 75 + Task 76, permiso settings.view). El Administrador las llena por CRUD (D-7506).",
                 "operationId": "disabilityRulesIndex",
                 "parameters": [
                     {
@@ -10248,7 +10248,7 @@
                     "Settings"
                 ],
                 "summary": "Crear una regla de invalidez",
-                "description": "Crea la regla de un origen (Task 75 + Task 76, permiso settings.manage): el porciento base y el multiplicador de la regla — la cuantía del invalidante se multiplica por (1 + increment_percent/100). UN origen, UNA regla — un origen ya reglado responde 422 (D-7503). Los porcientos viajan en [0,100] con dos decimales (D-7504: 100.00 es el todo); increment_percent es opcional — ausente o null aterriza como 0.00, el multiplicador neutro (confirmación 5.3).",
+                "description": "Crea la regla de un origen (Task 75 + Task 76, permiso settings.manage): el porciento base y el multiplicador de la regla — la cuantía del invalidante se multiplica por (1 + increment_percent/100). UN origen, UNA regla — un origen ya reglado responde 422 (D-7503). Los porcientos viajan en [0,100] con dos decimales (D-7504: 100.00 es el todo); increment_percent es opcional — ausente o null aterriza como 0.00, el multiplicador neutro (confirmación 5.3). El eje es el enum cerrado de los cuatro orígenes de la enfermedad desde la Task 83 — el quinto literal fallecimiento responde 422.",
                 "operationId": "disabilityRulesStore",
                 "requestBody": {
                     "required": true,
@@ -10267,8 +10267,7 @@
                                             "comun",
                                             "profesional",
                                             "accidente_trabajo",
-                                            "accidente_trayecto",
-                                            "fallecimiento"
+                                            "accidente_trayecto"
                                         ]
                                     },
                                     "base_percent": {
@@ -14406,7 +14405,7 @@
             },
             "DisabilityRule": {
                 "title": "Regla de invalidez",
-                "description": "Task 75 (ajuste de usuario 2026-11-13): la doctrina de porcientos de un ORIGEN de la enfermedad — el eje del bloque de invalidez del expediente (Task 74). Task 76 (confirmación 5.1): el eje incluye el QUINTO literal fallecimiento — la regla del sobreviviente que el motor selecciona para un retirement_type = fallecimiento. Parte de la configuración general; la llena el Administrador por CRUD (D-7506). Los porcientos son DECIMAL(5,2) en [0,100] (D-7504: convención del porciento declarado — 100.00 es el todo).",
+                "description": "Task 75 (ajuste de usuario 2026-11-13): la doctrina de porcientos de un ORIGEN de la enfermedad — el eje del bloque de invalidez del expediente (Task 74). Task 83 (corrección de usuario 2026-11-23): el eje es el enum cerrado de los CUATRO orígenes de la enfermedad — el quinto literal fallecimiento de la Task 76 murió (la regla del sobreviviente es la regla del disease_origin del expediente en ambas ramas). Parte de la configuración general; la llena el Administrador por CRUD (D-7506). Los porcientos son DECIMAL(5,2) en [0,100] (D-7504: convención del porciento declarado — 100.00 es el todo).",
                 "required": [
                     "id",
                     "origin",
@@ -14421,15 +14420,14 @@
                         "example": 1
                     },
                     "origin": {
-                        "description": "El origen de la enfermedad (literales del enum DiseaseOrigin de la Task 74) o el quinto literal fallecimiento del motor de sobrevivientes (Task 76) — natural key ÚNICA e inmutable tras el alta: un origen, una regla (D-7503)",
+                        "description": "El origen de la enfermedad (literales del enum DiseaseOrigin de la Task 74) — el eje cerrado de la Task 83 (el quinto literal fallecimiento de la Task 76 murió) — natural key ÚNICA e inmutable tras el alta: un origen, una regla (D-7503)",
                         "type": "string",
                         "example": "accidente_trabajo",
                         "enum": [
                             "comun",
                             "profesional",
                             "accidente_trabajo",
-                            "accidente_trayecto",
-                            "fallecimiento"
+                            "accidente_trayecto"
                         ]
                     },
                     "base_percent": {
