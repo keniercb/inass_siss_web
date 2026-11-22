@@ -65,7 +65,7 @@ export function OfficesListPage() {
         {canManage && <Button onClick={() => { setEditOffice(null); setFormOpen(true); }}><Plus className="w-4 h-4" />{t('offices.list.new')}</Button>}
       </div>
       <div className="bg-card rounded-lg border border-border p-4 mb-4">
-        <div className="relative flex-1"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input type="text" placeholder={t('offices.list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" /></div>
+        <div className="relative flex-1"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input type="text" autoComplete="off" placeholder={t('offices.list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" /></div>
       </div>
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <table className="w-full text-sm">

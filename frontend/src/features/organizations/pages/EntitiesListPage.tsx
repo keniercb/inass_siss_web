@@ -61,7 +61,7 @@ export function EntitiesListPage() {
       <div className="bg-card rounded-lg border border-border p-4 mb-4">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input type="text" placeholder={t('entities.list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" />
+          <Input type="text" autoComplete="off" placeholder={t('entities.list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" />
         </div>
       </div>
       <div className="bg-card rounded-lg border border-border overflow-hidden">

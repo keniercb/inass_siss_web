@@ -76,7 +76,7 @@ export function LegalBasisListPage() {
         {canManage && <Button onClick={() => { setEditItem(null); setFormOpen(true); }}><Plus className="w-4 h-4" />{t('list.new')}</Button>}
       </div>
       <div className="bg-card rounded-lg border border-border p-4 mb-4 flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[240px]"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input type="text" placeholder={t('list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" /></div>
+        <div className="relative flex-1 min-w-[240px]"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input type="text" autoComplete="off" placeholder={t('list.search_placeholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9" /></div>
         <div className="w-48">
           <SearchSelect
             value={status || undefined}

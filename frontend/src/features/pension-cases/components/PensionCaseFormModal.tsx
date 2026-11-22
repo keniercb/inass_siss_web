@@ -353,7 +353,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         <div className="border-t border-border pt-4 space-y-4">
           <h3 className="text-sm font-semibold text-foreground mb-3">{t('form.residence_section')}</h3>
           <div><label className="block text-sm font-medium mb-1">{t('form.current_address')} *</label>
-            <Input type="text" placeholder="Calle 8 #10 entre 5 y 7, Playa" value={currentAddress} onChange={(e) => setCurrentAddress(e.target.value)} /></div>
+            <Input type="text" autoComplete="street-address" placeholder="Calle 8 #10 entre 5 y 7, Playa" value={currentAddress} onChange={(e) => setCurrentAddress(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-sm font-medium mb-1">{t('form.residence_province_id')} *</label>
               <SearchSelect
@@ -398,7 +398,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
               /></div>
           </div>
           <div><label className="block text-sm font-medium mb-1">{t('form.bank_account')}</label>
-            <Input type="text" placeholder="01234567890123456789012345678" maxLength={34} value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} /></div>
+            <Input type="text" autoComplete="off" placeholder="01234567890123456789012345678" maxLength={34} value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} /></div>
         </div>
         {/* Task 52/S8.8: declaración de imputabilidad de salarios ausentes */}
         <div className="p-3 rounded-md border border-border space-y-2">
@@ -561,7 +561,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         )}
         <div className="grid grid-cols-2 gap-3">
           <div><label className="block text-sm font-medium mb-1">{t('form.phone')}</label>
-            <Input type="text" placeholder="+53 5 555 1234" maxLength={30} disabled={isEdit} value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+            <Input type="text" autoComplete="tel" placeholder="+53 5 555 1234" maxLength={30} disabled={isEdit} value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1">{t('form.popular_council')}</label>
             <Input type="text" placeholder="Consejo Popular Playa" maxLength={120} disabled={isEdit} value={popularCouncil} onChange={(e) => setPopularCouncil(e.target.value)} /></div>
         </div>
