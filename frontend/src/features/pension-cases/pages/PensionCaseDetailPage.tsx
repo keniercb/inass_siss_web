@@ -6,7 +6,7 @@ import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, 
 import { usePermiso } from '@/hooks/use-permiso';
 import { usePensionCase, usePensionCaseHistory, useCaseCalculation, useCalculationPreview } from '../api/queries';
 import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle, useAddIncomeConceptRecord, useRemoveIncomeConceptRecord, useRemoveEntitledRelative } from '../api/mutations';
-import { CASE_STATUS_META, type CaseStatus, type PensionCase, type EntitledRelative, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput, type IncomeConceptRecordInput } from '../schemas/pension-case.schema';
+import { CASE_STATUS_META, type CaseStatus, type PensionCase, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput, type IncomeConceptRecordInput } from '../schemas/pension-case.schema';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
@@ -439,24 +439,18 @@ function EntitledRelativesTab({ pensionCase, caseId, canEdit, onAdd, t }: {
             <tr><td colSpan={canEdit ? 6 : 5} className="px-4 py-8 text-center text-muted-foreground">{t('entitled_relative.empty')}</td></tr>
           ) : (
             relatives.map((r) => {
-              const er = r as EntitledRelative & {
-                beneficiary_person?: { first_surname?: string | null; first_name?: string | null };
-                tutor?: { first_surname?: string | null; first_name?: string | null };
-                beneficiary_type?: { name?: string };
-                agency?: { name?: string };
-              };
-              const personName = er.beneficiary_person ? [er.beneficiary_person.first_surname, er.beneficiary_person.first_name].filter(Boolean).join(' ') : '—';
-              const tutorName = er.tutor ? [er.tutor.first_surname, er.tutor.first_name].filter(Boolean).join(' ') : null;
+              const personName = r.beneficiary ? [r.beneficiary.first_surname, r.beneficiary.first_name].filter(Boolean).join(' ') : '—';
+              const tutorName = r.tutor ? [r.tutor.first_surname, r.tutor.first_name].filter(Boolean).join(' ') : null;
               return (
-                <tr key={er.id} className="hover:bg-muted/50 transition-colors">
+                <tr key={r.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3">{personName}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{er.beneficiary_type?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{er.agency?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-right font-mono">{er.assigned_amount != null ? formatCUP(Number(er.assigned_amount)) : '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{r.beneficiary_type?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{r.agency?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-right font-mono">{r.assigned_amount != null ? formatCUP(Number(r.assigned_amount)) : '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{tutorName ?? '—'}</td>
                   {canEdit && (
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => removeMutation.mutate(er.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => removeMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
                     </td>
                   )}
                 </tr>
