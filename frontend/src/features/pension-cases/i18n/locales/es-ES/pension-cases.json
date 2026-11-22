@@ -97,7 +97,9 @@
       "re_assessment_date": "Fecha de re-peritaje",
       "death_date": "Fecha de fallecimiento",
       "death_certificate": "Certificado de defunción",
-      "death_certificate_date": "Fecha del certificado"
+      "death_certificate_date": "Fecha del certificado",
+      "death_cause": "Causa",
+      "death_origin_type": "Tipo de fallecimiento"
     },
     "section": {
       "case_data": "Datos del expediente",
@@ -164,7 +166,9 @@
     "death_block_help": "Obligatorio cuando el tipo de pensión es fallecimiento.",
     "death_date": "Fecha de fallecimiento",
     "death_certificate": "Certificado de defunción",
-    "death_certificate_date": "Fecha del certificado"
+    "death_certificate_date": "Fecha del certificado",
+    "death_cause": "Causa",
+    "death_origin_type": "Tipo de fallecimiento"
   },
   "salary": {
     "title": "Registros de salario",

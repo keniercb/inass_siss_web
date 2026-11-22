@@ -187,7 +187,10 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         re_assessment_date: temporaryDisability ? (reAssessmentDate || null) : null,
       } : {}),
       // Bloque de defunción: solo se envía si el pension_type es fallecimiento.
+      // Incluye disease_origin (Tipo de fallecimiento) y disease_id (Causa).
       ...(isFallecimientoCase ? {
+        disease_id: diseaseId,
+        disease_origin: diseaseOrigin || null,
         death_date: deathDate || null,
         death_certificate: deathCertificate || null,
         death_certificate_date: deathCertificateDate || null,
@@ -212,15 +215,15 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           imputable_salary_months: missingSalariesAttributable === 'false' && imputableSalaryMonths !== ''
             ? Number(imputableSalaryMonths)
             : null,
-          // Task 74/Bloque C: PATCH del bloque de invalidez. Si el pension_type resultante es
-          // invalidez, enviamos los campos; si no lo es, enviamos null para limpiarlos (D-7407).
-          disease_id: isInvalidezCase ? diseaseId : null,
-          disease_origin: isInvalidezCase ? (diseaseOrigin || null) : null,
+          // disease_id y disease_origin se envían para invalidez O fallecimiento (no ambos a la vez).
+          // Si el pension_type resultante es de uno de esos dos tipos, enviamos los valores;
+          // si no lo es, enviamos null para limpiarlos.
+          disease_id: (isInvalidezCase || isFallecimientoCase) ? diseaseId : null,
+          disease_origin: (isInvalidezCase || isFallecimientoCase) ? (diseaseOrigin || null) : null,
           requires_personal_care: isInvalidezCase ? requiresPersonalCare : null,
           temporary_disability: isInvalidezCase ? temporaryDisability : null,
           re_assessment_date: isInvalidezCase && temporaryDisability ? (reAssessmentDate || null) : null,
-          // Bloque de defunción: PATCH. Si el pension_type resultante es fallecimiento, enviamos
-          // los campos; si no lo es, enviamos null para limpiarlos.
+          // Bloque de defunción: solo fallecimiento.
           death_date: isFallecimientoCase ? (deathDate || null) : null,
           death_certificate: isFallecimientoCase ? (deathCertificate || null) : null,
           death_certificate_date: isFallecimientoCase ? (deathCertificateDate || null) : null,
@@ -483,11 +486,40 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
             )}
           </div>
         )}
-        {/* Bloque de defunción: visible solo cuando el pension_type es fallecimiento. */}
+        {/* Bloque de defunción: visible solo cuando el pension_type es fallecimiento.
+            Incluye disease_origin (Tipo de fallecimiento) y disease_id (Causa) —
+            reutiliza el estado del bloque de invalidez ya que solo uno de los dos
+            bloques es visible a la vez (invalidez OR fallecimiento, nunca ambos). */}
         {isFallecimientoCase && (
           <div className="p-3 rounded-md border border-primary/40 bg-primary/5 space-y-3">
             <h3 className="text-sm font-semibold text-foreground">{t('form.death_block_title')}</h3>
             <p className="text-xs text-muted-foreground">{t('form.death_block_help')}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <CatalogSearchSelect
+                type="diseases"
+                label={t('form.death_cause')}
+                placeholder={tc('actions.search') + '…'}
+                required
+                initialDisplayValue={(pensionCase as { disease_name?: string })?.disease_name}
+                initialSelectedId={pensionCase?.disease_id}
+                onSelect={(item) => setDiseaseId(item.id)}
+              />
+              <div>
+                <label className="block text-sm font-medium mb-1">{t('form.death_origin_type')} *</label>
+                <SearchSelect
+                  value={diseaseOrigin || undefined}
+                  onChange={(v) => setDiseaseOrigin(v as 'comun' | 'profesional' | 'accidente_trabajo' | 'accidente_trayecto')}
+                  options={[
+                    { value: 'comun', label: t('form.disease_origin_comun') },
+                    { value: 'profesional', label: t('form.disease_origin_profesional') },
+                    { value: 'accidente_trabajo', label: t('form.disease_origin_accidente_trabajo') },
+                    { value: 'accidente_trayecto', label: t('form.disease_origin_accidente_trayecto') },
+                  ]}
+                  placeholder={tc('actions.select')}
+                  required
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">{t('form.death_date')} *</label>

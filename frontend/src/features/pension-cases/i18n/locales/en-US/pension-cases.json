@@ -97,7 +97,9 @@
       "re_assessment_date": "Re-assessment date",
       "death_date": "Death date",
       "death_certificate": "Death certificate",
-      "death_certificate_date": "Certificate date"
+      "death_certificate_date": "Certificate date",
+      "death_cause": "Cause",
+      "death_origin_type": "Death type"
     },
     "section": {
       "case_data": "Case data",
@@ -164,7 +166,9 @@
     "death_block_help": "Required when the pension type is death.",
     "death_date": "Death date",
     "death_certificate": "Death certificate",
-    "death_certificate_date": "Certificate date"
+    "death_certificate_date": "Certificate date",
+    "death_cause": "Cause",
+    "death_origin_type": "Death type"
   },
   "salary": {
     "title": "Salary records",
