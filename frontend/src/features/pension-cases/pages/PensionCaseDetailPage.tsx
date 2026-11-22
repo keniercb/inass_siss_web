@@ -334,6 +334,12 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.death_block')}</h3>
           <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <Field label={t('detail.fields.death_cause')} value={lookup(diseasesData, pensionCase.disease_id)} />
+            <Field label={t('detail.fields.death_origin_type')} value={
+              pensionCase.disease_origin
+                ? t(`detail.fields.disease_origin_${pensionCase.disease_origin}`) ?? t(`form.disease_origin_${pensionCase.disease_origin}`)
+                : '—'
+            } />
             <Field label={t('detail.fields.death_date')} value={pensionCase.death_date ? formatDate(pensionCase.death_date) : '—'} mono />
             <Field label={t('detail.fields.death_certificate_date')} value={pensionCase.death_certificate_date ? formatDate(pensionCase.death_certificate_date) : '—'} mono />
             <Field label={t('detail.fields.death_certificate')} value={pensionCase.death_certificate ?? '—'} mono fullWidth />
