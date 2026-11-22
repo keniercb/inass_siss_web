@@ -73,7 +73,9 @@
     "average_years_count": "Average N",
     "average_years_count_help": "Own N of the average strategy (1–15, ≤ gate). With 'all' it must equal the gate",
     "average_strategy": "Average salary strategy",
-    "average_strategy_help": "Best N / Last N / All (divisor N×12)"
+    "average_strategy_help": "Best N / Last N / All (divisor N×12)",
+    "maximum_percent": "Maximum percent",
+    "maximum_percent_help": "Cap on the kinship percent (0-1, e.g. 0.5 = 50%)"
   },
   "errors": {
     "rate_limited": "The server is processing too many requests. Retrying…"

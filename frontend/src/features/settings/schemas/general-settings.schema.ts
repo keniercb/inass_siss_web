@@ -20,6 +20,7 @@ export const createSettingSchema = z.object({
   payment_day: z.coerce.number().int().min(1, 'Debe estar entre 1 y 30').max(30, 'Debe estar entre 1 y 30'),
   month_to_provitional: z.coerce.number().int().min(1, 'Debe ser > 0'),
   month_to_expired: z.coerce.number().int().min(1, 'Debe ser > 0'),
+  age_of_majority: z.coerce.number().int().min(1, 'Debe ser > 0').max(120, 'Debe ser ≤ 120'),
 });
 
 // Refinamiento: maximum_pension >= minimum_pension

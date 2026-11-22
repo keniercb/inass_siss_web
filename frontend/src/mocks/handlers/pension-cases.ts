@@ -653,4 +653,42 @@ export const pensionCasesHandlers = [
     } as unknown as CalculationPreview;
     return HttpResponse.json({ data: preview });
   }),
+
+  // === Entitled Relatives (familiares con derecho) ===
+  // POST /pension-cases/{id}/entitled-relatives — añadir familiar
+  http.post(`${API_BASE}/pension-cases/:id/entitled-relatives`, async ({ request, params }) => {
+    const caseId = parseInt(params.id as string, 10);
+    const c = cases.get(caseId);
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    const body = (await request.json()) as { beneficiary_person_id?: number; beneficiary_type_id?: number; agency_type_id?: number; agency_id?: number; bank_account?: string; tutor_person_id?: number };
+    if (!body.beneficiary_person_id || !body.beneficiary_type_id || !body.agency_type_id || !body.agency_id) {
+      return HttpResponse.json({ message: 'Faltan campos obligatorios.', errors: {} }, { status: 422 });
+    }
+    const newId = (c.entitled_relatives ?? []).length + 1;
+    const relative = {
+      id: newId,
+      pension_case_id: caseId,
+      beneficiary_person_id: body.beneficiary_person_id,
+      beneficiary_type_id: body.beneficiary_type_id,
+      assigned_amount: '0.00',
+      agency_type_id: body.agency_type_id,
+      agency_id: body.agency_id,
+      bank_account: body.bank_account ?? null,
+      tutor_person_id: body.tutor_person_id ?? null,
+    } as never;
+    c.entitled_relatives = [...(c.entitled_relatives ?? []), relative];
+    cases.set(caseId, c);
+    return HttpResponse.json({ data: relative }, { status: 201 });
+  }),
+
+  // DELETE /pension-cases/{id}/entitled-relatives/{record} — eliminar familiar
+  http.delete(`${API_BASE}/pension-cases/:id/entitled-relatives/:record`, ({ params }) => {
+    const caseId = parseInt(params.id as string, 10);
+    const recordId = parseInt(params.record as string, 10);
+    const c = cases.get(caseId);
+    if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    c.entitled_relatives = (c.entitled_relatives ?? []).filter((r) => (r as { id?: number }).id !== recordId);
+    cases.set(caseId, c);
+    return HttpResponse.json({ message: 'Eliminado.' });
+  }),
 ];

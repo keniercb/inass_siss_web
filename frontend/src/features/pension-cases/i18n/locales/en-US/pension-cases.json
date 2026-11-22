@@ -40,7 +40,8 @@
       "summary": "Summary",
       "subrecords": "Subrecords",
       "history": "History",
-      "calculation": "Calculation"
+      "calculation": "Calculation",
+      "relatives": "Relatives"
     },
     "tabs_empty": {
       "history": "No history",
@@ -93,14 +94,18 @@
       "disease_origin_accidente_trayecto": "Commuting accident",
       "requires_personal_care": "Requires personal care",
       "temporary_disability": "Temporary disability",
-      "re_assessment_date": "Re-assessment date"
+      "re_assessment_date": "Re-assessment date",
+      "death_date": "Death date",
+      "death_certificate": "Death certificate",
+      "death_certificate_date": "Certificate date"
     },
     "section": {
       "case_data": "Case data",
       "rebel_army": "Rebel Army",
       "decision": "Decision",
       "residence": "Residence and collection",
-      "invalidez_block": "Disability block"
+      "invalidez_block": "Disability block",
+      "death_block": "Death block"
     }
   },
   "form": {
@@ -154,7 +159,12 @@
     "requires_personal_care": "Requires personal care",
     "temporary_disability": "Temporary disability",
     "re_assessment_date": "Re-assessment date",
-    "re_assessment_date_help": "Required only with temporary disability. Must be a future date."
+    "re_assessment_date_help": "Required only with temporary disability. Must be a future date.",
+    "death_block_title": "Death block",
+    "death_block_help": "Required when the pension type is death.",
+    "death_date": "Death date",
+    "death_certificate": "Death certificate",
+    "death_certificate_date": "Certificate date"
   },
   "salary": {
     "title": "Salary records",
@@ -314,7 +324,9 @@
       "internationalist_applied": "Internationalist increment applied",
       "minimum_increment_applied": "Min. pension increment applied",
       "capped_by_maximum": "Capped by maximum",
-      "above_maximum": "Above maximum"
+      "above_maximum": "Above maximum",
+      "entitled_relatives_count": "Entitled relatives",
+      "individual_amount": "Individual amount"
     },
     "criteria": {
       "age": "Age",
@@ -353,5 +365,28 @@
     "no_persistence_warning": "This preview does NOT persist: the engine opens no write transaction and does not modify computed_amount.",
     "error": "Could not run the simulation",
     "error_409": "The preview is only available in Submitted or Under review state"
+  },
+  "entitled_relative": {
+    "title": "Entitled relatives",
+    "description": "Beneficiaries of the pension case.",
+    "add": "Add relative",
+    "empty": "No entitled relatives",
+    "beneficiary_person": "Beneficiary",
+    "beneficiary_type": "Beneficiary type",
+    "agency": "Collection agency",
+    "assigned_amount": "Assigned amount",
+    "tutor": "Tutor",
+    "beneficiary_person_id": "Beneficiary person",
+    "beneficiary_type_id": "Beneficiary type",
+    "agency_type_id": "Collection agency type",
+    "agency_id": "Collection agency",
+    "bank_account": "Bank account",
+    "tutor_person_id": "Tutor",
+    "tutor_help": "Required when the beneficiary is below the age of majority.",
+    "search_person": "Search beneficiary person…",
+    "add_success": "Relative added successfully",
+    "add_error": "Could not add the relative",
+    "remove_success": "Relative removed successfully",
+    "remove_error": "Could not remove the relative"
   }
 }

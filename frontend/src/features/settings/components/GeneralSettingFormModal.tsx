@@ -27,6 +27,7 @@ const SETTING_FIELDS = [
   { name: 'payment_day', type: 'number', labelKey: 'form.payment_day', helpKey: 'form.payment_day_help', required: true, min: 1, max: 30 },
   { name: 'month_to_provitional', type: 'number', labelKey: 'form.month_to_provitional', helpKey: 'form.month_to_provitional_help', required: true, min: 1 },
   { name: 'month_to_expired', type: 'number', labelKey: 'form.month_to_expired', helpKey: 'form.month_to_expired_help', required: true, min: 1 },
+  { name: 'age_of_majority', type: 'number', labelKey: 'form.age_of_majority', helpKey: 'form.age_of_majority_help', required: true, min: 1, max: 120 },
 ] as const;
 
 export function GeneralSettingFormModal({ onClose }: GeneralSettingFormModalProps) {
@@ -48,6 +49,7 @@ export function GeneralSettingFormModal({ onClose }: GeneralSettingFormModalProp
       payment_day: 15,
       month_to_provitional: 1,
       month_to_expired: 1,
+      age_of_majority: 18,
     },
   });
 

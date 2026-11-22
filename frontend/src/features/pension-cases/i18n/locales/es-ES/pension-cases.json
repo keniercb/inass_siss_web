@@ -40,7 +40,8 @@
       "summary": "Resumen",
       "subrecords": "Subregistros",
       "history": "Historial",
-      "calculation": "Cálculo"
+      "calculation": "Cálculo",
+      "relatives": "Familiares"
     },
     "tabs_empty": {
       "history": "Sin historial",
@@ -93,14 +94,18 @@
       "disease_origin_accidente_trayecto": "Accidente de trayecto",
       "requires_personal_care": "Requiere cuidado personal",
       "temporary_disability": "Invalidez temporal",
-      "re_assessment_date": "Fecha de re-peritaje"
+      "re_assessment_date": "Fecha de re-peritaje",
+      "death_date": "Fecha de fallecimiento",
+      "death_certificate": "Certificado de defunción",
+      "death_certificate_date": "Fecha del certificado"
     },
     "section": {
       "case_data": "Datos del expediente",
       "rebel_army": "Ejército Rebelde",
       "decision": "Decisión",
       "residence": "Domicilio y cobro",
-      "invalidez_block": "Bloque de invalidez"
+      "invalidez_block": "Bloque de invalidez",
+      "death_block": "Bloque de defunción"
     }
   },
   "form": {
@@ -154,7 +159,12 @@
     "requires_personal_care": "Requiere cuidado de otra persona",
     "temporary_disability": "Invalidez temporal",
     "re_assessment_date": "Fecha de re-peritaje",
-    "re_assessment_date_help": "Obligatoria solo con invalidez temporal. Debe ser una fecha futura."
+    "re_assessment_date_help": "Obligatoria solo con invalidez temporal. Debe ser una fecha futura.",
+    "death_block_title": "Bloque de defunción",
+    "death_block_help": "Obligatorio cuando el tipo de pensión es fallecimiento.",
+    "death_date": "Fecha de fallecimiento",
+    "death_certificate": "Certificado de defunción",
+    "death_certificate_date": "Fecha del certificado"
   },
   "salary": {
     "title": "Registros de salario",
@@ -314,7 +324,9 @@
       "internationalist_applied": "Incremento internacionalista",
       "minimum_increment_applied": "Incremento pensión mín.",
       "capped_by_maximum": "Recortada por máximo",
-      "above_maximum": "Por encima del máximo"
+      "above_maximum": "Por encima del máximo",
+      "entitled_relatives_count": "Familiares con derecho",
+      "individual_amount": "Cuantía individual"
     },
     "criteria": {
       "age": "Edad",
@@ -353,5 +365,28 @@
     "no_persistence_warning": "Esta vista previa NO persiste: el motor no abre transacción de escritura ni modifica computed_amount.",
     "error": "No se pudo ejecutar la simulación",
     "error_409": "La vista previa solo está disponible en estado Solicitud o Revisión"
+  },
+  "entitled_relative": {
+    "title": "Familiares con derecho",
+    "description": "Personas beneficiarias del expediente de pensión.",
+    "add": "Añadir familiar",
+    "empty": "Sin familiares con derecho",
+    "beneficiary_person": "Beneficiario",
+    "beneficiary_type": "Tipo de beneficiario",
+    "agency": "Agencia de cobro",
+    "assigned_amount": "Monto asignado",
+    "tutor": "Tutor",
+    "beneficiary_person_id": "Persona beneficiaria",
+    "beneficiary_type_id": "Tipo de beneficiario",
+    "agency_type_id": "Tipo de agencia de cobro",
+    "agency_id": "Agencia de cobro",
+    "bank_account": "Cuenta bancaria",
+    "tutor_person_id": "Tutor",
+    "tutor_help": "Obligatorio cuando el beneficiario es menor de la edad de mayoría de edad.",
+    "search_person": "Buscar persona beneficiaria…",
+    "add_success": "Familiar añadido correctamente",
+    "add_error": "No se pudo añadir el familiar",
+    "remove_success": "Familiar eliminado correctamente",
+    "remove_error": "No se pudo eliminar el familiar"
   }
 }

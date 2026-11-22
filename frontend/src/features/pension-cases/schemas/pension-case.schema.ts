@@ -6,6 +6,7 @@ export type SalaryRecord = components['schemas']['SalaryRecord'];
 export type ServiceRecord = components['schemas']['ServiceRecord'];
 export type WorkCycle = components['schemas']['WorkCycle'];
 export type IncomeConceptRecord = components['schemas']['IncomeConceptRecord'];
+export type EntitledRelative = components['schemas']['EntitledRelative'];
 
 // Schema para crear expediente (number, requested_at y office_id los maneja el backend)
 // Campos alineados con docs.json: rebel_army_member + rebel_army_join_date
@@ -39,16 +40,17 @@ export const createCaseSchema = z.object({
   // null ⇒ divisor = N_eff × 12 (semántica histórica). La validación cruzada la hace el backend (422).
   imputable_salary_months: z.number().int().min(1).max(180).optional().nullable(),
   // Task 74/Bloque C: bloque de invalidez del expediente. Los 5 campos son obligatorios
-  // cuando el pension_type.retirement_type === 'invalidez' y prohibidos en el resto (422, D-7408).
+  // cuando el pension_type.retirement_type === 'invalidez' y prohibidos en el resto.
   // El frontend NO valida esa coherencia — la hace el backend. Solo captura y transmite.
   disease_id: z.number().int().positive().optional().nullable(),
   disease_origin: z.enum(['comun', 'profesional', 'accidente_trabajo', 'accidente_trayecto']).optional().nullable(),
-  // re_assessment_date: obligatoria SOLO con temporary_disability=true y estrictamente
-  // FUTURA contra el reloj (422 si es hoy o pasada — D-7409). El frontend muestra helper
-  // pero no bloquea el submit; el backend valida.
   re_assessment_date: z.string().optional().nullable(),
   requires_personal_care: z.boolean().optional().nullable(),
   temporary_disability: z.boolean().optional().nullable(),
+  // Bloque de defunción: obligatorio con fallecimiento, prohibido en el resto.
+  death_date: z.string().optional().nullable(),
+  death_certificate: z.string().optional().nullable(),
+  death_certificate_date: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
@@ -92,6 +94,9 @@ export const updateCaseSchema = z.object({
   re_assessment_date: z.string().optional().nullable(),
   requires_personal_care: z.boolean().optional().nullable(),
   temporary_disability: z.boolean().optional().nullable(),
+  death_date: z.string().optional().nullable(),
+  death_certificate: z.string().optional().nullable(),
+  death_certificate_date: z.string().optional().nullable(),
 });
 export type UpdateCaseInput = z.infer<typeof updateCaseSchema>;
 
@@ -129,6 +134,17 @@ export const incomeConceptRecordSchema = z.object({
   applied_percent: z.number().min(0, 'El porciento debe ser ≥ 0').max(100, 'El porciento debe ser ≤ 100'),
 });
 export type IncomeConceptRecordInput = z.infer<typeof incomeConceptRecordSchema>;
+
+// Familiar con derecho (subresource POST /pension-cases/{id}/entitled-relatives)
+export const entitledRelativeSchema = z.object({
+  beneficiary_person_id: z.number().int().positive('La persona beneficiaria es obligatoria'),
+  beneficiary_type_id: z.number().int().positive('El tipo de beneficiario es obligatorio'),
+  agency_type_id: z.number().int().positive('El tipo de agencia de cobro es obligatorio'),
+  agency_id: z.number().int().positive('La agencia de cobro es obligatoria'),
+  bank_account: z.string().max(34).optional().nullable(),
+  tutor_person_id: z.number().int().positive().optional().nullable(),
+});
+export type EntitledRelativeInput = z.infer<typeof entitledRelativeSchema>;
 
 // Metadata de estados del expediente
 export const CASE_STATUS_META: Record<string, { label: string; badgeClass: string }> = {

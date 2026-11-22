@@ -119,6 +119,11 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
   );
   const [reAssessmentDate, setReAssessmentDate] = useState<string>(pensionCase?.re_assessment_date ?? '');
 
+  // Bloque de defunción: obligatorio cuando retirement_type === 'fallecimiento'.
+  const [deathDate, setDeathDate] = useState<string>(pensionCase?.death_date ?? '');
+  const [deathCertificate, setDeathCertificate] = useState<string>(pensionCase?.death_certificate ?? '');
+  const [deathCertificateDate, setDeathCertificateDate] = useState<string>(pensionCase?.death_certificate_date ?? '');
+
   // Para mostrar el bloque de invalidez necesitamos conocer el retirement_type del pension_type
   // seleccionado. El objeto PensionCase del OpenAPI no embebe pension_type (solo pension_type_id),
   // así que en AMBOS modos (create y edit) hacemos fetch del catálogo pension-types y lookup por id.
@@ -131,6 +136,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
   });
   const selectedPensionTypeRetirement = pensionTypesData?.data.find((pt) => pt.id === pensionTypeId)?.retirement_type;
   const isInvalidezCase = selectedPensionTypeRetirement === 'invalidez';
+  const isFallecimientoCase = selectedPensionTypeRetirement === 'fallecimiento';
 
   // Cargar provincias y municipios de residencia (cascading)
   const { data: provincesData } = useQuery({ queryKey: ['catalogs', 'provinces', 'all'], queryFn: async () => { const r = await http.get<{ data: { id: number; name: string }[] }>('/catalogs/provinces', { params: { per_page: 100 } }); return r.data; }, staleTime: 5 * 60 * 1000 });
@@ -178,9 +184,13 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         disease_origin: diseaseOrigin || null,
         requires_personal_care: requiresPersonalCare,
         temporary_disability: temporaryDisability,
-        // re_assessment_date: obligatoria solo con temporary_disability=true (D-7409).
-        // Se envía siempre que esté seteada; el backend valida la futuridad.
         re_assessment_date: temporaryDisability ? (reAssessmentDate || null) : null,
+      } : {}),
+      // Bloque de defunción: solo se envía si el pension_type es fallecimiento.
+      ...(isFallecimientoCase ? {
+        death_date: deathDate || null,
+        death_certificate: deathCertificate || null,
+        death_certificate_date: deathCertificateDate || null,
       } : {}),
     };
     try {
@@ -209,6 +219,11 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           requires_personal_care: isInvalidezCase ? requiresPersonalCare : null,
           temporary_disability: isInvalidezCase ? temporaryDisability : null,
           re_assessment_date: isInvalidezCase && temporaryDisability ? (reAssessmentDate || null) : null,
+          // Bloque de defunción: PATCH. Si el pension_type resultante es fallecimiento, enviamos
+          // los campos; si no lo es, enviamos null para limpiarlos.
+          death_date: isFallecimientoCase ? (deathDate || null) : null,
+          death_certificate: isFallecimientoCase ? (deathCertificate || null) : null,
+          death_certificate_date: isFallecimientoCase ? (deathCertificateDate || null) : null,
         };
         await updateMutation.mutateAsync({ id: pensionCase.id!, input: updateInput });
       } else {
@@ -466,6 +481,27 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
                 <p className="text-xs text-amber-700 mt-1">{t('form.re_assessment_date_help')}</p>
               </div>
             )}
+          </div>
+        )}
+        {/* Bloque de defunción: visible solo cuando el pension_type es fallecimiento. */}
+        {isFallecimientoCase && (
+          <div className="p-3 rounded-md border border-primary/40 bg-primary/5 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">{t('form.death_block_title')}</h3>
+            <p className="text-xs text-muted-foreground">{t('form.death_block_help')}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">{t('form.death_date')} *</label>
+                <DatePickerField value={deathDate} onChange={setDeathDate} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">{t('form.death_certificate_date')} *</label>
+                <DatePickerField value={deathCertificateDate} onChange={setDeathCertificateDate} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('form.death_certificate')} *</label>
+              <Input type="text" maxLength={100} placeholder="Certificado N.º" value={deathCertificate} onChange={(e) => setDeathCertificate(e.target.value)} />
+            </div>
           </div>
         )}
         {/* Ejército Rebelde + Internacionalista */}
