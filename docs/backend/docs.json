@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.39.0"
+        "version": "1.40.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -12943,10 +12943,10 @@
             },
             "EntitledRelative": {
                 "title": "Familiar con derecho",
-                "description": "Familiar con derecho del expediente (Task 80, nuevo requerimiento 2026-11-20; Task 81, nuevo requerimiento 2026-11-22): un beneficiario de la pensión con su parentezco, su punto de cobro propio y — cuando es menor de la edad de mayoría de edad de la configuración general activa — su tutor. El par expediente-beneficiario es único; la cuantía asignada nace en 0.00 (nunca viaja en el POST) y solo la escribe el reparto de la aprobación de la rama fallecimiento: cuantía del expediente × porciento de la regla de beneficiario del tamaño de la familia, repartida a partes iguales y con el tope del porciento máximo del parentezco cuando el catálogo lo configura; la cuenta de cobro viaja con la MISMA validación del grupo de cobro del expediente (exigida cuando la forma de pago del tipo de agencia es tarjeta magnetica).",
+                "description": "Familiar con derecho del expediente (Task 80, nuevo requerimiento 2026-11-20; Task 81, nuevo requerimiento 2026-11-22): un beneficiario de la pensión con su parentezco, su punto de cobro propio y — cuando es menor de la edad de mayoría de edad de la configuración general activa — su tutor. El par expediente-beneficiario es único; la cuantía asignada nace en 0.00 (nunca viaja en el POST) y solo la escribe el reparto de la aprobación de la rama fallecimiento: cuantía del expediente × porciento de la regla de beneficiario del tamaño de la familia, repartida a partes iguales y con el tope del porciento máximo del parentezco cuando el catálogo lo configura; la cuenta de cobro viaja con la MISMA validación del grupo de cobro del expediente (exigida cuando la forma de pago del tipo de agencia es tarjeta magnetica). Task 82 (corrección de usuario 2026-11-22): la fila viaja CON SUS DATOS — la persona COMPLETA del beneficiario y del tutor (regla de usuario 3), el parentezco con la forma del catálogo y el punto de cobro con las proyecciones del grupo de cobro del expediente — para que el front muestre a los familiares del GET del expediente sin consultas extra.",
                 "properties": {
                     "id": {
-                        "description": "Entitled relative projection (FAMILIAR CON DERECHO, Task 80).\n\nThe D-7410 mold: bare integer ids only — no person/catalog\nprojections and no eager loads; whoever needs the names consults\nthe registry/catalogs by the ids.",
+                        "description": "Entitled relative projection (FAMILIAR CON DERECHO, Task 80).\n\nTask 82 (corrección de usuario 2026-11-22): the D-7410 mold —\nbare integer ids only, \"whoever needs the names consults the\n * registry by the ids\" — is REPEALED for this projection: the front\ncould not display the familiares of the case GET with ids alone.\nThe row now travels WITH its data, the shapes the case surface\nalready serves: the beneficiary and the tutor as the FULL person\nprojection (user rule 3, PersonResource reused so the familiar is\nnever a summary that drifts from the people surface), the\nparentezco as the same catalog shape of beneficiary-types (its\noptional maximum_percent included) and the collection point with\nthe SAME projections of the case's own collection group (Task 42\nmold: the agency type carrying its payment form, the full agency\nwith geography and type). The scalar ids stay beside the\nprojections.",
                         "type": "integer",
                         "format": "int64",
                         "example": 1
@@ -12957,13 +12957,13 @@
                         "example": 1
                     },
                     "beneficiary_person_id": {
-                        "description": "La persona beneficiaria (registro de personas) — solo el id (D-7410)",
+                        "description": "La persona beneficiaria (registro de personas) — el id queda al lado de la proyección beneficiary",
                         "type": "integer",
                         "format": "int64",
                         "example": 12
                     },
                     "beneficiary_type_id": {
-                        "description": "El parentezco (catálogo beneficiary-types) — su porciento máximo, cuando está configurado, tope la cuantía asignada en el reparto de la aprobación",
+                        "description": "El parentezco (catálogo beneficiary-types) — el id queda al lado de la proyección beneficiary_type; su porciento máximo, cuando está configurado, tope la cuantía asignada en el reparto de la aprobación",
                         "type": "integer",
                         "format": "int64",
                         "example": 2
@@ -12998,6 +12998,51 @@
                         "format": "int64",
                         "example": 15,
                         "nullable": true
+                    },
+                    "beneficiary": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Person"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Task 82 (corrección de usuario 2026-11-22): la persona beneficiaria — proyección COMPLETA (regla de usuario 3) para que el front muestre al familiar sin consultas extra; null — nunca un recurso roto — si la referencia ya no resuelve"
+                    },
+                    "tutor": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Person"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Task 82: la persona tutora — proyección COMPLETA espejo del beneficiary; null cuando el familiar no lleva tutor"
+                    },
+                    "beneficiary_type": {
+                        "description": "Task 82: el parentezco — la MISMA forma del catálogo beneficiary-types (con su maximum_percent cuando está configurado)",
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CatalogItem"
+                            }
+                        ]
+                    },
+                    "agency_type": {
+                        "description": "Task 82: el tipo de agencia de cobro del familiar con su payment_form — la misma forma del grupo de cobro del expediente",
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CatalogItem"
+                            }
+                        ]
+                    },
+                    "agency": {
+                        "description": "Task 82: la agencia de cobro del familiar completa (geografía y tipo) — la misma forma del grupo de cobro del expediente",
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Agency"
+                            }
+                        ]
                     }
                 },
                 "type": "object"
