@@ -55,7 +55,8 @@
       "initial_payment_status": "Estado",
       "initial_payment_description": "Descripción",
       "initial_payment_status_pending": "Pendiente",
-      "initial_payment_status_done": "Liquidado"
+      "initial_payment_status_done": "Liquidado",
+      "tutor": "Tutor"
     },
     "section": {
       "person_data": "Datos de la persona",

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
 import type { components } from '@/types/api';
-import type { CreateCaseInput, UpdateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput, IncomeConceptRecordInput, TransitionInput } from '../schemas/pension-case.schema';
+import type { CreateCaseInput, UpdateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput, IncomeConceptRecordInput, EntitledRelativeInput, TransitionInput } from '../schemas/pension-case.schema';
 import type { AxiosError } from 'axios';
 
 type PensionCase = components['schemas']['PensionCase'];
@@ -296,5 +296,43 @@ export function useCaseTransition(caseId: number | string) {
 
       toast.error(t('transition.error'));
     },
+  });
+}
+
+// === Entitled Relatives (familiares con derecho) ===
+
+/** POST /pension-cases/{id}/entitled-relatives — añadir familiar con derecho */
+export function useAddEntitledRelative(caseId: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pension-cases');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (input: EntitledRelativeInput) => {
+      await http.post(`/pension-cases/${caseId}/entitled-relatives`, input);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('entitled_relative.add_success')); },
+    onError: (err: unknown) => {
+      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
+      if (ae.response?.status === 422 && ae.response.data?.errors) {
+        const allMessages = Object.values(ae.response.data.errors).flat();
+        if (allMessages.length > 0) toast.errorDetail(t('entitled_relative.add_error'), allMessages.join(' · '));
+        return;
+      }
+      toast.error(t('entitled_relative.add_error'));
+    },
+  });
+}
+
+/** DELETE /pension-cases/{id}/entitled-relatives/{record} — eliminar familiar con derecho */
+export function useRemoveEntitledRelative(caseId: number | string) {
+  const qc = useQueryClient();
+  const { t } = useTranslation('pension-cases');
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async (recordId: number | string) => {
+      await http.delete(`/pension-cases/${caseId}/entitled-relatives/${recordId}`);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('entitled_relative.remove_success')); },
+    onError: () => { toast.error(t('entitled_relative.remove_error')); },
   });
 }

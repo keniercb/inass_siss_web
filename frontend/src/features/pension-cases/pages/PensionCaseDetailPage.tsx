@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight, CheckCircle2, XCircle, AlertTriangle, History as HistoryIcon } from 'lucide-react';
+import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight, CheckCircle2, XCircle, AlertTriangle, History as HistoryIcon, Users } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { usePensionCase, usePensionCaseHistory, useCaseCalculation, useCalculationPreview } from '../api/queries';
-import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle, useAddIncomeConceptRecord, useRemoveIncomeConceptRecord } from '../api/mutations';
-import { CASE_STATUS_META, type CaseStatus, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput, type IncomeConceptRecordInput } from '../schemas/pension-case.schema';
+import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle, useAddIncomeConceptRecord, useRemoveIncomeConceptRecord, useRemoveEntitledRelative } from '../api/mutations';
+import { CASE_STATUS_META, type CaseStatus, type PensionCase, type EntitledRelative, type SalaryRecordInput, type ServiceRecordInput, type WorkCycleInput, type IncomeConceptRecordInput } from '../schemas/pension-case.schema';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
@@ -17,6 +17,7 @@ import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearc
 import type { components } from '@/types/api';
 import { DatePickerField } from '@/components/ui/DatePickerField';
 import { CaseTransitionModal } from '../components/CaseTransitionModal';
+import { EntitledRelativeFormModal } from '../components/EntitledRelativeFormModal';
 
 type Person = components['schemas']['Person'];
 interface EntityItem { id: number; code: string; name?: string; tax_id_number: string; }
@@ -25,7 +26,7 @@ interface CatalogItem { id: number; name: string; }
 interface CatalogListResponse { data: CatalogItem[]; }
 interface OfficeItem { id: number; address: string; type?: { name: string }; province?: { name: string }; municipality?: { name: string }; }
 
-type Tab = 'summary' | 'subrecords' | 'history' | 'calculation';
+type Tab = 'summary' | 'subrecords' | 'relatives' | 'history' | 'calculation';
 type SubModalKind = 'salary' | 'service' | 'cycle' | 'income' | null;
 
 export function PensionCaseDetailPage() {
@@ -38,6 +39,7 @@ export function PensionCaseDetailPage() {
   const [subModal, setSubModal] = useState<SubModalKind>(null);
   const [transitionOpen, setTransitionOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [relativesModal, setRelativesModal] = useState(false);
 
   const { data: pensionCase, isLoading, isError } = usePensionCase(id);
   // Cargar catálogo de conceptos de ingreso para etiquetar las filas
@@ -96,6 +98,9 @@ export function PensionCaseDetailPage() {
         <nav className="flex gap-4">
           <TabBtn active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}><ClipboardList className="w-4 h-4" />{t('detail.tabs.summary')}</TabBtn>
           <TabBtn active={activeTab === 'subrecords'} onClick={() => setActiveTab('subrecords')}><FileText className="w-4 h-4" />{t('detail.tabs.subrecords')}</TabBtn>
+          {pensionCase.entitled_relatives != null && (
+            <TabBtn active={activeTab === 'relatives'} onClick={() => setActiveTab('relatives')}><Users className="w-4 h-4" />{t('detail.tabs.relatives')}</TabBtn>
+          )}
           <TabBtn active={activeTab === 'history'} onClick={() => setActiveTab('history')}><Clock className="w-4 h-4" />{t('detail.tabs.history')}</TabBtn>
           <TabBtn active={activeTab === 'calculation'} onClick={() => setActiveTab('calculation')}><Calculator className="w-4 h-4" />{t('detail.tabs.calculation')}</TabBtn>
         </nav>
@@ -145,6 +150,9 @@ export function PensionCaseDetailPage() {
         </div>
       )}
 
+      {activeTab === 'relatives' && (
+        <EntitledRelativesTab pensionCase={pensionCase} caseId={id} canEdit={canEdit} onAdd={() => setRelativesModal(true)} t={t} />
+      )}
       {activeTab === 'history' && (
         <HistoryTab caseId={id} t={t} />
       )}
@@ -157,6 +165,8 @@ export function PensionCaseDetailPage() {
       {subModal === 'service' && <ServiceRecordModal caseId={id} onClose={() => setSubModal(null)} />}
       {subModal === 'cycle' && <WorkCycleModal caseId={id} onClose={() => setSubModal(null)} />}
       {subModal === 'income' && <IncomeConceptRecordModal caseId={id} onClose={() => setSubModal(null)} />}
+
+      {relativesModal && <EntitledRelativeFormModal caseId={id} onClose={() => setRelativesModal(false)} />}
 
       {/* Modal de transición de estado */}
       {transitionOpen && (
@@ -319,6 +329,18 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
         </div>
       )}
 
+      {/* Bloque de defunción: se muestra solo si death_date != null. */}
+      {pensionCase.death_date != null && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('detail.section.death_block')}</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <Field label={t('detail.fields.death_date')} value={pensionCase.death_date ? formatDate(pensionCase.death_date) : '—'} mono />
+            <Field label={t('detail.fields.death_certificate_date')} value={pensionCase.death_certificate_date ? formatDate(pensionCase.death_certificate_date) : '—'} mono />
+            <Field label={t('detail.fields.death_certificate')} value={pensionCase.death_certificate ?? '—'} mono fullWidth />
+          </div>
+        </div>
+      )}
+
       {/* Decisión (solo si hay datos de decisión) */}
       {isApproved && (
         <div>
@@ -370,6 +392,77 @@ function SubrecordSection({ title, onAdd, addLabel, children }: { title: string;
  * (S6, RF-EXP-009, RN-010/DA H-09). Solo lectura: cada fila muestra estado
  * previo → nuevo, usuario responsable, momento y nota de evidencia.
  */
+/**
+ * Tab Familiares con derecho — muestra los familiares con derecho del expediente.
+ * Solo aparece cuando pensionCase.entitled_relatives != null (rama fallecimiento).
+ * Cada fila tiene: persona beneficiaria, tipo, agencia de cobro, cuenta, tutor, monto asignado.
+ * Add (POST) + Delete (DELETE) via subresource endpoints.
+ */
+function EntitledRelativesTab({ pensionCase, caseId, canEdit, onAdd, t }: {
+  pensionCase: PensionCase;
+  caseId: string;
+  canEdit: boolean;
+  onAdd: () => void;
+  t: (key: string) => string;
+}) {
+  const removeMutation = useRemoveEntitledRelative(caseId);
+  const relatives = pensionCase.entitled_relatives ?? [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{t('entitled_relative.title')}</h3>
+          <p className="text-xs text-muted-foreground mt-1">{t('entitled_relative.description')}</p>
+        </div>
+        {canEdit && <Button size="sm" variant="outline" onClick={onAdd}><Plus className="w-3.5 h-3.5" />{t('entitled_relative.add')}</Button>}
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
+            <th className="text-left px-4 py-3 font-medium">{t('entitled_relative.beneficiary_person')}</th>
+            <th className="text-left px-4 py-3 font-medium">{t('entitled_relative.beneficiary_type')}</th>
+            <th className="text-left px-4 py-3 font-medium">{t('entitled_relative.agency')}</th>
+            <th className="text-right px-4 py-3 font-medium">{t('entitled_relative.assigned_amount')}</th>
+            <th className="text-left px-4 py-3 font-medium">{t('entitled_relative.tutor')}</th>
+            {canEdit && <th className="text-right px-4 py-3 font-medium"></th>}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {relatives.length === 0 ? (
+            <tr><td colSpan={canEdit ? 6 : 5} className="px-4 py-8 text-center text-muted-foreground">{t('entitled_relative.empty')}</td></tr>
+          ) : (
+            relatives.map((r) => {
+              const er = r as EntitledRelative & {
+                beneficiary_person?: { first_surname?: string | null; first_name?: string | null };
+                tutor?: { first_surname?: string | null; first_name?: string | null };
+                beneficiary_type?: { name?: string };
+                agency?: { name?: string };
+              };
+              const personName = er.beneficiary_person ? [er.beneficiary_person.first_surname, er.beneficiary_person.first_name].filter(Boolean).join(' ') : '—';
+              const tutorName = er.tutor ? [er.tutor.first_surname, er.tutor.first_name].filter(Boolean).join(' ') : null;
+              return (
+                <tr key={er.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="px-4 py-3">{personName}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{er.beneficiary_type?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{er.agency?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-right font-mono">{er.assigned_amount != null ? formatCUP(Number(er.assigned_amount)) : '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{tutorName ?? '—'}</td>
+                  {canEdit && (
+                    <td className="px-4 py-3 text-right">
+                      <button onClick={() => removeMutation.mutate(er.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function HistoryTab({ caseId, t }: { caseId: string; t: (key: string) => string }) {
   const { data: history, isLoading, isError } = usePensionCaseHistory(caseId);
   const { t: tc } = useTranslation('common');
@@ -722,6 +815,17 @@ function CalculationPreviewModal({ caseId, onClose, t, tc }: { caseId: string; o
                 <Field label={t('calculation.fields.average_divisor_months')} value={
                   preview.average_divisor_months != null
                     ? String(preview.average_divisor_months)
+                    : '—'
+                } mono />
+                {/* Rama fallecimiento: cantidad de familiares y cuantía individual */}
+                <Field label={t('calculation.fields.entitled_relatives_count')} value={
+                  preview.entitled_relatives_count != null
+                    ? String(preview.entitled_relatives_count)
+                    : '—'
+                } mono />
+                <Field label={t('calculation.fields.individual_amount')} value={
+                  preview.individual_amount != null
+                    ? formatCUP(Number(preview.individual_amount))
                     : '—'
                 } mono />
                 {/* Task 53/S8.9: porciento total de conceptos aplicables */}

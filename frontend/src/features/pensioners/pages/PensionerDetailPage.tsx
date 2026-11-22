@@ -129,6 +129,13 @@ export function PensionerDetailPage() {
               <Field label={t('detail.fields.pension_type')} value={pensioner.pension_type?.name ?? '—'} />
               <Field label={t('detail.fields.pension_regime')} value={pensioner.pension_regime?.name ?? '—'} />
               <Field label={t('detail.fields.origin_case')} value={pensioner.origin_case?.number ?? '—'} mono />
+              {(pensioner as { tutor_person_id?: number | null }).tutor_person_id != null && (
+                <Field label={t('detail.fields.tutor')} value={
+                  ((pensioner as { tutor?: { first_surname?: string | null; first_name?: string | null } }).tutor)
+                    ? [((pensioner as { tutor?: { first_surname?: string | null } }).tutor?.first_surname), ((pensioner as { tutor?: { first_name?: string | null } }).tutor?.first_name)].filter(Boolean).join(' ')
+                    : `Persona #${(pensioner as { tutor_person_id?: number }).tutor_person_id}`
+                } />
+              )}
               <Field label={t('detail.fields.created_at')} value={pensioner.created_at ? formatDate(pensioner.created_at) : '—'} />
               <Field label={t('detail.fields.updated_at')} value={pensioner.updated_at ? formatDate(pensioner.updated_at) : '—'} />
             </div>

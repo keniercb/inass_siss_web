@@ -63,6 +63,8 @@
     "month_to_provitional": "Meses hasta ventana de cobro (provisional)",
     "month_to_provitional_help": "Meses desde la generación del pago durante los cuales puede estar pendiente. Al cumplir este plazo, el pago pasa automáticamente al estado provisional.",
     "month_to_expired": "Meses hasta cierre (expirado)",
-    "month_to_expired_help": "Meses que el pago puede permanecer en estado provisional desde que alcanzó la ventana de cobro. Al cumplir este plazo, el pago pasa al estado expirado (vencido)."
+    "month_to_expired_help": "Meses que el pago puede permanecer en estado provisional desde que alcanzó la ventana de cobro. Al cumplir este plazo, el pago pasa al estado expirado (vencido).",
+    "age_of_majority": "Edad de mayoría de edad",
+    "age_of_majority_help": "Edad legal para ser mayor de edad. Los familiares con derecho menores a esta edad requieren tutor."
   }
 }

@@ -73,7 +73,9 @@
     "average_years_count": "N de la estrategia",
     "average_years_count_help": "N propio de la estrategia de promedio (1–15, ≤ gate). Con 'all' debe igualar al gate",
     "average_strategy": "Estrategia de promedio salarial",
-    "average_strategy_help": "Mejores N / Últimos N / Todos (divisor N×12)"
+    "average_strategy_help": "Mejores N / Últimos N / Todos (divisor N×12)",
+    "maximum_percent": "Porciento máximo",
+    "maximum_percent_help": "Tope del porciento del parentezco (0-1, p. ej. 0.5 = 50%)"
   },
   "errors": {
     "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…"

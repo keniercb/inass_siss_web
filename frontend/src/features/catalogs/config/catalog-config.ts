@@ -43,8 +43,10 @@ const schemasByType: Record<string, z.ZodSchema> = {
   'income-concepts': baseSchema.extend({
     applies_base_salary: z.boolean().default(false),
   }),
+  'beneficiary-types': baseSchema.extend({
+    maximum_percent: z.number().min(0).max(1).optional(),
+  }),
   'educational-levels': baseSchema, // sin code
-  'beneficiary-types': baseSchema, // sin code
   races: baseSchema, // sin code
   // Task 74 (Bloque C): catálogo diseases — entidad uniforme, sin campos extra (D-7401).
   // Solo el ID viaja al expediente (D-7410, sin proyección).
@@ -63,6 +65,7 @@ function getColumns(type: CatalogType): Array<{ id: string }> {
     cols.push({ id: 'base_calc_percent' });
   }
   if (type === 'pension-types') cols.push({ id: 'retirement_type' });
+  if (type === 'beneficiary-types') cols.push({ id: 'maximum_percent' });
   return cols;
 }
 
@@ -234,6 +237,19 @@ function getFields(type: CatalogType): Array<Record<string, unknown>> {
       type: 'boolean',
       label: 'catalogs:form.applies_base_salary',
       help: 'Indica si participa del salario base de referencia',
+    });
+  }
+
+  if (type === 'beneficiary-types') {
+    baseFields.push({
+      name: 'maximum_percent',
+      type: 'number',
+      label: 'catalogs:form.maximum_percent',
+      help: 'catalogs:form.maximum_percent_help',
+      min: 0,
+      max: 1,
+      step: 0.01,
+      width: 'half',
     });
   }
 

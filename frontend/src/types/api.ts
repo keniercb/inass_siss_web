@@ -614,7 +614,7 @@ export interface paths {
         put?: never;
         /**
          * Vista previa del cálculo (RF-CAL-006)
-         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN; Task 75/D-7501: los EXPEDIENTES DE INVALIDEZ añaden el criterio salary_records — la serie salarial contra la VENTANA del pase a revisión, con los años faltantes como detalle missing_salary_years), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía de la VERSIÓN TRES (Task 57/SGP-42: F1 = SPM×(PCI + ATE×PIA + Σ aplicables + combatiente PAU/PPU por umbral), instantánea con los conceptos NO aplicables (RINSB) sobre CuantíaTmp, tope SPM×PIL, incremento internacionalista II, mínimo IPmin y tope final PMax — ADR-41), junto con los parámetros del régimen, el bloque general_settings de la doctrina ACTIVA usada y las advertencias (serie salarial incompleta, criterios de elegibilidad fallidos, tope del régimen o tope final que recortan — D-11 —, incremento de la pensión mínima). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
+         * @description Simulación del motor de cálculo para un expediente en submitted/under_review (permiso cases.calculate): ejecuta elegibilidad (edad por cumpleaños y sexo + años mínimos generales, ambos del RÉGIMEN; Task 75/D-7501 + Task 79/D-7904: TODAS las ramas añaden el criterio salary_records — la serie salarial contra la VENTANA del pase a revisión anclada al AÑO EN CURSO, con los años faltantes como detalle missing_salary_years), años trabajados ((Σ meses no coletilla)/months_per_year, truncados), salario promedio MENSUAL (estrategia best_n/last_n/all del régimen con divisor N propio × 12 — Task 51/S8.1 V-1) y cuantía de la VERSIÓN TRES (Task 57/SGP-42: F1 = SPM×(PCI + ATE×PIA + Σ aplicables + combatiente PAU/PPU por umbral), instantánea con los conceptos NO aplicables (RINSB) sobre CuantíaTmp, tope SPM×PIL, incremento internacionalista II, mínimo IPmin y tope final PMax — ADR-41), junto con los parámetros del régimen, el bloque general_settings de la doctrina ACTIVA usada y las advertencias (serie salarial incompleta, criterios de elegibilidad fallidos, tope del régimen o tope final que recortan — D-11 —, incremento de la pensión mínima). NO ESCRIBE ABSOLUTAMENTE NADA (RF-CAL-006/DoD 8.6). Responde 409 en cualquier otro estado — el cálculo del expediente aprobado está CONGELADO y se consulta por GET /{id}/calculation (RF-CAL-008).
          */
         post: operations["pensionCasesCalculationPreview"];
         delete?: never;
@@ -874,6 +874,46 @@ export interface paths {
          * @description Elimina el valor declarado de un concepto de ingreso (regla de usuario 5) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).
          */
         delete: operations["pensionCasesRemoveIncomeConceptRecord"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/entitled-relatives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alta de un familiar con derecho
+         * @description Declara un FAMILIAR CON DERECHO del expediente (Task 80, nuevo requerimiento 2026-11-20; Task 81, nuevo requerimiento 2026-11-22 — sin porciento en el alta) mientras está en submitted: la persona beneficiaria, su parentezco (catálogo beneficiary-types) y su punto de cobro propio — la MISMA validación del grupo de cobro del expediente (agencia activa del tipo declarado; la cuenta es OBLIGATORIA cuando la forma de pago del tipo de agencia es tarjeta magnetica, 422) — y el tutor: OBLIGATORIO cuando age(beneficiario.fecha de nacimiento) < age_of_majority de la configuración general ACTIVA (422 si falta), PROHIBIDO en el resto; siempre una persona registrada y activa distinta del beneficiario. El par expediente-beneficiario es único (422). La cuantía asignada NACE en 0.00 y no viaja en el POST: solo el reparto de la aprobación de la rama fallecimiento la escribe (cuantía × porciento de la regla de beneficiario del tamaño de la familia / cantidad de familiares, con el tope del porciento máximo del parentezco cuando existe).
+         */
+        post: operations["pensionCasesAddEntitledRelative"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pension-cases/{id}/entitled-relatives/{record}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Baja de un familiar con derecho
+         * @description Elimina un familiar con derecho del expediente (Task 80) mientras está en submitted. La bitácora conserva los valores previos (ADR-19).
+         */
+        delete: operations["pensionCasesRemoveEntitledRelative"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1849,6 +1889,12 @@ export interface components {
              */
             average_strategy?: "best_n" | "last_n" | "all";
             /**
+             * Format: double
+             * @description Solo beneficiary-types (Task 80, nuevo requerimiento 2026-11-20): porciento máximo del parentezco — DECIMAL(5,2) en [0,100] con a lo sumo dos decimales; null = sin tope configurado (el familiar con derecho valida su applied_percent contra este techo cuando existe)
+             * @example 50
+             */
+            maximum_percent?: number | null;
+            /**
              * Format: date-time
              * @description Borrado lógico (RF-CAT-001)
              */
@@ -2466,7 +2512,7 @@ export interface components {
         };
         /**
          * Vista previa del cálculo
-         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía de la VERSIÓN TRES (Task 57/SGP-42: base del régimen + combatiente por umbral + conceptos aplicables + conceptos NO aplicables sobre la instantánea + tope del régimen + internacionalista + mínimo + tope final absoluto), los parámetros del régimen usados, la doctrina de la configuración ACTIVA usada (general_settings) y las advertencias. Task 75 (D-7501): los EXPEDIENTES DE INVALIDEZ añaden el criterio salary_records — la serie salarial contra la VENTANA del pase a revisión, con los años faltantes como detalle estructurado missing_salary_years; en las demás ramas los criterios siguen siendo age y service.
+         * @description Resultado completo del motor de cálculo SIN persistir (RF-CAL-006, Task 51/S8.2): elegibilidad por criterio, años trabajados, salario promedio mensual, excedentes, cuantía de la VERSIÓN TRES (Task 57/SGP-42: base del régimen + combatiente por umbral + conceptos aplicables + conceptos NO aplicables sobre la instantánea + tope del régimen + internacionalista + mínimo + tope final absoluto), los parámetros del régimen usados, la doctrina de la configuración ACTIVA usada (general_settings) y las advertencias. Task 75 (D-7501) + Task 79 (D-7904): TODAS las ramas añaden el criterio salary_records — la serie salarial contra la VENTANA del pase a revisión anclada al AÑO EN CURSO, con los años faltantes como detalle estructurado missing_salary_years; los criterios del motor (age + service, o ninguno en la cadena invalidante/sobreviviente) viajan primero.
          */
         CalculationPreview: {
             /**
@@ -2551,6 +2597,16 @@ export interface components {
              * @example 332.50
              */
             amount: string;
+            /**
+             * @description Task 81 (nuevo requerimiento 2026-11-22, D-8109): SOLO la rama fallecimiento — la cantidad de familiares con derecho del expediente; 0 mientras la familia está vacía (con su advertencia), null en el resto de las ramas
+             * @example 3
+             */
+            entitled_relatives_count: number | null;
+            /**
+             * @description Task 81 (D-8109): SOLO la rama fallecimiento — la CuantíaIndividual del reparto consultivo: cuantía del expediente × porciento de la regla de beneficiario del tamaño de la familia, dividida a partes iguales entre los familiares (pre-tope del parentezco, que solo aplica a la cuantía asignada de cada familiar); null con la familia vacía y en el resto de las ramas
+             * @example 110.83
+             */
+            individual_amount: string | null;
             /** @description Task 53/S8.9, V-11: los conceptos APLICABLES (applies_base_salary) que el motor consumió como incrementos — SIN término de dinero por concepto; lista vacía sin conceptos declarados (D-9: aporte 0.00) */
             income_concept_terms: {
                 /**
@@ -2610,12 +2666,12 @@ export interface components {
              */
             minimum_increment_applied: boolean;
             /**
-             * @description Task 58/SGP-43, D-37: si el recorte INTERIOR del bloque final aplicó — SOLO un IPmin que dispara por encima de PMax dentro de la zona del máximo (la advertencia muestra ambos números); una cuantía que ya superó el máximo NO se recorta
+             * @description Task 78 (V3.3, corrección de usuario 2026-11-19): true cuando el bloque final AJUSTÓ la cuantía a la pensión máxima — la zona media (PMin ≤ Cuantía < PMax → Cuantía = PMax), el ajuste que el pseudocódigo corregido manda; el nombre del campo es histórico y la advertencia muestra ambos números
              * @example false
              */
             capped_by_maximum: boolean;
             /**
-             * @description Task 58/SGP-43, D-39: true cuando PMax > 0 y la cuantía quedó POR ENCIMA del máximo SIN recorte (la advertencia informa el par cuantía/máximo); false en la igualdad exacta
+             * @description Task 78 (V3.3, D-39 re-escopado): true cuando PMax > 0 y la cuantía FINAL quedó POR ENCIMA del máximo — entró por encima o el IPmin la llevó — y VIAJA ENTERA: el bloque final NO la recorta (el tope duro de la v3.2 queda derogado; la advertencia lo hace explícito); false en la igualdad exacta
              * @example false
              */
             above_maximum: boolean;
@@ -2789,6 +2845,67 @@ export interface components {
                     name?: string;
                 };
             }[];
+        };
+        /**
+         * Familiar con derecho
+         * @description Familiar con derecho del expediente (Task 80, nuevo requerimiento 2026-11-20; Task 81, nuevo requerimiento 2026-11-22): un beneficiario de la pensión con su parentezco, su punto de cobro propio y — cuando es menor de la edad de mayoría de edad de la configuración general activa — su tutor. El par expediente-beneficiario es único; la cuantía asignada nace en 0.00 (nunca viaja en el POST) y solo la escribe el reparto de la aprobación de la rama fallecimiento: cuantía del expediente × porciento de la regla de beneficiario del tamaño de la familia, repartida a partes iguales y con el tope del porciento máximo del parentezco cuando el catálogo lo configura; la cuenta de cobro viaja con la MISMA validación del grupo de cobro del expediente (exigida cuando la forma de pago del tipo de agencia es tarjeta magnetica).
+         */
+        EntitledRelative: {
+            /**
+             * Format: int64
+             * @description Entitled relative projection (FAMILIAR CON DERECHO, Task 80).
+             *
+             *     The D-7410 mold: bare integer ids only — no person/catalog
+             *     projections and no eager loads; whoever needs the names consults
+             *     the registry/catalogs by the ids.
+             * @example 1
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @example 1
+             */
+            pension_case_id?: number;
+            /**
+             * Format: int64
+             * @description La persona beneficiaria (registro de personas) — solo el id (D-7410)
+             * @example 12
+             */
+            beneficiary_person_id?: number;
+            /**
+             * Format: int64
+             * @description El parentezco (catálogo beneficiary-types) — su porciento máximo, cuando está configurado, tope la cuantía asignada en el reparto de la aprobación
+             * @example 2
+             */
+            beneficiary_type_id?: number;
+            /**
+             * @description Cuantía asignada — DECIMAL(12,2) que nace en 0.00 (jamás viaja en el POST) y que el reparto de la aprobación de la rama fallecimiento escribe: cuantía del expediente × porciento de la regla de beneficiario / cantidad de familiares, con el tope del porciento máximo del parentezco cuando existe
+             * @example 0.00
+             */
+            assigned_amount?: string;
+            /**
+             * Format: int64
+             * @description Tipo de agencia de cobro del familiar — la misma validación del grupo de cobro del expediente
+             * @example 1
+             */
+            agency_type_id?: number;
+            /**
+             * Format: int64
+             * @description Agencia de cobro del familiar — activa y del tipo declarado
+             * @example 7
+             */
+            agency_id?: number;
+            /**
+             * @description Cuenta del cobro del familiar — OBLIGATORIA cuando la forma de pago del tipo de agencia es tarjeta magnetica (422 si falta), opcional con nomina electronica
+             * @example 01234567890123456789012345678
+             */
+            bank_account?: string | null;
+            /**
+             * Format: int64
+             * @description Tutor del beneficiario — OBLIGATORIO cuando age(beneficiario.fecha de nacimiento) < age_of_majority de la configuración general activa (422 si falta), PROHIBIDO en el resto; persona registrada y activa distinta del beneficiario
+             * @example 15
+             */
+            tutor_person_id?: number | null;
         };
         /**
          * Concepto de ingreso del expediente
@@ -3009,6 +3126,23 @@ export interface components {
              */
             re_assessment_date?: string | null;
             /**
+             * Format: date
+             * @description Task 80 (nuevo requerimiento 2026-11-20, D-8003): fecha de fallecimiento — obligatoria cuando el tipo de jubilación es fallecimiento y estrictamente ANTERIOR a la actual (422 si es hoy o futura); prohibida en el resto
+             * @example 2026-01-15
+             */
+            death_date?: string | null;
+            /**
+             * @description Task 80 (D-8003): certificado de defunción — obligatorio con fallecimiento (string), prohibido en el resto
+             * @example CERT-2026-045123
+             */
+            death_certificate?: string | null;
+            /**
+             * Format: date
+             * @description Task 80 (D-8003): fecha del certificado de defunción — obligatoria con fallecimiento y estrictamente ANTERIOR a la actual; prohibida en el resto
+             * @example 2026-01-20
+             */
+            death_certificate_date?: string | null;
+            /**
              * @description Último salario, DECIMAL(12,2) no negativo (RN-005)
              * @example 5000.00
              */
@@ -3147,6 +3281,8 @@ export interface components {
             work_cycles?: components["schemas"]["WorkCycle"][];
             /** @description Conceptos de ingreso declarados (regla 5) */
             income_concept_records?: components["schemas"]["IncomeConceptRecord"][];
+            /** @description Task 80 (nuevo requerimiento 2026-11-20): familiares con derecho del expediente — una fila por persona beneficiaria (par expediente-beneficiario único) */
+            entitled_relatives?: components["schemas"]["EntitledRelative"][];
             /** @description Proyección COMPLETA del promovente (regla 3) */
             applicant?: components["schemas"]["Person"] | null;
         };
@@ -3386,8 +3522,16 @@ export interface components {
              * @example Reapertura administrativa: el expediente vuelve a revisión.
              */
             status_reason?: string | null;
+            /**
+             * Format: int64
+             * @description Task 81 (nuevo requerimiento 2026-11-22, D-8106): tutor del familiar con derecho del que la fila nació — copiado por la aprobación de la rama fallecimiento y refrescado por la re-aprobación; null en el resto de las ramas y en los familiares adultos sin tutor
+             * @example 15
+             */
+            tutor_person_id?: number | null;
             /** @description Persona pensionada: proyección COMPLETA (regla de usuario 3) */
             person?: components["schemas"]["Person"] | null;
+            /** @description Task 81 (D-8106): la persona tutora del familiar con derecho del que la fila nació — proyección COMPLETA espejo del person; null cuando la fila no lleva tutor */
+            tutor?: components["schemas"]["Person"] | null;
             /** @description Tipo de pensión del catálogo */
             pension_type?: {
                 /** Format: int64 */
@@ -3868,7 +4012,7 @@ export interface components {
         };
         /**
          * Versión de configuración general
-         * @description Los DIEZ campos de una versión de la configuración general (RF-CAT-005, Task 55/S9.1 + Task 70/SGP-54): los siete de doctrina 2026 y los tres del calendario de la ventana de cobro — payment_day (1–30), month_to_provitional y month_to_expired (ambos > 0, directriz «monthToProvitional y monthToExpired > 0 ambos»). Las versiones son append-only: publicar una nueva desactiva la anterior en la misma transacción. La vigencia es un hecho almacenado — effective_from (sello del Clock) y deactivated_at (baja de la versión) — y solo UNA versión está activa a la vez (garantizado en base de datos). Los montos se sirven como Double y se almacenan DECIMAL(12,2) exacto (RN-005).
+         * @description Los ONCE campos de una versión de la configuración general (RF-CAT-005, Task 55/S9.1 + Task 70/SGP-54 + Task 80): los siete de doctrina 2026, los tres del calendario de la ventana de cobro — payment_day (1–30), month_to_provitional y month_to_expired (ambos > 0, directriz «monthToProvitional y monthToExpired > 0 ambos») — y la edad de mayoría de edad age_of_majority (1–120) que decide la exigencia de tutor del familiar con derecho. Las versiones son append-only: publicar una nueva desactiva la anterior en la misma transacción. La vigencia es un hecho almacenado — effective_from (sello del Clock) y deactivated_at (baja de la versión) — y solo UNA versión está activa a la vez (garantizado en base de datos). Los montos se sirven como Double y se almacenan DECIMAL(12,2) exacto (RN-005).
          */
         GeneralSettingVersion: {
             /**
@@ -3933,6 +4077,11 @@ export interface components {
              * @example 1
              */
             month_to_expired: number;
+            /**
+             * @description Task 80 (nuevo requerimiento 2026-11-20): edad de mayoría de edad — el familiar con derecho menor de edad (age < age_of_majority) exige tutor en su captura; entero entre 1 y 120
+             * @example 18
+             */
+            age_of_majority: number;
             /**
              * @description Única versión activa (regla de configuración general)
              * @example true
@@ -7604,6 +7753,133 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             /** @description Expediente o registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pensionCasesAddEntitledRelative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: int64
+                     * @example 12
+                     */
+                    beneficiary_person_id: number;
+                    /**
+                     * Format: int64
+                     * @example 2
+                     */
+                    beneficiary_type_id: number;
+                    /**
+                     * Format: int64
+                     * @example 1
+                     */
+                    agency_type_id: number;
+                    /**
+                     * Format: int64
+                     * @example 7
+                     */
+                    agency_id: number;
+                    /**
+                     * @description Cuenta del cobro del familiar — exigida cuando la forma de pago del tipo de agencia es tarjeta magnetica
+                     * @example 01234567890123456789012345678
+                     */
+                    bank_account?: string | null;
+                    /**
+                     * Format: int64
+                     * @description Tutor — obligatorio con beneficiario menor de la edad de mayoría de edad activa, prohibido en el resto
+                     * @example 15
+                     */
+                    tutor_person_id?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Familiar declarado (assigned_amount nace en 0.00) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["EntitledRelative"];
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Expediente ya no editable (devuelve estado actual) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sonda semántica: beneficiario/tutor/tipo inactivo, agencia incoherente, cuenta exigida, tutor exigido/prohibido o beneficiario duplicado */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pensionCasesRemoveEntitledRelative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                record: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Familiar eliminado (con advertencias actualizadas) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Entitled relative removed. */
+                        message?: string;
+                        warnings?: Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Expediente o familiar inexistente */
             404: {
                 headers: {
                     [name: string]: unknown;

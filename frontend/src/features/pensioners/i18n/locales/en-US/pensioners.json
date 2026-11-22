@@ -55,7 +55,8 @@
       "initial_payment_status": "Status",
       "initial_payment_description": "Description",
       "initial_payment_status_pending": "Pending",
-      "initial_payment_status_done": "Settled"
+      "initial_payment_status_done": "Settled",
+      "tutor": "Tutor"
     },
     "section": {
       "person_data": "Person data",

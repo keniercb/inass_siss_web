@@ -63,6 +63,8 @@
     "month_to_provitional": "Months to collection window (provisional)",
     "month_to_provitional_help": "Months from payment generation during which it can remain pending. After this period elapses, the payment automatically transitions to the provisional state.",
     "month_to_expired": "Months to closure (expired)",
-    "month_to_expired_help": "Months the payment can remain in the provisional state from the moment it reached the collection window. After this period elapses, the payment transitions to the expired state."
+    "month_to_expired_help": "Months the payment can remain in the provisional state from the moment it reached the collection window. After this period elapses, the payment transitions to the expired state.",
+    "age_of_majority": "Age of majority",
+    "age_of_majority_help": "Legal age of majority. Entitled relatives below this age require a tutor."
   }
 }
