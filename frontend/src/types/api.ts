@@ -3148,7 +3148,7 @@ export interface components {
             re_assessment_date?: string | null;
             /**
              * Format: date
-             * @description Task 80 (nuevo requerimiento 2026-11-20, D-8003): fecha de fallecimiento — obligatoria cuando el tipo de jubilación es fallecimiento y estrictamente ANTERIOR a la actual (422 si es hoy o futura); prohibida en el resto
+             * @description Task 80 (nuevo requerimiento 2026-11-20, D-8003): fecha de fallecimiento — obligatoria cuando el tipo de jubilación es fallecimiento, estrictamente ANTERIOR al día de hoy (422 si es hoy o futura) y a la fecha del certificado, y estrictamente POSTERIOR a la fecha de nacimiento de la persona (Task 84, D-8402); prohibida en el resto
              * @example 2026-01-15
              */
             death_date?: string | null;
@@ -3159,10 +3159,15 @@ export interface components {
             death_certificate?: string | null;
             /**
              * Format: date
-             * @description Task 80 (D-8003): fecha del certificado de defunción — obligatoria con fallecimiento y estrictamente ANTERIOR a la actual; prohibida en el resto
+             * @description Task 80 (D-8003): fecha del certificado de defunción — obligatoria con fallecimiento, estrictamente ANTERIOR al día de hoy y estrictamente POSTERIOR a la fecha de nacimiento de la persona y a la fecha de fallecimiento (Task 84, D-8402); prohibida en el resto
              * @example 2026-01-20
              */
             death_certificate_date?: string | null;
+            /**
+             * @description Task 84 (corrección de usuario 2026-11-24, D-8403): forzar jubilación por edad del bloque de defunción — obligatoria con fallecimiento, prohibida en el resto; true ⇒ la cuantía se calcula según los PARÁMETROS DEL RÉGIMEN (el motor de edad), false ⇒ según la doctrina implementada actualmente (la regla del disease_origin, Task 83)
+             * @example false
+             */
+            forced_age_retirement?: boolean | null;
             /**
              * @description Último salario, DECIMAL(12,2) no negativo (RN-005)
              * @example 5000.00
