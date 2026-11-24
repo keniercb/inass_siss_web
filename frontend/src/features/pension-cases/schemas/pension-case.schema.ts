@@ -51,6 +51,7 @@ export const createCaseSchema = z.object({
   death_date: z.string().optional().nullable(),
   death_certificate: z.string().optional().nullable(),
   death_certificate_date: z.string().optional().nullable(),
+  forced_age_retirement: z.boolean().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.rebel_army_member === true && !data.rebel_army_join_date) {
     ctx.addIssue({
@@ -97,6 +98,7 @@ export const updateCaseSchema = z.object({
   death_date: z.string().optional().nullable(),
   death_certificate: z.string().optional().nullable(),
   death_certificate_date: z.string().optional().nullable(),
+  forced_age_retirement: z.boolean().optional().nullable(),
 });
 export type UpdateCaseInput = z.infer<typeof updateCaseSchema>;
 

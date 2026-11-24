@@ -99,7 +99,8 @@
       "death_certificate": "Certificado de defunción",
       "death_certificate_date": "Fecha del certificado",
       "death_cause": "Causa",
-      "death_origin_type": "Tipo de fallecimiento"
+      "death_origin_type": "Tipo de fallecimiento",
+      "forced_age_retirement": "Forzar jubilación por edad"
     },
     "section": {
       "case_data": "Datos del expediente",
@@ -168,7 +169,9 @@
     "death_certificate": "Certificado de defunción",
     "death_certificate_date": "Fecha del certificado",
     "death_cause": "Causa",
-    "death_origin_type": "Tipo de fallecimiento"
+    "death_origin_type": "Tipo de fallecimiento",
+    "forced_age_retirement": "Forzar jubilación por edad",
+    "forced_age_retirement_help": "Si está marcado, la cuantía se calcula según los parámetros del régimen de edad. Si no, según el origen de la enfermedad."
   },
   "salary": {
     "title": "Registros de salario",

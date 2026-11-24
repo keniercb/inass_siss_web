@@ -343,6 +343,11 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
             <Field label={t('detail.fields.death_date')} value={pensionCase.death_date ? formatDate(pensionCase.death_date) : '—'} mono />
             <Field label={t('detail.fields.death_certificate_date')} value={pensionCase.death_certificate_date ? formatDate(pensionCase.death_certificate_date) : '—'} mono />
             <Field label={t('detail.fields.death_certificate')} value={pensionCase.death_certificate ?? '—'} mono fullWidth />
+            <Field label={t('detail.fields.forced_age_retirement')} value={
+              pensionCase.forced_age_retirement != null
+                ? (pensionCase.forced_age_retirement ? tc('booleans.yes') : tc('booleans.no'))
+                : '—'
+            } />
           </div>
         </div>
       )}

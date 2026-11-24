@@ -123,6 +123,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
   const [deathDate, setDeathDate] = useState<string>(pensionCase?.death_date ?? '');
   const [deathCertificate, setDeathCertificate] = useState<string>(pensionCase?.death_certificate ?? '');
   const [deathCertificateDate, setDeathCertificateDate] = useState<string>(pensionCase?.death_certificate_date ?? '');
+  const [forcedAgeRetirement, setForcedAgeRetirement] = useState<boolean>(pensionCase?.forced_age_retirement ?? false);
 
   // Para mostrar el bloque de invalidez necesitamos conocer el retirement_type del pension_type
   // seleccionado. El objeto PensionCase del OpenAPI no embebe pension_type (solo pension_type_id),
@@ -194,6 +195,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
         death_date: deathDate || null,
         death_certificate: deathCertificate || null,
         death_certificate_date: deathCertificateDate || null,
+        forced_age_retirement: forcedAgeRetirement,
       } : {}),
     };
     try {
@@ -227,6 +229,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
           death_date: isFallecimientoCase ? (deathDate || null) : null,
           death_certificate: isFallecimientoCase ? (deathCertificate || null) : null,
           death_certificate_date: isFallecimientoCase ? (deathCertificateDate || null) : null,
+          forced_age_retirement: isFallecimientoCase ? forcedAgeRetirement : null,
         };
         await updateMutation.mutateAsync({ id: pensionCase.id!, input: updateInput });
       } else {
@@ -534,6 +537,13 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
               <label className="block text-sm font-medium mb-1">{t('form.death_certificate')} *</label>
               <Input type="text" maxLength={100} placeholder="Certificado N.º" value={deathCertificate} onChange={(e) => setDeathCertificate(e.target.value)} />
             </div>
+            <label className="flex items-start gap-2 pt-1">
+              <input type="checkbox" checked={forcedAgeRetirement} onChange={(e) => setForcedAgeRetirement(e.target.checked)} className="w-4 h-4 mt-0.5" />
+              <span className="text-sm">
+                <strong>{t('form.forced_age_retirement')}</strong>
+                <span className="block text-xs text-muted-foreground mt-0.5">{t('form.forced_age_retirement_help')}</span>
+              </span>
+            </label>
           </div>
         )}
         {/* Ejército Rebelde + Internacionalista */}
