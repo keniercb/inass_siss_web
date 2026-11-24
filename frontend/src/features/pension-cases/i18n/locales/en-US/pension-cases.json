@@ -99,7 +99,8 @@
       "death_certificate": "Death certificate",
       "death_certificate_date": "Certificate date",
       "death_cause": "Cause",
-      "death_origin_type": "Death type"
+      "death_origin_type": "Death type",
+      "forced_age_retirement": "Force age retirement"
     },
     "section": {
       "case_data": "Case data",
@@ -168,7 +169,9 @@
     "death_certificate": "Death certificate",
     "death_certificate_date": "Certificate date",
     "death_cause": "Cause",
-    "death_origin_type": "Death type"
+    "death_origin_type": "Death type",
+    "forced_age_retirement": "Force age retirement",
+    "forced_age_retirement_help": "If checked, the amount is calculated using the age regime parameters. Otherwise, using the disease origin."
   },
   "salary": {
     "title": "Salary records",
