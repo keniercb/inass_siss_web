@@ -10,7 +10,8 @@
       "submitted": "Submitted",
       "under_review": "Under review",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "deceased": "Deceased"
     },
     "columns": {
       "number": "Number",
@@ -24,7 +25,8 @@
       "submitted": "Submitted",
       "under_review": "Under review",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "deceased": "Deceased"
     }
   },
   "create": {
@@ -100,7 +102,8 @@
       "death_certificate_date": "Certificate date",
       "death_cause": "Cause",
       "death_origin_type": "Death type",
-      "forced_age_retirement": "Force age retirement"
+      "forced_age_retirement": "Force age retirement",
+      "parent_case_id": "Origin case"
     },
     "section": {
       "case_data": "Case data",
@@ -278,7 +281,8 @@
       "submitted": "Return to Submitted",
       "under_review": "Move to Review",
       "approved": "Approve",
-      "rejected": "Reject"
+      "rejected": "Reject",
+      "deceased": "Declare death"
     },
     "requires_note": "Requires note",
     "requires_legal_basis": "Requires legal basis",
@@ -301,7 +305,12 @@
     "error": "Could not apply the transition",
     "error_409": "Reopening would break the open-case-per-person reservation",
     "out_of_matrix": "Transition not allowed: {{from}} → {{to}}",
-    "missing_checklist": "Missing: {{items}}"
+    "missing_checklist": "Missing: {{items}}",
+    "requires_death_block": "Requires death details",
+    "death_block_help": "Declare the holder's death: a derived survivors case is created from this one and the holder's pension ends. The note is optional: the death certificate is the evidence.",
+    "death_block_required": "All death details fields are required",
+    "note_optional_hint": "optional, at least 10 characters if written",
+    "deceased_success": "Death declared. Survivors case {{number}} created."
   },
   "history": {
     "by": "by"
@@ -395,5 +404,9 @@
     "add_error": "Could not add the relative",
     "remove_success": "Relative removed successfully",
     "remove_error": "Could not remove the relative"
+  },
+  "subrecord": {
+    "derived_badge": "Copy",
+    "derived_help": "Copy from the origin case — cannot be deleted"
   }
 }

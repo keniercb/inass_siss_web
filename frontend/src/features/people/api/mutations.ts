@@ -101,6 +101,51 @@ export function useDeletePerson() {
   });
 }
 
+/** Respuesta de error del endpoint FUC (todos los códigos llevan `message`) */
+interface FucErrorResponse {
+  message?: string;
+}
+
+/**
+ * Consulta de ciudadano por carné de identidad (GET /fuc/people/{identityNumber}).
+ *
+ * Lectura con disparo manual (botón junto al campo CI del formulario de
+ * persona): busca los datos públicos del ciudadano en la Ficha Única y
+ * devuelve la persona FUC para autollenar el formulario. Los atributos null
+ * son los que el nivel de consulta configurado no aporta — el autollenado
+ * solo toca los campos que llegan con valor.
+ *
+ * Códigos de error contractuales: 404 (no existe en la FUC), 422 (CI
+ * estructuralmente inválido o rechazo del proveedor), 502 (autenticación con
+ * el proveedor fallida), 503 (integración desactivada), 504 (proveedor no
+ * disponible). Todos viajan con `message` legible — se muestra como detalle
+ * del toast con título localizado.
+ */
+export function useFucPersonLookup() {
+  const { t } = useTranslation('people');
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async (identityNumber: string) => {
+      const response = await http.get<ApiResponse<components['schemas']['FucPerson']>>(
+        `/fuc/people/${identityNumber}`,
+      );
+      return response.data.data;
+    },
+    onError: (err: unknown) => {
+      const axiosErr = err as AxiosError<FucErrorResponse>;
+      const status = axiosErr.response?.status;
+      const detail = axiosErr.response?.data?.message;
+      const fallback =
+        status === 404 ? t('fuc.not_found') :
+        status === 503 ? t('fuc.disabled') :
+        status === 502 || status === 504 ? t('fuc.unavailable') :
+        t('fuc.error');
+      toast.errorDetail(t('fuc.error_title'), detail ?? fallback);
+    },
+  });
+}
+
 /** Registrar fallecimiento (POST /people/{id}/death) */
 export function useRegisterDeath() {
   const queryClient = useQueryClient();

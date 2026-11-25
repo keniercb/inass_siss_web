@@ -19,7 +19,9 @@ export interface CasesListParams {
   page?: number;
   per_page?: number;
   search?: string;
-  status?: string; // 'submitted' | 'under_review' | 'approved' | 'rejected' | ''
+  status?: string; // 'submitted' | 'under_review' | 'approved' | 'rejected' | 'deceased' | ''
+  /** Búsqueda inversa: el expediente derivado de este id de expediente padre */
+  parent_case_id?: number;
   office_id?: number;
   sort?: string;
   order?: 'asc' | 'desc';

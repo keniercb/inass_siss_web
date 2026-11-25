@@ -154,10 +154,13 @@ export const CASE_STATUS_META: Record<string, { label: string; badgeClass: strin
   under_review: { label: 'Revisión', badgeClass: 'badge-under_review' },
   approved: { label: 'Aprobado', badgeClass: 'badge-approved' },
   rejected: { label: 'Denegado', badgeClass: 'badge-rejected' },
+  deceased: { label: 'Fallecido', badgeClass: 'badge-deceased' },
 };
 
-// Estados del expediente (sección 2.4) — máquina declarativa
-export type CaseStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
+// Estados del expediente (sección 2.4) — máquina declarativa.
+// deceased es el terminal de la declaración de fallecimiento: solo se entra
+// desde approved y jamás se reabre.
+export type CaseStatus = 'submitted' | 'under_review' | 'approved' | 'rejected' | 'deceased';
 
 /**
  * Matriz de transiciones legales (sección 2.4):
@@ -167,6 +170,7 @@ export type CaseStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
  *   under_review  → rejected              (denegación, Director, cases.reject)
  *   approved      → under_review          (reapertura, Administrador, cases.reopen)
  *   rejected      → under_review          (reapertura, Administrador, cases.reopen)
+ *   approved      → deceased              (declaración de fallecimiento, Director, cases.approve)
  *
  * Cada transición legal define su permiso, si exige nota (mínimo 10 caracteres),
  * si exige base legal vigente y si admite force (RF-LEG-003).
@@ -180,36 +184,51 @@ export interface TransitionRule {
   legalBasisRequired: boolean;
   /** Bandera force admitida (solo aprobación, base legal derogada) */
   forceAllowed: boolean;
+  /** Bloque de defunción obligatorio (solo declaración de fallecimiento) */
+  deathBlockRequired: boolean;
   /** Etiqueta breve de la transición para UI */
   labelKey: string;
 }
 
 export const TRANSITION_MATRIX: Record<CaseStatus, TransitionRule[]> = {
   submitted: [
-    { to: 'under_review', permission: 'cases.review', noteRequired: false, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.under_review' },
+    { to: 'under_review', permission: 'cases.review', noteRequired: false, legalBasisRequired: false, forceAllowed: false, deathBlockRequired: false, labelKey: 'transition.to.under_review' },
   ],
   under_review: [
-    { to: 'submitted', permission: 'cases.review', noteRequired: false, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.submitted' },
-    { to: 'approved', permission: 'cases.approve', noteRequired: true, legalBasisRequired: true, forceAllowed: true, labelKey: 'transition.to.approved' },
-    { to: 'rejected', permission: 'cases.reject', noteRequired: true, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.rejected' },
+    { to: 'submitted', permission: 'cases.review', noteRequired: false, legalBasisRequired: false, forceAllowed: false, deathBlockRequired: false, labelKey: 'transition.to.submitted' },
+    { to: 'approved', permission: 'cases.approve', noteRequired: true, legalBasisRequired: true, forceAllowed: true, deathBlockRequired: false, labelKey: 'transition.to.approved' },
+    { to: 'rejected', permission: 'cases.reject', noteRequired: true, legalBasisRequired: false, forceAllowed: false, deathBlockRequired: false, labelKey: 'transition.to.rejected' },
   ],
   approved: [
-    { to: 'under_review', permission: 'cases.reopen', noteRequired: true, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.under_review' },
+    { to: 'under_review', permission: 'cases.reopen', noteRequired: true, legalBasisRequired: false, forceAllowed: false, deathBlockRequired: false, labelKey: 'transition.to.under_review' },
+    { to: 'deceased', permission: 'cases.approve', noteRequired: false, legalBasisRequired: false, forceAllowed: false, deathBlockRequired: true, labelKey: 'transition.to.deceased' },
   ],
   rejected: [
-    { to: 'under_review', permission: 'cases.reopen', noteRequired: true, legalBasisRequired: false, forceAllowed: false, labelKey: 'transition.to.under_review' },
+    { to: 'under_review', permission: 'cases.reopen', noteRequired: true, legalBasisRequired: false, forceAllowed: false, deathBlockRequired: false, labelKey: 'transition.to.under_review' },
+  ],
+  deceased: [
+    // Terminal: ninguna transición sale de deceased
   ],
 };
 
 /**
  * Schema para POST /pension-cases/{id}/transitions.
  * El campo `to` es obligatorio; note/legal_basis_id/force son condicionales según la matriz.
+ * El bloque de defunción (5 claves) es todo-o-nada con to=deceased: obligatorio
+ * ahí y prohibido en las demás transiciones — la validación sustantiva la hace
+ * el backend (422); el frontend solo captura y transmite.
  */
 export const transitionSchema = z.object({
-  to: z.enum(['submitted', 'under_review', 'approved', 'rejected']),
+  to: z.enum(['submitted', 'under_review', 'approved', 'rejected', 'deceased']),
   note: z.string().max(2000).optional().nullable(),
   legal_basis_id: z.number().int().positive().optional().nullable(),
   force: z.boolean().optional().nullable(),
+  // Bloque de defunción (declaración de fallecimiento)
+  disease_id: z.number().int().positive().optional().nullable(),
+  disease_origin: z.enum(['comun', 'profesional', 'accidente_trabajo', 'accidente_trayecto']).optional().nullable(),
+  death_date: z.string().optional().nullable(),
+  death_certificate: z.string().max(100).optional().nullable(),
+  death_certificate_date: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
   // La validación de "nota ≥ 10 caracteres" se hace en el backend (422 con detalle),
   // pero hacemos una pre-validación de UX para evitar viajes innecesarios.

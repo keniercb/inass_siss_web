@@ -76,8 +76,20 @@
     "father_name": "Father's name",
     "mother_name": "Mother's name",
     "citizen_card_id": "Citizen card ID",
-    "citizen_card_id_help": "Optional and unique. Additional citizen identifier.",
+    "citizen_card_id_help": "Optional and unique. Person identifier in the Unique File (32 characters); filled in automatically when querying the identity number.",
     "death_date": "Death date"
+  },
+  "fuc": {
+    "button": "Query Unique File",
+    "button_help": "Looks up the citizen's public data in the Unique Citizen File using the identity number and fills in the form automatically.",
+    "success": "Data for {{name}} loaded from the Unique Citizen File",
+    "deceased_warning": "The Unique File reports this person as deceased",
+    "deceased_warning_detail": "Registered date of death: {{date}}",
+    "error_title": "Could not query the Unique File",
+    "not_found": "The person does not exist in the Unique Citizen File.",
+    "disabled": "Unique File queries are disabled in this environment.",
+    "unavailable": "The Unique File service is unavailable right now.",
+    "error": "An error occurred while querying the Unique File."
   },
   "detail": {
     "back_to_list": "Back to list",

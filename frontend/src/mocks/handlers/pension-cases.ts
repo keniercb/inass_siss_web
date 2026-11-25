@@ -76,12 +76,20 @@ const caseHistory = new Map<number, components['schemas']['PensionCaseHistory'][
 ]);
 
 // Matriz legal de transiciones (sección 2.4) — refleja la del backend.
+// deceased es el terminal de la declaración de fallecimiento: solo se entra
+// desde approved y jamás sale nada de él.
 const LEGAL_TRANSITIONS: Record<string, string[]> = {
   submitted: ['under_review'],
   under_review: ['submitted', 'approved', 'rejected'],
-  approved: ['under_review'],
+  approved: ['under_review', 'deceased'],
   rejected: ['under_review'],
+  deceased: [],
 };
+
+// Id del tipo de pensión «Por sobrevivencia» (rama fallecimiento) en el catálogo
+// sembrado de mocks/handlers/catalogs.ts (AGE=1, DIS=2, SUP=3). La declaración
+// de fallecimiento solo procede desde un expediente de rama NO fallecimiento.
+const SURVIVORSHIP_PENSION_TYPE_ID = 3;
 
 // Permisos por transición (cubre el rol del actor) — referencia documental
 // (no se valida en el mock porque el backend ya cubre 403 contra el actor real)
@@ -102,11 +110,14 @@ export const pensionCasesHandlers = [
     const perPage = parseInt(url.searchParams.get('per_page') ?? '15', 10);
     const search = url.searchParams.get('search') ?? '';
     const status = url.searchParams.get('status') ?? '';
+    const parentCaseId = url.searchParams.get('parent_case_id') ?? '';
     const sort = url.searchParams.get('sort') ?? 'requested_at';
     const order = url.searchParams.get('order') ?? 'desc';
 
     let items = Array.from(cases.values());
     if (status) items = items.filter((c) => c.status === status);
+    // Búsqueda inversa del expediente derivado: ¿cuál es el derivado de X?
+    if (parentCaseId) items = items.filter((c) => String(c.parent_case_id ?? '') === parentCaseId);
     if (search) {
       const q = search.toLowerCase();
       items = items.filter((c) => c.number?.toLowerCase().includes(q) || `${c.applicant?.first_name ?? ''} ${c.applicant?.first_surname ?? ''}`.toLowerCase().includes(q));
@@ -232,11 +243,16 @@ export const pensionCasesHandlers = [
   }),
 
   // DELETE /pension-cases/{id}/salary-records/{record}
+  // Las copias derivadas de una declaración de fallecimiento responden 422.
   http.delete(`${API_BASE}/pension-cases/:id/salary-records/:record`, ({ params }) => {
     const caseId = parseInt(params.id as string, 10);
     const recordId = parseInt(params.record as string, 10);
     const c = cases.get(caseId);
     if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    const record = (c.salary_records ?? []).find((r) => r.id === recordId);
+    if (record?.derived) {
+      return HttpResponse.json({ message: 'La fila es una copia del expediente derivado y no se puede eliminar.' }, { status: 422 });
+    }
     c.salary_records = (c.salary_records ?? []).filter((r) => r.id !== recordId);
     cases.set(caseId, c);
     return HttpResponse.json({ message: 'Eliminado.' });
@@ -263,11 +279,16 @@ export const pensionCasesHandlers = [
   }),
 
   // DELETE /pension-cases/{id}/service-records/{record}
+  // Las copias derivadas de una declaración de fallecimiento responden 422.
   http.delete(`${API_BASE}/pension-cases/:id/service-records/:record`, ({ params }) => {
     const caseId = parseInt(params.id as string, 10);
     const recordId = parseInt(params.record as string, 10);
     const c = cases.get(caseId);
     if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    const record = (c.service_records ?? []).find((r) => r.id === recordId);
+    if (record?.derived) {
+      return HttpResponse.json({ message: 'La fila es una copia del expediente derivado y no se puede eliminar.' }, { status: 422 });
+    }
     c.service_records = (c.service_records ?? []).filter((r) => r.id !== recordId);
     cases.set(caseId, c);
     return HttpResponse.json({ message: 'Eliminado.' });
@@ -287,11 +308,16 @@ export const pensionCasesHandlers = [
   }),
 
   // DELETE /pension-cases/{id}/work-cycles/{record}
+  // Las copias derivadas de una declaración de fallecimiento responden 422.
   http.delete(`${API_BASE}/pension-cases/:id/work-cycles/:record`, ({ params }) => {
     const caseId = parseInt(params.id as string, 10);
     const recordId = parseInt(params.record as string, 10);
     const c = cases.get(caseId);
     if (!c) return HttpResponse.json({ message: 'No encontrado.' }, { status: 404 });
+    const record = (c.work_cycles ?? []).find((r) => r.id === recordId);
+    if (record?.derived) {
+      return HttpResponse.json({ message: 'La fila es una copia del expediente derivado y no se puede eliminar.' }, { status: 422 });
+    }
     c.work_cycles = (c.work_cycles ?? []).filter((r) => r.id !== recordId);
     cases.set(caseId, c);
     return HttpResponse.json({ message: 'Eliminado.' });
@@ -352,10 +378,19 @@ export const pensionCasesHandlers = [
       note?: string | null;
       legal_basis_id?: number | null;
       force?: boolean | null;
+      // Bloque de defunción (declaración de fallecimiento)
+      disease_id?: number | null;
+      disease_origin?: string | null;
+      death_date?: string | null;
+      death_certificate?: string | null;
+      death_certificate_date?: string | null;
+      // Pago inicial (aprobación) — el resto del cuerpo desconocido se ignora
+      initial_payment_amount?: string | number | null;
+      initial_payment_description?: string | null;
     };
 
     // 1. Validación del cuerpo
-    if (!body.to || !['submitted', 'under_review', 'approved', 'rejected'].includes(body.to)) {
+    if (!body.to || !['submitted', 'under_review', 'approved', 'rejected', 'deceased'].includes(body.to)) {
       return HttpResponse.json({ message: 'Error de validación.', errors: { to: ['El campo to es obligatorio y debe ser un estado válido.'] } }, { status: 422 });
     }
 
@@ -378,11 +413,50 @@ export const pensionCasesHandlers = [
     const errors: Record<string, string[]> = {};
     const missing: string[] = [];
 
-    // Nota obligatoria en aprobación, denegación y reapertura (mínimo 10 caracteres)
-    const noteRequired = ['approved', 'rejected'].includes(toStatus) || ['approved', 'rejected'].includes(fromStatus);
+    // Nota obligatoria en aprobación, denegación y reapertura (mínimo 10 caracteres).
+    // En la declaración de fallecimiento la nota es OPCIONAL — el certificado
+    // de defunción es la evidencia.
+    const noteRequired = ['approved', 'rejected'].includes(toStatus)
+      || (toStatus === 'under_review' && ['approved', 'rejected'].includes(fromStatus));
     if (noteRequired) {
       if (!note || note.length < 10) {
         errors.note = ['La nota es obligatoria y debe tener al menos 10 caracteres.'];
+      }
+    }
+
+    // Declaración de fallecimiento: solo desde un expediente APROBADO de rama
+    // NO fallecimiento (la matriz ya cubre approved; aquí la rama). 422 si el
+    // expediente ya es de sobrevivientes.
+    if (toStatus === 'deceased' && c.pension_type_id === SURVIVORSHIP_PENSION_TYPE_ID) {
+      return HttpResponse.json({
+        message: 'La declaración de fallecimiento no procede: este expediente ya es de la rama de sobrevivientes.',
+        status: fromStatus,
+        attempted_to: toStatus,
+        case_id: caseId,
+      }, { status: 422 });
+    }
+
+    // Bloque de defunción de la declaración: las 5 claves son todo-o-nada
+    // (obligatorias con to=deceased, prohibidas en las demás).
+    if (toStatus === 'deceased') {
+      if (!body.disease_id) errors.disease_id = ['La causa de muerte es obligatoria en la declaración de fallecimiento.'];
+      if (!body.disease_origin) errors.disease_origin = ['El tipo de muerte es obligatorio en la declaración de fallecimiento.'];
+      if (!body.death_date) errors.death_date = ['La fecha de fallecimiento es obligatoria en la declaración de fallecimiento.'];
+      if (!body.death_certificate) errors.death_certificate = ['El certificado de defunción es obligatorio en la declaración de fallecimiento.'];
+      if (!body.death_certificate_date) errors.death_certificate_date = ['La fecha del certificado es obligatoria en la declaración de fallecimiento.'];
+      const today = new Date().toISOString().split('T')[0] ?? '';
+      if (body.death_date && body.death_certificate_date) {
+        if (body.death_date >= today) errors.death_date = ['La fecha de fallecimiento debe ser estrictamente anterior a hoy.'];
+        else if (body.death_date >= body.death_certificate_date) errors.death_date = ['La fecha de fallecimiento debe ser estrictamente anterior a la fecha del certificado.'];
+      }
+      if (body.death_certificate_date && body.death_certificate_date >= today) {
+        errors.death_certificate_date = ['La fecha del certificado debe ser estrictamente anterior a hoy.'];
+      }
+    } else {
+      // Bloque de defunción prohibido en las demás transiciones
+      if (body.disease_id != null || body.disease_origin != null || body.death_date != null
+        || body.death_certificate != null || body.death_certificate_date != null) {
+        errors.disease_id = ['El bloque de defunción está prohibido en esta transición.'];
       }
     }
 
@@ -454,8 +528,54 @@ export const pensionCasesHandlers = [
         decided_at: new Date().toISOString(),
         decided_by: 2,
       } : {}),
+      // La declaración de fallecimiento: bloque de defunción del payload y
+      // forzar jubilación por edad TRUE inmutable (el switch NUNCA viaja).
+      ...(toStatus === 'deceased' ? {
+        disease_id: body.disease_id ?? null,
+        disease_origin: body.disease_origin as PensionCase['disease_origin'],
+        death_date: body.death_date ?? null,
+        death_certificate: body.death_certificate ?? null,
+        death_certificate_date: body.death_certificate_date ?? null,
+        forced_age_retirement: true,
+      } : {}),
     };
     cases.set(caseId, updated);
+
+    // Declaración de fallecimiento: nace el EXPEDIENTE DERIVADO de sobrevivientes —
+    // copia verbatim del original (subregistros incluidos, las copias nacen
+    // «derived» y su DELETE responde 422), tipo SOB del catálogo, estado
+    // solicitud, parent_case_id = el declarado, número territorial nuevo de la
+    // MISMA oficina. El original ya quedó deceased (TERMINAL, jamás reabrible).
+    let derivedCase: PensionCase | null = null;
+    if (toStatus === 'deceased') {
+      const derivedId = nextCaseId++;
+      derivedCase = baseCase({
+        ...updated,
+        id: derivedId,
+        number: `${(updated.number ?? '').split('-')[0] ?? '11'}-${new Date().getFullYear()}-${String(derivedId).padStart(5, '0')}`,
+        status: 'submitted',
+        parent_case_id: caseId,
+        pension_type_id: SURVIVORSHIP_PENSION_TYPE_ID,
+        approval_legal_basis_id: null,
+        decision_notes: null,
+        decided_at: null,
+        decided_by: null,
+        computed_amount: null,
+        death_date: body.death_date ?? null,
+        death_certificate: body.death_certificate ?? null,
+        death_certificate_date: body.death_certificate_date ?? null,
+        forced_age_retirement: true,
+        // Copias verbatim marcadas derived — su DELETE responde 422
+        salary_records: (updated.salary_records ?? []).map((r) => ({ ...r, id: nextSalaryId++, pension_case_id: derivedId, derived: true }) as SalaryRecord),
+        service_records: (updated.service_records ?? []).map((r) => ({ ...r, id: nextServiceId++, pension_case_id: derivedId, derived: true }) as ServiceRecord),
+        work_cycles: (updated.work_cycles ?? []).map((r) => ({ ...r, id: nextCycleId++, pension_case_id: derivedId, derived: true }) as WorkCycle),
+        income_concept_records: (updated.income_concept_records ?? []).map((r) => ({ ...r, id: nextIncomeId++, pension_case_id: derivedId }) as IncomeConceptRecord),
+        // Rama sobrevivencia: los familiares con derecho se añaden después vía
+        // el subrecurso — la pestaña nace visible con la lista vacía.
+        entitled_relatives: [],
+      } as Partial<PensionCase>);
+      cases.set(derivedId, derivedCase);
+    }
 
     const transitionRow: components['schemas']['PensionCaseHistory'] = {
       id: nextTransitionId++,
@@ -468,7 +588,7 @@ export const pensionCasesHandlers = [
     const rows = caseHistory.get(caseId) ?? [];
     caseHistory.set(caseId, [...rows, transitionRow]);
 
-    return HttpResponse.json({ data: updated, transition: transitionRow });
+    return HttpResponse.json({ data: updated, transition: transitionRow, ...(derivedCase ? { derived_case: derivedCase } : {}) });
   }),
 
   // GET /pension-cases/{id}/calculation — snapshot congelado (Task 51/S8.4, RF-CAL-008)

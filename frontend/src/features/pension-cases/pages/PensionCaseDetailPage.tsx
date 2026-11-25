@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight, CheckCircle2, XCircle, AlertTriangle, History as HistoryIcon, Users } from 'lucide-react';
+import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight, CheckCircle2, XCircle, AlertTriangle, History as HistoryIcon, Users, Lock } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { usePensionCase, usePensionCaseHistory, useCaseCalculation, useCalculationPreview } from '../api/queries';
 import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle, useAddIncomeConceptRecord, useRemoveIncomeConceptRecord, useRemoveEntitledRelative } from '../api/mutations';
@@ -57,6 +57,19 @@ export function PensionCaseDetailPage() {
   const removeServiceMutation = useRemoveServiceRecord(id);
   const removeWorkCycleMutation = useRemoveWorkCycle(id);
   const removeIncomeConceptMutation = useRemoveIncomeConceptRecord(id);
+
+  // Copia heredada de una declaración de fallecimiento: la fila nació con el
+  // expediente derivado y su eliminación está bloqueada por contrato (422).
+  // Se presenta el candado y el distintivo «copia»; el backend sigue siendo
+  // la autoridad si la petición llegara a escaparse.
+  const DerivedBadge = () => (
+    <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide bg-zinc-200 text-zinc-700 align-middle">{t('subrecord.derived_badge')}</span>
+  );
+  const DerivedLock = () => (
+    <span className="inline-flex p-1 text-muted-foreground" title={t('subrecord.derived_help')}>
+      <Lock className="w-3.5 h-3.5" />
+    </span>
+  );
 
   if (isLoading) return <div className="max-w-7xl mx-auto"><p className="text-muted-foreground">{tc('status.loading')}…</p></div>;
   if (isError || !pensionCase) return <div className="max-w-7xl mx-auto text-center py-12"><h1 className="text-xl font-semibold text-foreground mb-2">{t('detail.not_found')}</h1><button onClick={() => navigate('/expedientes')} className="text-primary hover:underline">{t('detail.back_to_list')}</button></div>;
@@ -116,7 +129,7 @@ export function PensionCaseDetailPage() {
           <SubrecordSection title={t('salary.title')} onAdd={canEdit ? () => setSubModal('salary') : undefined} addLabel={t('salary.add')}>
             {(pensionCase.salary_records ?? []).length > 0 ? (
               <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('salary.columns.year')}</th><th className="text-left px-3 py-2">{t('salary.columns.earned_salary')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
-                <tbody className="divide-y divide-border">{(pensionCase.salary_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{r.year}</td><td className="px-3 py-2">{formatCUP(Number(r.earned_salary ?? 0))}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeSalaryMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
+                <tbody className="divide-y divide-border">{(pensionCase.salary_records ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{r.year}{r.derived && <DerivedBadge />}</td><td className="px-3 py-2">{formatCUP(Number(r.earned_salary ?? 0))}</td>{canEdit && <td className="text-right px-3 py-2">{r.derived ? <DerivedLock /> : <button onClick={() => removeSalaryMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>}</td>}</tr>))}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
           </SubrecordSection>
@@ -126,7 +139,7 @@ export function PensionCaseDetailPage() {
               <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('service.columns.entity')}</th><th className="text-left px-3 py-2">{t('service.columns.start_date')}</th><th className="text-left px-3 py-2">{t('service.columns.end_date')}</th><th className="text-right px-3 py-2">{t('service.columns.worked_months')}</th><th className="text-right px-3 py-2">{t('service.columns.worked_years')}</th><th className="text-left px-3 py-2">{t('service.columns.is_appendix')}</th><th className="text-left px-3 py-2">{t('service.columns.declaration_form')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
                 <tbody className="divide-y divide-border">{(pensionCase.service_records ?? []).map((r) => {
                   const entityLabel = r.entity ? (r.entity.name ?? `${r.entity.code ?? ''} ${r.entity.tax_id_number ?? ''}`.trim()) : (r.entity_id ? `#${r.entity_id}` : '—');
-                  return (<tr key={r.id}><td className="px-3 py-2 text-xs">{entityLabel}</td><td className="px-3 py-2">{r.start_date ? formatDate(r.start_date) : '—'}</td><td className="px-3 py-2">{r.end_date ? formatDate(r.end_date) : '—'}</td><td className="px-3 py-2 text-right font-mono">{r.worked_months != null ? r.worked_months : '—'}</td><td className="px-3 py-2 text-right font-mono">{r.worked_years != null ? r.worked_years : '—'}</td><td className="px-3 py-2">{r.is_appendix ? '✓' : '—'}</td><td className="px-3 py-2 text-xs">{r.declaration_form ?? '—'}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeServiceMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>);
+                  return (<tr key={r.id}><td className="px-3 py-2 text-xs">{entityLabel}{r.derived && <DerivedBadge />}</td><td className="px-3 py-2">{r.start_date ? formatDate(r.start_date) : '—'}</td><td className="px-3 py-2">{r.end_date ? formatDate(r.end_date) : '—'}</td><td className="px-3 py-2 text-right font-mono">{r.worked_months != null ? r.worked_months : '—'}</td><td className="px-3 py-2 text-right font-mono">{r.worked_years != null ? r.worked_years : '—'}</td><td className="px-3 py-2">{r.is_appendix ? '✓' : '—'}</td><td className="px-3 py-2 text-xs">{r.declaration_form ?? '—'}</td>{canEdit && <td className="text-right px-3 py-2">{r.derived ? <DerivedLock /> : <button onClick={() => removeServiceMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>}</td>}</tr>);
                 })}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
@@ -135,7 +148,7 @@ export function PensionCaseDetailPage() {
           <SubrecordSection title={t('cycle.title')} onAdd={canEdit ? () => setSubModal('cycle') : undefined} addLabel={t('cycle.add')}>
             {(pensionCase.work_cycles ?? []).length > 0 ? (
               <table className="w-full text-sm"><thead><tr className="bg-muted text-xs uppercase tracking-wider text-muted-foreground"><th className="text-left px-3 py-2">{t('cycle.columns.planned_days')}</th><th className="text-left px-3 py-2">{t('cycle.columns.actual_days')}</th><th className="text-left px-3 py-2">{t('cycle.columns.cycles_count')}</th>{canEdit && <th className="text-right px-3 py-2"></th>}</tr></thead>
-                <tbody className="divide-y divide-border">{(pensionCase.work_cycles ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{r.planned_days}</td><td className="px-3 py-2">{r.actual_days}</td><td className="px-3 py-2">{r.cycles_count}</td>{canEdit && <td className="text-right px-3 py-2"><button onClick={() => removeWorkCycleMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button></td>}</tr>))}</tbody>
+                <tbody className="divide-y divide-border">{(pensionCase.work_cycles ?? []).map((r) => (<tr key={r.id}><td className="px-3 py-2">{r.planned_days}{r.derived && <DerivedBadge />}</td><td className="px-3 py-2">{r.actual_days}</td><td className="px-3 py-2">{r.cycles_count}</td>{canEdit && <td className="text-right px-3 py-2">{r.derived ? <DerivedLock /> : <button onClick={() => removeWorkCycleMutation.mutate(r.id!)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>}</td>}</tr>))}</tbody>
               </table>
             ) : <p className="text-sm text-muted-foreground py-2">—</p>}
           </SubrecordSection>
@@ -173,6 +186,7 @@ export function PensionCaseDetailPage() {
         <CaseTransitionModal
           caseId={id}
           currentStatus={currentStatus}
+          pensionTypeId={pensionCase.pension_type_id}
           onClose={() => setTransitionOpen(false)}
         />
       )}
@@ -245,6 +259,10 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
           <Field label={t('detail.fields.number')} value={pensionCase.number ?? '—'} mono />
           <Field label={t('detail.fields.status')} value={t(`list.status.${pensionCase.status}`)} />
+          {/* Expediente de origen — presente solo en los derivados de una declaración de fallecimiento */}
+          {pensionCase.parent_case_id != null && (
+            <Field label={t('detail.fields.parent_case_id')} value={`#${pensionCase.parent_case_id}`} mono />
+          )}
           <Field label={t('detail.fields.requested_at')} value={pensionCase.requested_at ? formatDate(pensionCase.requested_at) : '—'} />
           <Field label={t('detail.fields.last_salary')} value={pensionCase.last_salary != null ? formatCUP(Number(pensionCase.last_salary)) : '—'} />
           <Field label={t('detail.fields.pension_type')} value={lookup(pensionTypesData, pensionCase.pension_type_id)} />

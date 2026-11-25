@@ -56,6 +56,8 @@
   .badge-under_review { @apply bg-amber-100 text-amber-800; }
   .badge-approved     { @apply bg-emerald-100 text-emerald-800; }
   .badge-rejected     { @apply bg-red-100 text-red-800; }
+  /* Estado terminal de la declaración de fallecimiento */
+  .badge-deceased     { @apply bg-zinc-200 text-zinc-800; }
 
   /* Standard scrollbar styling (Baseline since 2024-12) */
   .app-layout__main {

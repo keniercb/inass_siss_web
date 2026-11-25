@@ -76,8 +76,20 @@
     "father_name": "Nombre del padre",
     "mother_name": "Nombre de la madre",
     "citizen_card_id": "Ficha única de ciudadano",
-    "citizen_card_id_help": "Opcional y único. Identificador adicional del ciudadano.",
+    "citizen_card_id_help": "Opcional y único. Identificador de la persona en la Ficha Única (32 caracteres); se completa al consultar el carné de identidad.",
     "death_date": "Fecha de fallecimiento"
+  },
+  "fuc": {
+    "button": "Consultar Ficha Única",
+    "button_help": "Busca los datos del ciudadano en la Ficha Única del Ciudadano a partir del carné de identidad y completa el formulario automáticamente.",
+    "success": "Datos de {{name}} cargados desde la Ficha Única",
+    "deceased_warning": "La Ficha Única reporta a esta persona como fallecida",
+    "deceased_warning_detail": "Fecha de defunción registrada: {{date}}",
+    "error_title": "No se pudo consultar la Ficha Única",
+    "not_found": "La persona no existe en la Ficha Única del Ciudadano.",
+    "disabled": "La consulta a la Ficha Única está desactivada en este entorno.",
+    "unavailable": "El servicio de la Ficha Única no está disponible ahora mismo.",
+    "error": "Ocurrió un error al consultar la Ficha Única."
   },
   "detail": {
     "back_to_list": "Volver al listado",
