@@ -228,7 +228,12 @@ export function useRemoveIncomeConceptRecord(caseId: number | string) {
  * El toast de error sintetiza los campos de diagnóstico que devuelve el backend
  * (status, attempted_to, missing, message) para que el usuario entienda la causa.
  */
-interface TransitionResponse { data: PensionCase; transition: PensionCaseHistory; }
+interface TransitionResponse {
+  data: PensionCase;
+  transition: PensionCaseHistory;
+  /** Solo con to=deceased — el expediente de sobrevivientes que la declaración engendró */
+  derived_case?: PensionCase | null;
+}
 
 interface TransitionError422 {
   message?: string;
@@ -260,7 +265,14 @@ export function useCaseTransition(caseId: number | string) {
       qc.setQueryData(['pension-cases', 'detail', caseId], data.data);
       qc.invalidateQueries({ queryKey: ['pension-cases', 'history', caseId] });
       qc.invalidateQueries({ queryKey: ['pension-cases', 'list'] });
-      toast.success(t('transition.success'));
+      // Declaración de fallecimiento: informar del expediente derivado de sobrevivientes
+      if (data.derived_case) {
+        const derived = data.derived_case;
+        if (derived.id != null) qc.setQueryData(['pension-cases', 'detail', derived.id], derived);
+        toast.success(t('transition.deceased_success', { number: derived.number ?? derived.id ?? '—' }));
+      } else {
+        toast.success(t('transition.success'));
+      }
     },
     onError: (err: unknown) => {
       const ae = err as AxiosError<TransitionError422 & TransitionError409>;

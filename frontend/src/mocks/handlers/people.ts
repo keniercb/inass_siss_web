@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 import type { components } from '@/types/api';
 
 type Person = components['schemas']['Person'];
+type FucPerson = components['schemas']['FucPerson'];
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
@@ -48,7 +49,7 @@ const seedPersons: Person[] = [
     id: 5, identity_number: '72051548124', first_name: 'Roberto', middle_name: null,
     first_surname: 'Hernández', second_surname: 'Suárez', sex: 'M', race_id: 4,
     address: 'Calle Maceo #200, Santiago de Cuba', birth_date: '1972-05-15', death_date: null,
-    father_name: null, mother_name: null, citizen_card_id: 'FC-001-2024',
+    father_name: null, mother_name: null, citizen_card_id: 'F5B2A7D1C3E4F6A8B0C2D4E6F8A1C3E5',
     deceased: false,
   },
   // 92 0510 4789 1 (mujer 1992-05-10)
@@ -95,6 +96,50 @@ const seedPersons: Person[] = [
 
 const persons = new Map<number, Person>(seedPersons.map((p) => [p.id!, p!]));
 let nextId = 1000;
+
+// Ficha Única del Ciudadano — registro simulado de personas servidas por la
+// consulta GET /fuc/people/{identityNumber}. Los atributos null muestran la
+// degradación de alcance del nivel de consulta (mapping tolerante). Los CI
+// coinciden con personas del seed para poder probar el flujo completo de
+// autollenado; incluir uno fallecido para probar la advertencia.
+const fucRegistry: Record<string, FucPerson> = {
+  '85061547812': {
+    fuc_id: '8F5A3B7C9D1E2F4A6B8C0D2E4F6A8B0C', identity_number: '85061547812',
+    first_name: 'Ana', middle_name: 'María', first_surname: 'Pérez', second_surname: 'González',
+    sex: 'F', age: 41, birth_date: '1985-06-15', deceased: false, death_date: null,
+    address: 'Calle 23 #45, Vedado', province_name: 'La Habana', province_sid: 3, province_dpa_code: '03', province_suin_code: 'CU-03',
+    municipality_name: 'Plaza de la Revolución', municipality_sid: 31, municipality_dpa_code: '0331', municipality_suin_code: 'CU-03-31',
+    father_name: 'Pedro Pérez Rodríguez', mother_name: 'María Gómez Fernández',
+    rid_updated_at: '2025-11-02T08:15:00Z', fuc_updated_at: '2025-11-10T10:30:00Z',
+  },
+  '78092145678': {
+    fuc_id: 'A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6', identity_number: '78092145678',
+    first_name: 'Carlos', middle_name: null, first_surname: 'Rodríguez', second_surname: 'Gómez',
+    sex: 'M', age: 48, birth_date: '1978-09-21', deceased: false, death_date: null,
+    address: 'Av. 51 #1206, Marianao', province_name: 'La Habana', province_sid: 3, province_dpa_code: '03', province_suin_code: 'CU-03',
+    municipality_name: 'Marianao', municipality_sid: 33, municipality_dpa_code: '0333', municipality_suin_code: 'CU-03-33',
+    father_name: 'Juan Rodríguez Fernández', mother_name: 'Ana Gómez Suárez',
+    rid_updated_at: '2025-10-18T12:00:00Z', fuc_updated_at: '2025-11-04T09:45:00Z',
+  },
+  '56043012345': {
+    fuc_id: 'C9D8E7F6A5B4C3D2E1F0A9B8C7D6E5F4', identity_number: '56043012345',
+    first_name: 'Juan', middle_name: null, first_surname: 'Pérez', second_surname: 'García',
+    sex: 'M', age: 69, birth_date: '1956-04-30', deceased: true, death_date: '2025-01-15',
+    address: 'Calle Luz #44, Habana Vieja', province_name: 'La Habana', province_sid: 3, province_dpa_code: '03', province_suin_code: 'CU-03',
+    municipality_name: 'Habana Vieja', municipality_sid: 32, municipality_dpa_code: '0332', municipality_suin_code: 'CU-03-32',
+    father_name: null, mother_name: null,
+    rid_updated_at: '2025-01-16T08:00:00Z', fuc_updated_at: '2025-01-16T08:00:00Z',
+  },
+};
+
+// Validación estructural del CI previa a la consulta (mes 01-12 y día 01-31
+// en los dígitos 3-6) — refleja la validación local del contrato del endpoint.
+function fucCiStructurallyValid(ci: string): boolean {
+  if (!CI_REGEX.test(ci)) return false;
+  const month = parseInt(ci.slice(2, 4), 10);
+  const day = parseInt(ci.slice(4, 6), 10);
+  return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+}
 
 export const peopleHandlers = [
   // GET /people — listado con búsqueda y filtros
@@ -166,6 +211,32 @@ export const peopleHandlers = [
       data: paged,
       meta: { current_page: page, per_page: perPage, total, last_page: Math.max(1, Math.ceil(total / perPage)) },
     });
+  }),
+
+  // GET /fuc/people/{identityNumber} — consulta de ciudadano por CI (FUC).
+  // La respuesta nunca se loguea: de la consulta queda solo el actor, el CI
+  // y el resultado (bitácora simulada fuera de este handler).
+  http.get(`${API_BASE}/fuc/people/:identityNumber`, ({ params }) => {
+    const ci = String(params.identityNumber ?? '');
+
+    // 422 — CI estructuralmente inválido antes de toda llamada al proveedor
+    if (!fucCiStructurallyValid(ci)) {
+      return HttpResponse.json(
+        { message: 'El carné de identidad es estructuralmente inválido: se esperan 11 dígitos con mes 01-12 y día 01-31.' },
+        { status: 422 },
+      );
+    }
+
+    // 404 — la persona no existe en la Ficha Única (arreglo vacío del proveedor)
+    const fuc = fucRegistry[ci];
+    if (!fuc) {
+      return HttpResponse.json(
+        { message: `La persona con carné ${ci} no existe en la Ficha Única del Ciudadano.` },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json({ data: fuc });
   }),
 
   // POST /people — crear persona con validación de CI cubano

@@ -20,7 +20,9 @@ export const personSchema = z.object({
   birth_date: z.string().min(1, 'La fecha de nacimiento es obligatoria'),
   father_name: z.string().max(120).optional().nullable(),
   mother_name: z.string().max(120).optional().nullable(),
-  citizen_card_id: z.string().max(30).optional().nullable(),
+  // UID-P de la Ficha Única desde la consulta FUC: 32 caracteres [A-Z0-9].
+  // Solo límite de longitud — el formato lo valida el backend (unicidad incluida).
+  citizen_card_id: z.string().max(32, 'La ficha única debe tener como máximo 32 caracteres').optional().nullable(),
 });
 
 export type PersonInput = z.infer<typeof personSchema>;

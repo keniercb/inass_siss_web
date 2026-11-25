@@ -10,7 +10,8 @@
       "submitted": "Solicitud",
       "under_review": "Revisión",
       "approved": "Aprobados",
-      "rejected": "Denegados"
+      "rejected": "Denegados",
+      "deceased": "Fallecidos"
     },
     "columns": {
       "number": "Número",
@@ -24,7 +25,8 @@
       "submitted": "Solicitud",
       "under_review": "Revisión",
       "approved": "Aprobado",
-      "rejected": "Denegado"
+      "rejected": "Denegado",
+      "deceased": "Fallecido"
     }
   },
   "create": {
@@ -100,7 +102,8 @@
       "death_certificate_date": "Fecha del certificado",
       "death_cause": "Causa",
       "death_origin_type": "Tipo de fallecimiento",
-      "forced_age_retirement": "Forzar jubilación por edad"
+      "forced_age_retirement": "Forzar jubilación por edad",
+      "parent_case_id": "Expediente de origen"
     },
     "section": {
       "case_data": "Datos del expediente",
@@ -278,7 +281,8 @@
       "submitted": "Devolver a Solicitud",
       "under_review": "Pasar a Revisión",
       "approved": "Aprobar",
-      "rejected": "Denegar"
+      "rejected": "Denegar",
+      "deceased": "Declarar fallecimiento"
     },
     "requires_note": "Requiere nota",
     "requires_legal_basis": "Requiere base legal",
@@ -301,7 +305,12 @@
     "error": "No se pudo aplicar la transición",
     "error_409": "La reapertura rompería la reservación de expediente abierto por persona",
     "out_of_matrix": "Transición no permitida: {{from}} → {{to}}",
-    "missing_checklist": "Faltan: {{items}}"
+    "missing_checklist": "Faltan: {{items}}",
+    "requires_death_block": "Requiere bloque de defunción",
+    "death_block_help": "Declare el fallecimiento del titular: nace un expediente de sobrevivientes derivado de este y la pensión del titular termina. La nota es opcional: el certificado de defunción es la evidencia.",
+    "death_block_required": "Todos los campos del bloque de defunción son obligatorios",
+    "note_optional_hint": "opcional, mínimo 10 caracteres si se escribe",
+    "deceased_success": "Fallecimiento declarado. Expediente de sobrevivientes {{number}} creado."
   },
   "history": {
     "by": "por"
@@ -395,5 +404,9 @@
     "add_error": "No se pudo añadir el familiar",
     "remove_success": "Familiar eliminado correctamente",
     "remove_error": "No se pudo eliminar el familiar"
+  },
+  "subrecord": {
+    "derived_badge": "Copia",
+    "derived_help": "Copia del expediente original — no se puede eliminar"
   }
 }

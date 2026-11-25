@@ -98,6 +98,7 @@ export function PensionCasesListPage() {
               { value: 'under_review', label: t('list.filter.under_review') },
               { value: 'approved', label: t('list.filter.approved') },
               { value: 'rejected', label: t('list.filter.rejected') },
+              { value: 'deceased', label: t('list.filter.deceased') },
             ]}
             placeholder={t('list.filter.all')}
           />

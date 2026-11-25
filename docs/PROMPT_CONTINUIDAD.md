@@ -93,18 +93,32 @@ El booleano `deceased_person` (Task 38) fue sustituido por `retirement_type: 'ed
 
 Página unificada en `/configuracion-invalidez` con 3 secciones.
 
+### Consulta FUC (GET /fuc/people/{identityNumber}, spec 1.44.0)
+En el formulario de ALTA de persona (`PersonFormModal`), botón «Consultar Ficha Única» junto al campo CI (solo modo alta; en edición el CI está deshabilitado). Habilitado solo con CI estructuralmente válido (11 dígitos + mes 01-12 + día 01-31 en dígitos 3-6 — validación de formato, no de negocio). El hook `useFucPersonLookup` (people/api/mutations.ts) dispara la consulta; con 200 autollena: nombres, apellidos, sexo, birth_date, dirección, padre, madre y `citizen_card_id` ← **fuc_id (UID-P de 32 chars [A-Z0-9])**. Los null del proveedor no tocan el valor actual. Si `deceased === true` muestra toast de advertencia (no bloquea). Errores: 404/422/502/503/504 llegan con `message` — se muestra como detalle del toast con título localizado. El Zod de citizen_card_id ahora es max(32).
+
+### Declaración de fallecimiento (to=deceased, spec 1.44.0)
+Quinto destino de la máquina de estados — `TRANSITION_MATRIX.approved` incluye `{ to: 'deceased', permission: 'cases.approve', deathBlockRequired: true }`. `deceased` es TERMINAL (matriz vacía, jamás reabrible). `CaseTransitionModal` recibe prop `pensionTypeId` y oculta el destino cuando el tipo de pensión es rama fallecimiento (el backend lo rechaza 422). El bloque de defunción (5 claves todo-o-nada: disease_id + disease_origin + death_date + death_certificate + death_certificate_date) se captura en el modal; **forced_age_retirement JAMÁS viaja — el sistema lo escribe TRUE**. La nota es opcional (el certificado es la evidencia). Badge `badge-deceased` (zinc) en CSS. Tras 200, `derived_case` llega en la respuesta: la mutation hace `setQueryData` del derivado y toast con su número.
+
+En el expediente derivado: `parent_case_id` se muestra en el resumen («Expediente de origen #N»), los subregistros copiados nacen con `derived: true` — la UI muestra distintivo «Copia» + candado en vez del botón de borrar (el DELETE del mock responde 422 como el backend). El índice soporta `parent_case_id` como filtro de búsqueda inversa.
+
 ---
 
 ## 3. Estado actual
 
-**Rama activa**: `feat/task-74-bloque-invalidez-catalogo-enfermedad`
-**Spec OpenAPI consumida**: 1.34.0
+**Rama activa**: `feat/task-85-86-consulta-fuc-declaracion-fallecimiento`
+**Spec OpenAPI consumida**: 1.44.0
 **Último commit**: ver `git log --oneline -3`
 
 ### Tareas completadas
 - Task 72/73 (spec 1.31.0): pagos iniciales, meses imputables, idioma del usuario
 - Task 74 Bloque C (spec 1.32.0): catálogo diseases, eje retirement_type, bloque invalidez en PensionCase
 - Tasks 75/76 (spec 1.34.0): configuración de invalidez (reglas, brackets, modificaciones especiales, reglas de beneficiario)
+- Tasks 77-81 (spec 1.39.0): age_of_majority, maximum_percent, bloque de defunción del expediente (Causa/Tipo), Familiares con derecho como tab independiente + EntitledRelativeFormModal
+- Task 82 (spec 1.41.0): proyecciones embebidas de EntitledRelative (beneficiary/tutor/type/agencias) sin casts
+- Task 84 (spec 1.42.0): forced_age_retirement (checkbox «Forzar jubilación por edad» en el bloque de defunción)
+- Task 85 (spec 1.44.0): consulta FUC con autollenado del formulario de persona + UID-P en citizen_card_id
+- Task 86 (spec 1.44.0): declaración de fallecimiento (to=deceased, terminal) con expediente derivado de sobrevivientes + subregistros derivados bloqueados + parent_case_id
+- modern-web-guidance v1.0.1: scrollbars estándar, toSorted, ES2023, autoComplete en formularios
 - Fixes UX: pago inicial al aprobar, formatDate off-by-one, toast z-index, menú lateral diseases
 - Limpieza i18n: sin referencias a Tasks/Doctrinas en textos user-facing
 
