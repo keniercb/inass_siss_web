@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.42.0"
+        "version": "1.44.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -1573,6 +1573,155 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Municipality not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/fuc/people/{identityNumber}": {
+            "get": {
+                "tags": [
+                    "Ficha Única"
+                ],
+                "summary": "Consulta de ciudadano por carné de identidad (FUC)",
+                "description": "Busca los datos públicos de la persona natural en la Ficha Única del Ciudadano a partir de su carné de identidad de 11 dígitos y devuelve sus datos junto al identificador único de persona (UID-P, `fuc_id` de 32 caracteres [A-Z0-9]) — insumo de la confrontación y del enriquecimiento del registro único de personas (Task 85, ADR-46). El nivel de consulta y los endpoints del proveedor son configuración de entorno (`citizen_fuc.*`). La respuesta nunca se loguea: de la consulta queda en la bitácora solo el actor, el CI y el resultado (D-8508).",
+                "operationId": "fucPeopleShow",
+                "parameters": [
+                    {
+                        "name": "identityNumber",
+                        "in": "path",
+                        "description": "Carné de identidad: 11 dígitos (mes 01-12 y día 01-31 en los dígitos 3-6, validados localmente antes de toda llamada de red)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9]{11}$",
+                            "example": "85061510002"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Persona encontrada en la FUC",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/FucPerson"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "La persona no existe en la Ficha Única (arreglo vacío del proveedor)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "La persona con carné 85061510002 no existe en la Ficha Única del Ciudadano."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Carné estructuralmente inválido, consulta rechazada por el proveedor (códigos E) o fila de respuesta malformada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "El servicio Ficha Única rechazó la consulta: código E1201 — parámetro identidad_numero."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "La autenticación contra el proveedor falló o el alcance concedido no cubre el nivel configurado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No fue posible autenticar contra el servicio Ficha Única del Ciudadano."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "La integración está desactivada en este entorno (FUC_ENABLED=false)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "La consulta a la Ficha Única del Ciudadano está desactivada en este entorno."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "504": {
+                        "description": "El proveedor no está disponible (fallo de conexión o 5xx tras un reintento)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "El servicio Ficha Única del Ciudadano no está disponible; el registro manual de personas permanece operativo."
                                         }
                                     },
                                     "type": "object"
@@ -4418,7 +4567,8 @@
                                 "submitted",
                                 "under_review",
                                 "approved",
-                                "rejected"
+                                "rejected",
+                                "deceased"
                             ]
                         }
                     },
@@ -4434,6 +4584,14 @@
                     {
                         "name": "applicant_person_id",
                         "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "parent_case_id",
+                        "in": "query",
+                        "description": "Task 86 (nuevo requerimiento 2026-11-25, D-8609): la búsqueda inversa del expediente derivado — ¿cuál es el derivado de X?",
                         "schema": {
                             "type": "integer"
                         }
@@ -5297,6 +5455,9 @@
                     },
                     "409": {
                         "description": "Expediente fuera de submitted (devuelve estado actual)"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
                     }
                 },
                 "security": [
@@ -5368,7 +5529,7 @@
                     "Expedientes"
                 ],
                 "summary": "Transición de estado del expediente (máquina declarativa)",
-                "description": "Sprint 6 (RF-EXP-005..010, ADR-07/arquitectura 9.1): UN solo endpoint declarativo para toda la máquina de estados — POST /pension-cases/{id}/transitions con {\"to\", \"note\", \"legal_basis_id\", \"force\"} en lugar de verbos RPC por transición. La decisión corre sobre la FILA BLOQUEADA dentro de una transacción (dos aprobaciones concurrentes del mismo expediente no pueden ocurrir: el segundo actor relee el estado ya resuelto y responde 422) y sigue el orden: la MATRIZ de la sección 2.4 primero (fuera de ella: 422 con el estado actual y el intento aterriza en bitácora), el ROL de la transición después (403: la revisión/devolución exige cases.review del especialista, la aprobación/denegación exige cases.approve/cases.reject del Director, la reapertura exige cases.reopen del Administrador), la EVIDENCIA después (la aprobación exige base legal VIGENTE y nota de resolución — una derogada solo el Administrador puede forzarla con force:true y la advertencia queda en bitácora, RF-LEG-003; la denegación y la reapertura exigen motivo de mínimo 10 caracteres, RF-EXP-008/010) y la COMPLETITUD al entrar en revisión (RF-EXP-006: al menos un servicio, la serie salarial y último salario positivo; 422 con la lista missing). La REAPERTURA administrativa (approved/rejected → under_review, solo Administrador) limpia la evidencia de decisión del expediente — la historia completa queda en las filas append-only — y respeta la reservación de expediente-abierto-por-persona (409 si el promovente ya tiene otro expediente abierto). Cada transición legal persiste from_status, to_status, usuario, fecha y nota en el historial inmutable y la respuesta viaja con el expediente actualizado (proyección completa de subregistros) y el objeto transition de la fila creada.",
+                "description": "Sprint 6 (RF-EXP-005..010, ADR-07/arquitectura 9.1): UN solo endpoint declarativo para toda la máquina de estados — POST /pension-cases/{id}/transitions con {\"to\", \"note\", \"legal_basis_id\", \"force\"} en lugar de verbos RPC por transición. La decisión corre sobre la FILA BLOQUEADA dentro de una transacción (dos aprobaciones concurrentes del mismo expediente no pueden ocurrir: el segundo actor relee el estado ya resuelto y responde 422) y sigue el orden: la MATRIZ de la sección 2.4 primero (fuera de ella: 422 con el estado actual y el intento aterriza en bitácora), el ROL de la transición después (403: la revisión/devolución exige cases.review del especialista, la aprobación/denegación exige cases.approve/cases.reject del Director, la reapertura exige cases.reopen del Administrador), la EVIDENCIA después (la aprobación exige base legal VIGENTE y nota de resolución — una derogada solo el Administrador puede forzarla con force:true y la advertencia queda en bitácora, RF-LEG-003; la denegación y la reapertura exigen motivo de mínimo 10 caracteres, RF-EXP-008/010) y la COMPLETITUD al entrar en revisión (RF-EXP-006: al menos un servicio, la serie salarial y último salario positivo; 422 con la lista missing). La REAPERTURA administrativa (approved/rejected → under_review, solo Administrador) limpia la evidencia de decisión del expediente — la historia completa queda en las filas append-only — y respeta la reservación de expediente-abierto-por-persona (409 si el promovente ya tiene otro expediente abierto). Cada transición legal persiste from_status, to_status, usuario, fecha y nota en el historial inmutable y la respuesta viaja con el expediente actualizado (proyección completa de subregistros) y el objeto transition de la fila creada. — Task 86 (nuevo requerimiento 2026-11-25): el QUINTO destino `deceased` es la DECLARACIÓN DE FALLECIMIENTO (permiso del Director cases.approve, 403 para el resto): solo desde un expediente APROBADO de rama NO fallecimiento (422 en cualquier otro origen — el intento aterriza en bitácora — y 422 si el expediente YA es de sobrevivientes), lleva en el cuerpo el BLOQUE DE DEFUNCIÓN de cinco claves (causa/tipo de muerte + trío de fechas y certificado, todas obligatorias y con fechas estrictamente pasadas; el switch forced_age_retirement JAMÁS viaja — el sistema lo escribe TRUE) y ejecuta TODO dentro de la misma transacción: nace el EXPEDIENTE DERIVADO de sobrevivientes (la copia verbatim del original INCLUYENDO los subregistros — las copias de salarios/servicios/ciclos nacen «derived» y su DELETE responde 422 —, tipo SOB «Por sobrevivencia» del catálogo, estado solicitud, parent_case_id = el expediente declarado, bloque de defunción del payload y forzar jubilación por edad TRUE inmutable; número territorial nuevo de la MISMA oficina) y la respuesta lo viaja como derived_case; el original pasa a deceased (TERMINAL, jamás reabrible — la reapertura administrativa sigue exclusiva de approved/rejected), la fila del historial aterriza con la nota y el pensionado del expediente declarado TERMINA automáticamente (el muerto no cobra, ADR-20; S10 solo paga active).",
                 "operationId": "pensionCasesTransition",
                 "parameters": [
                     {
@@ -5391,18 +5552,19 @@
                                 ],
                                 "properties": {
                                     "to": {
-                                        "description": "Estado destino de la matriz de la sección 2.4",
+                                        "description": "Estado destino de la matriz de la sección 2.4 — o deceased, la declaración de fallecimiento de la Task 86 (solo desde approved de rama no fallecimiento)",
                                         "type": "string",
                                         "example": "approved",
                                         "enum": [
                                             "submitted",
                                             "under_review",
                                             "approved",
-                                            "rejected"
+                                            "rejected",
+                                            "deceased"
                                         ]
                                     },
                                     "note": {
-                                        "description": "Nota de la transición: OBLIGATORIA (mínimo 10 caracteres) en la aprobación (nota de resolución), la denegación (motivo) y la reapertura (motivo); texto libre opcional en la revisión y la devolución",
+                                        "description": "Nota de la transición: OBLIGATORIA (mínimo 10 caracteres) en la aprobación (nota de resolución), la denegación (motivo) y la reapertura (motivo); texto libre opcional en la revisión, la devolución y la declaración de fallecimiento (el certificado de defunción ES la evidencia)",
                                         "type": "string",
                                         "example": "Procede la pensión por la Ley 128.",
                                         "nullable": true,
@@ -5433,6 +5595,46 @@
                                         "example": "Pago inicial por la aprobación del expediente.",
                                         "nullable": true,
                                         "maxLength": 255
+                                    },
+                                    "disease_id": {
+                                        "description": "Task 86 (D-8603): CAUSA DE MUERTE del bloque de defunción de la declaración — OBLIGATORIA con to=deceased (422 si falta), PROHIBIDA en las demás (422); la enfermedad debe existir y estar ACTIVA en el catálogo",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 3,
+                                        "nullable": true
+                                    },
+                                    "disease_origin": {
+                                        "description": "Task 86 (D-8603): TIPO DE MUERTE — el mismo campo Origen de la enfermedad del bloque de invalidez, OBLIGATORIO con to=deceased y PROHIBIDO en las demás",
+                                        "type": "string",
+                                        "example": "comun",
+                                        "nullable": true,
+                                        "enum": [
+                                            "comun",
+                                            "profesional",
+                                            "accidente_trabajo",
+                                            "accidente_trayecto"
+                                        ]
+                                    },
+                                    "death_date": {
+                                        "description": "Task 86 (D-8603): fecha de fallecimiento — OBLIGATORIA con to=deceased, estrictamente ANTERIOR a hoy y a la fecha del certificado, y estrictamente POSTERIOR al nacimiento de la persona (D-8402); PROHIBIDA en las demás transiciones",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-11-01",
+                                        "nullable": true
+                                    },
+                                    "death_certificate": {
+                                        "description": "Task 86 (D-8603): certificado de defunción — OBLIGATORIO con to=deceased, texto acotado; PROHIBIDO en las demás",
+                                        "type": "string",
+                                        "example": "CERT-2026-001182",
+                                        "nullable": true,
+                                        "maxLength": 100
+                                    },
+                                    "death_certificate_date": {
+                                        "description": "Task 86 (D-8603): fecha del certificado — OBLIGATORIA con to=deceased, estrictamente ANTERIOR a hoy y POSTERIOR a la fecha de fallecimiento; PROHIBIDA en las demás",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-11-03",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -5442,7 +5644,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Transición aplicada: el expediente actualizado y la fila del historial",
+                        "description": "Transición aplicada: el expediente actualizado y la fila del historial — con to=deceased viaja además derived_case, el expediente de sobrevivientes que la declaración engendró",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5456,6 +5658,15 @@
                                         },
                                         "transition": {
                                             "$ref": "#/components/schemas/PensionCaseHistory"
+                                        },
+                                        "derived_case": {
+                                            "oneOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PensionCase"
+                                                }
+                                            ],
+                                            "nullable": true,
+                                            "description": "Task 86: solo con to=deceased — el expediente derivado de sobrevivientes (SOB, solicitud, parent_case_id, bloque de defunción, forzar TRUE) con su proyección completa de subregistros"
                                         }
                                     },
                                     "type": "object"
@@ -11620,6 +11831,161 @@
                 },
                 "type": "object"
             },
+            "FucPerson": {
+                "title": "Persona FUC",
+                "description": "Persona natural servida por la Ficha Única del Ciudadano (Task 85, contrato api-pn-consulta). Los atributos null son los que el nivel de consulta configurado no aporta: el mapeo tolera la degradación de alcance. fuc_id es el identificador único de la persona (UID-P) — 32 caracteres de A-Z o 0-9 — que el registro del SGP persiste en people.citizen_card_id.",
+                "required": [
+                    "fuc_id",
+                    "identity_number",
+                    "first_name",
+                    "first_surname"
+                ],
+                "properties": {
+                    "fuc_id": {
+                        "description": "Identificador único de la persona en la FUC (UID-P): 32 caracteres [A-Z0-9]",
+                        "type": "string",
+                        "example": "8F5A3B7C9D1E2F4A6B8C0D2E4F6A8B0C"
+                    },
+                    "identity_number": {
+                        "description": "Carné de identidad consultado (11 dígitos)",
+                        "type": "string",
+                        "example": "85061510002"
+                    },
+                    "first_name": {
+                        "description": "Primer nombre (nivel 0)",
+                        "type": "string",
+                        "example": "Juan"
+                    },
+                    "middle_name": {
+                        "description": "Segundo nombre (nivel 0)",
+                        "type": "string",
+                        "example": "Carlos",
+                        "nullable": true
+                    },
+                    "first_surname": {
+                        "description": "Primer apellido (nivel 0)",
+                        "type": "string",
+                        "example": "Pérez"
+                    },
+                    "second_surname": {
+                        "description": "Segundo apellido (nivel 0)",
+                        "type": "string",
+                        "example": "Gómez",
+                        "nullable": true
+                    },
+                    "sex": {
+                        "description": "Sexo normalizado del literal del proveedor (nivel 1); null cuando el literal no es reconocible",
+                        "type": "string",
+                        "example": "M",
+                        "nullable": true,
+                        "enum": [
+                            "M",
+                            "F"
+                        ]
+                    },
+                    "age": {
+                        "description": "Edad declarada por el proveedor (nivel 1)",
+                        "type": "integer",
+                        "example": 41,
+                        "nullable": true
+                    },
+                    "birth_date": {
+                        "description": "Fecha de nacimiento (nivel 10 / endpoint de nacimiento)",
+                        "type": "string",
+                        "format": "date",
+                        "example": "1985-06-15",
+                        "nullable": true
+                    },
+                    "deceased": {
+                        "description": "Bandera de fallecido del proveedor (nivel 4)",
+                        "type": "boolean",
+                        "example": false,
+                        "nullable": true
+                    },
+                    "death_date": {
+                        "description": "Fecha de defunción (nivel 10 / endpoint de defunción)",
+                        "type": "string",
+                        "format": "date",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "address": {
+                        "description": "Dirección de residencia (nivel 3)",
+                        "type": "string",
+                        "example": "Calle 23 #45, Vedado",
+                        "nullable": true
+                    },
+                    "province_name": {
+                        "description": "Provincia de residencia (nivel 3)",
+                        "type": "string",
+                        "example": "La Habana",
+                        "nullable": true
+                    },
+                    "province_sid": {
+                        "type": "integer",
+                        "example": 3,
+                        "nullable": true
+                    },
+                    "province_dpa_code": {
+                        "type": "string",
+                        "example": "03",
+                        "nullable": true
+                    },
+                    "province_suin_code": {
+                        "type": "string",
+                        "example": "CU-03",
+                        "nullable": true
+                    },
+                    "municipality_name": {
+                        "description": "Municipio de residencia (nivel 3)",
+                        "type": "string",
+                        "example": "Plaza de la Revolución",
+                        "nullable": true
+                    },
+                    "municipality_sid": {
+                        "type": "integer",
+                        "example": 31,
+                        "nullable": true
+                    },
+                    "municipality_dpa_code": {
+                        "type": "string",
+                        "example": "0331",
+                        "nullable": true
+                    },
+                    "municipality_suin_code": {
+                        "type": "string",
+                        "example": "CU-03-31",
+                        "nullable": true
+                    },
+                    "father_name": {
+                        "description": "Nombre del padre (nivel 2)",
+                        "type": "string",
+                        "example": "Pedro Pérez Rodríguez",
+                        "nullable": true
+                    },
+                    "mother_name": {
+                        "description": "Nombre de la madre (nivel 2)",
+                        "type": "string",
+                        "example": "María Gómez Fernández",
+                        "nullable": true
+                    },
+                    "rid_updated_at": {
+                        "description": "Fecha de última actualización RID (nivel 4)",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-11-02T08:15:00Z",
+                        "nullable": true
+                    },
+                    "fuc_updated_at": {
+                        "description": "Fecha de última actualización de la FUC (nivel 4)",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-11-10T10:30:00Z",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "LegalBasis": {
                 "title": "Base legal",
                 "description": "Norma o resolución del corpus legal (RF-LEG-002). La terna tipo+número+año es única e inmutable; el año se deriva de la fecha de emisión (H-11); status se deriva de las fechas al leer, nunca se almacena.",
@@ -13086,25 +13452,27 @@
                         "example": 1
                     },
                     "from_status": {
-                        "description": "Estado previo (sección 2.4)",
+                        "description": "Estado previo (sección 2.4 — más deceased, el terminal de la declaración de fallecimiento de la Task 86)",
                         "type": "string",
                         "example": "submitted",
                         "enum": [
                             "submitted",
                             "under_review",
                             "approved",
-                            "rejected"
+                            "rejected",
+                            "deceased"
                         ]
                     },
                     "to_status": {
-                        "description": "Estado nuevo (sección 2.4)",
+                        "description": "Estado nuevo (sección 2.4 — más deceased, el terminal de la declaración de fallecimiento de la Task 86)",
                         "type": "string",
                         "example": "under_review",
                         "enum": [
                             "submitted",
                             "under_review",
                             "approved",
-                            "rejected"
+                            "rejected",
+                            "deceased"
                         ]
                     },
                     "changed_by": {
@@ -13153,20 +13521,28 @@
                         "type": "string",
                         "example": "11032600001"
                     },
+                    "parent_case_id": {
+                        "description": "Task 86 (nuevo requerimiento 2026-11-25, D-8601): id del EXPEDIENTE PADRE — el expediente aprobado cuya declaración de fallecimiento engendró este derivado de sobrevivientes. NULL en todo expediente nacido del alta pública. Solo lectura: la clave JAMÁS viaja en el POST/PUT del expediente (prohibida, 422) — la escribe el sistema en el nacimiento del derivado",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": null,
+                        "nullable": true
+                    },
                     "requested_at": {
                         "type": "string",
                         "format": "date",
                         "example": "2026-09-30"
                     },
                     "status": {
-                        "description": "Estado normativo de la sección 2.4",
+                        "description": "Estado normativo de la sección 2.4 — más deceased, el terminal de la declaración de fallecimiento de la Task 86 (solo desde approved de rama no fallecimiento; jamás reabrible)",
                         "type": "string",
                         "example": "submitted",
                         "enum": [
                             "submitted",
                             "under_review",
                             "approved",
-                            "rejected"
+                            "rejected",
+                            "deceased"
                         ]
                     },
                     "applicant_person_id": {
@@ -13532,6 +13908,11 @@
                         "format": "int64",
                         "example": 1
                     },
+                    "derived": {
+                        "description": "Task 86 (D-8606): true cuando la fila es una COPIA del nacimiento de un expediente derivado de declaración de fallecimiento — su DELETE responde 422; las filas añadidas después nacen false",
+                        "type": "boolean",
+                        "example": false
+                    },
                     "year": {
                         "description": "Año devengado (1950…año actual+1)",
                         "type": "integer",
@@ -13559,6 +13940,11 @@
                         "type": "integer",
                         "format": "int64",
                         "example": 1
+                    },
+                    "derived": {
+                        "description": "Task 86 (D-8606): true cuando la fila es una COPIA del nacimiento de un expediente derivado de declaración de fallecimiento — su DELETE responde 422; las filas añadidas después nacen false",
+                        "type": "boolean",
+                        "example": false
                     },
                     "entity_id": {
                         "type": "integer",
@@ -13627,6 +14013,11 @@
                         "type": "integer",
                         "format": "int64",
                         "example": 1
+                    },
+                    "derived": {
+                        "description": "Task 86 (D-8606): true cuando la fila es una COPIA del nacimiento de un expediente derivado de declaración de fallecimiento — su DELETE responde 422; las filas añadidas después nacen false",
+                        "type": "boolean",
+                        "example": false
                     },
                     "planned_days": {
                         "type": "integer",
@@ -14044,9 +14435,9 @@
                         "nullable": true
                     },
                     "citizen_card_id": {
-                        "description": "Ficha única de ciudadano, opcional y única (RF-PER-005)",
+                        "description": "Ficha única de ciudadano (UID-P de la FUC desde Task 85: 32 caracteres [A-Z0-9]), opcional y única (RF-PER-005)",
                         "type": "string",
-                        "example": null,
+                        "example": "8F5A3B7C9D1E2F4A6B8C0D2E4F6A8B0C",
                         "nullable": true
                     },
                     "deceased": {
@@ -14716,6 +15107,10 @@
         {
             "name": "Personas",
             "description": "Registro único de personas: alta con control de duplicados, edición auditada, fallecimiento y búsqueda (RF-PER-001..005)"
+        },
+        {
+            "name": "Ficha Única",
+            "description": "Primera integración saliente del SGP (Task 85, ADR-46): consulta del ciudadano contra la Ficha Única del Ciudadano (FUC) por carné de identidad — GET /fuc/people/{identityNumber} responde los datos públicos de la persona natural con su identificador único (UID-P, fuc_id de 32 [A-Z0-9]), tras OAuth2 client_credentials con token cacheado; la respuesta nunca se loguea, la bitácora guarda actor + CI + resultado (D-8508). El nivel de consulta, los endpoints y el TLS son configuración de entorno (citizen_fuc.*)"
         },
         {
             "name": "Usuarios",
