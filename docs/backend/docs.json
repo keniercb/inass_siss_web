@@ -6,7 +6,7 @@
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.44.0"
+        "version": "1.45.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -7753,6 +7753,604 @@
                 ]
             }
         },
+        "/api/v1/reports/cases": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Reporte de expedientes por oficina y estado (RF-REP-001)",
+                "description": "RF-REP-001 (Task 87, D-8703): expedientes por estado y oficina en un rango de fechas (requested_at, inclusivo), con totales y desglose por oficina subordinada — un office_id resuelve el SUBÁRBOL de la jerarquía de oficinas (parent_office_id: la oficina y sus subordinadas); una oficina sin expedientes responde su fila de ceros. Una oficina inexistente o desactivada responde 422 (el filtro del operador es entrada, nunca un reporte vacío silencioso). Las oficinas se identifican por tipo, municipio, provincia y dirección (el modelo no tiene columna de nombre, la doctrina de display del OfficeResource). Los expedientes con borrado lógico quedan fuera (SGP-34). Permiso `reports.view` (admin, director, auditor).",
+                "operationId": "reportsCases",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Inicio del rango sobre requested_at (inclusivo)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Fin del rango sobre requested_at (inclusivo)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "office_id",
+                        "in": "query",
+                        "description": "Oficina raíz del subárbol (la oficina y sus subordinadas) — 422 si no existe",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "La matriz oficina × estado con totales",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CaseReport"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/pensioners": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Reporte de pensionados por provincia, tipo y régimen (RF-REP-002)",
+                "description": "RF-REP-002 (Task 87, D-8704): pensionados y monto total de cuantías por los tres ejes — provincia SEGÚN CONTROL BANCARIO ACTIVO (la provincia de la agencia del control del cobro; los pensionados sin control viajan en la fila «(sin control)»), tipo de pensión y régimen. El filtro status es el literal exacto de PensionerStatus (opcional). Los montos viajan como cadenas con dos decimales. Permiso `reports.view`.",
+                "operationId": "reportsPensioners",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "suspended",
+                                "terminated"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Los tres desgloses con los totales",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PensionerReport"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/bank-controls": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Reporte de controles bancarios por agencia y nómina electrónica (RF-REP-003)",
+                "description": "RF-REP-003 (Task 87, D-8705): controles bancarios por agencia del catálogo vivo con el marcador de nómina electrónica; con year+month los pagos del período se suman por agencia con los CINCO buckets del H-16 (pending/paid/provitional/expired/cancelled) y el monto de lo efectivamente pagado. La lectura del mayor NO pasa por el flag payments.enabled (el flag gobierra la superficie de escritura, jamás un reporte): una agencia sin generación responde ceros honestos. Permiso `reports.view`.",
+                "operationId": "reportsBankControls",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "description": "Año del período (con month)",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 3000,
+                            "minimum": 2000
+                        }
+                    },
+                    {
+                        "name": "month",
+                        "in": "query",
+                        "description": "Mes del período (con year)",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 12,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Las agencias con sus controles y (si hay período) los pagos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/BankControlReport"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/dashboard": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Tablero de indicadores: carga, tramitación y aprobación (RF-REP-005)",
+                "description": "RF-REP-005 (Task 87, D-8706): versión mínima con contadores cacheados (reporting.dashboard_ttl, default 300 s, llave por ventana). Carga por oficina (expedientes abiertos: submitted + under_review), tiempo medio de tramitación (días desde created_at del expediente hasta la PRIMERA aprobación, promedio sobre los aprobados dentro de la ventana) y tasa de aprobación (aprobados / decisiones de la ventana — aprobadas y rechazadas del historial). Indicadores NULL = sin evidencia en la ventana, jamás un 0% inventado. Ventana por defecto: los últimos 90 días. Permiso `reports.view`.",
+                "operationId": "reportsDashboard",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Inicio de la ventana (default: hoy − 90 días)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Fin de la ventana (default: hoy)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "El tablero por oficina y los indicadores globales",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/DashboardReport"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/case-fichas/{id}": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Ficha del expediente en PDF (RF-REP-004)",
+                "description": "RF-REP-004 (Task 87, D-8708): la ficha del expediente como documento PDF — número, estado, oficina, promovente (identidad y nombre), tipo, régimen, expediente padre y contacto. Registro institucional monoidioma español (D-114) con sello de generación. 404 de expediente inexistente (o con borrado lógico). Permiso `reports.view`.",
+                "operationId": "reportsCaseFicha",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "El documento PDF (stream)",
+                        "content": {
+                            "application/pdf": {}
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Registro inexistente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/pensioner-fichas/{id}": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Ficha del pensionado en PDF (RF-REP-004)",
+                "description": "RF-REP-004 (Task 87, D-8708): la ficha del pensionado como documento PDF — persona (identidad y nombre), tipo, régimen, cuantía, estado con motivo, expediente de origen y control bancario del cobro (la cuenta nula del D-117 viaja como «— (cuenta nula)»). Registro institucional monoidioma español (D-114) con sello de generación. 404 de pensionado inexistente (o con borrado lógico). Permiso `reports.view`.",
+                "operationId": "reportsPensionerFicha",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "El documento PDF (stream)",
+                        "content": {
+                            "application/pdf": {}
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Registro inexistente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/report-exports": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Listado de corridas de exportación",
+                "description": "El directorio de exportaciones de reportes (RF-REP-004, Task 87): las corridas más recientes primero, con su estado lineal (queued/processing/completed/failed), el reporte, el formato, la bolsa de filtros congelada, el conteo de registros al completar y el nombre del archivo. Permiso `reports.export`.",
+                "operationId": "reportExportsIndex",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Corridas paginadas (envelope RF-API-002)"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Exportación de un reporte: solicitar el archivo",
+                "description": "RF-REP-004 (Task 87, D-8707): solicita el archivo de un reporte — cases, pensioners, bank-controls, dashboard o case-listing (el listado filtrado de expedientes, la dependencia delegada desde la Fase 3) — en csv o xlsx. Crea la corrida `queued` y responde 202 Accepted — el job en cola (driver `database`, `queue:work`) construye las filas con la MISMA fuente de agregación de los endpoints JSON y escribe el archivo (CSV fputcsv; XLSX con openspout, el escritor OpenXML en STREAMING — decenas de miles de filas con memoria plana, tope reporting.listing_row_cap). La bolsa de filtros viaja congelada en la corrida (evidencia reproducible); una office_id desconocida responde 422 ANTES de crear la corrida. Re-ejecutar crea una corrida NUEVA: los archivos previos jamás se tocan. Permiso `reports.export` (admin, director, auditor).",
+                "operationId": "reportExportsStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "report",
+                                    "format"
+                                ],
+                                "properties": {
+                                    "report": {
+                                        "description": "El reporte a exportar — case-listing es el listado filtrado de expedientes (RF-EXP/Fase 3)",
+                                        "type": "string",
+                                        "example": "case-listing",
+                                        "enum": [
+                                            "cases",
+                                            "pensioners",
+                                            "bank-controls",
+                                            "dashboard",
+                                            "case-listing"
+                                        ]
+                                    },
+                                    "format": {
+                                        "description": "CSV (fputcsv) o Excel (XLSX OpenXML en streaming)",
+                                        "type": "string",
+                                        "example": "xlsx",
+                                        "enum": [
+                                            "csv",
+                                            "xlsx"
+                                        ]
+                                    },
+                                    "from": {
+                                        "description": "cases/dashboard: inicio del rango de fechas",
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "to": {
+                                        "description": "cases/dashboard: fin del rango de fechas",
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "office_id": {
+                                        "description": "cases: oficina raíz del subárbol de oficinas (422 si no existe)",
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "status": {
+                                        "description": "pensioners: active/suspended/terminated · case-listing: submitted/under_review/approved/rejected/deceased",
+                                        "type": "string"
+                                    },
+                                    "year": {
+                                        "description": "bank-controls: año del período",
+                                        "type": "integer",
+                                        "example": 2026
+                                    },
+                                    "month": {
+                                        "description": "bank-controls: mes del período",
+                                        "type": "integer",
+                                        "example": 11
+                                    },
+                                    "q": {
+                                        "description": "case-listing: término de búsqueda del listado",
+                                        "type": "string"
+                                    },
+                                    "number": {
+                                        "description": "case-listing: número exacto",
+                                        "type": "string"
+                                    },
+                                    "applicant_person_id": {
+                                        "description": "case-listing: promovente",
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "parent_case_id": {
+                                        "description": "case-listing: búsqueda inversa del derivado",
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "requested_from": {
+                                        "description": "case-listing: inicio del rango de solicitud",
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "requested_to": {
+                                        "description": "case-listing: fin del rango de solicitud",
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Exportación aceptada: la corrida `queued` que el worker procesará",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ReportExportRun"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/report-exports/{id}": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Estado de una corrida de exportación",
+                "description": "El detalle de la exportación (RF-REP-004, Task 87): el estado del worker, el conteo de registros al completar y la causa del failed cuando corresponde — la «notificación de finalización» de la corrida es el propio estado (el worker la mueve a completed). 404 de corrida inexistente. Permiso `reports.export`.",
+                "operationId": "reportExportsShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "La corrida"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Registro inexistente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/report-exports/{id}/download": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Descargar el archivo del reporte generado",
+                "description": "La descarga del archivo de una exportación COMPLETADA (RF-REP-004, Task 87): el CSV (UTF-8 con BOM) o el XLSX (OpenXML) del reporte con los filtros congelados en la corrida. 409 mientras la corrida no esté `completed` (aún en cola, procesándose o fallida — el detalle de la corrida sirve el error). 404 de corrida inexistente o de archivo perdido. Permiso `reports.export`.",
+                "operationId": "reportExportsDownload",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "El archivo del reporte (stream)"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Registro inexistente"
+                    },
+                    "409": {
+                        "description": "La corrida aún no está completed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/audit-logs": {
             "get": {
                 "tags": [
@@ -14448,6 +15046,446 @@
                 },
                 "type": "object"
             },
+            "CaseReport": {
+                "title": "Reporte de expedientes",
+                "description": "RF-REP-001 (Task 87, D-8703): la matriz oficina × estado del rango de fechas sobre requested_at — una fila por oficina del alcance (el office_id resuelve el subárbol de la jerarquía de oficinas: «desglose por oficina subordinada») con los CINCO literales del CaseStatus siempre presentes (ceros incluidos) y el total por oficina; el objeto totals acumula el alcance completo. Los expedientes con borrado lógico quedan fuera (SGP-34).",
+                "properties": {
+                    "rows": {
+                        "description": "The OpenAPI schemas of the reporting read surface (Task 87,\nFase 6 · S11, ADR-13: schemas documented with attributes, the\nspec grows with the code). The report VIEWS are plain `data`\nobjects (RF-API-002) — bounded aggregates, NOT paginated.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CaseReportRow"
+                        }
+                    },
+                    "totals": {
+                        "description": "Los cinco literales del estado + total",
+                        "properties": {
+                            "submitted": {
+                                "type": "integer",
+                                "example": 4
+                            },
+                            "under_review": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "approved": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "rejected": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "deceased": {
+                                "type": "integer",
+                                "example": 0
+                            },
+                            "total": {
+                                "type": "integer",
+                                "example": 10
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "CaseReportRow": {
+                "title": "Fila del reporte de expedientes",
+                "description": "Una oficina del alcance con sus conteos por estado — identificada por tipo, municipio, provincia y dirección (el modelo de oficinas no tiene columna de nombre).",
+                "properties": {
+                    "office_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "office_type": {
+                        "type": "string",
+                        "example": "Municipal"
+                    },
+                    "municipality": {
+                        "type": "string",
+                        "example": "Playa"
+                    },
+                    "province": {
+                        "type": "string",
+                        "example": "La Habana",
+                        "nullable": true
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Calle 42 #7, Playa"
+                    },
+                    "status_counts": {
+                        "properties": {
+                            "submitted": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "under_review": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "approved": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "rejected": {
+                                "type": "integer",
+                                "example": 0
+                            },
+                            "deceased": {
+                                "type": "integer",
+                                "example": 0
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "example": 4
+                    }
+                },
+                "type": "object"
+            },
+            "PensionerReport": {
+                "title": "Reporte de pensionados",
+                "description": "RF-REP-002 (Task 87, D-8704): los tres ejes de análisis con el conteo y el MONTO TOTAL de cuantías por eje (cadenas de dos decimales), más los totales globales. La provincia se resuelve SEGÚN CONTROL BANCARIO ACTIVO — la provincia de la agencia del control del cobro; los pensionados sin control viajan en la fila «(sin control)» con key null.",
+                "properties": {
+                    "by_province": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PensionerBreakdownRow"
+                        }
+                    },
+                    "by_pension_type": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PensionerBreakdownRow"
+                        }
+                    },
+                    "by_regime": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PensionerBreakdownRow"
+                        }
+                    },
+                    "totals": {
+                        "properties": {
+                            "count": {
+                                "type": "integer",
+                                "example": 9
+                            },
+                            "total_amount": {
+                                "type": "string",
+                                "example": "21730.00"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "PensionerBreakdownRow": {
+                "title": "Fila de desglose de pensionados",
+                "properties": {
+                    "key": {
+                        "description": "La clave del eje (provincia/tipo/régimen); null en la fila «(sin control)»",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 15,
+                        "nullable": true
+                    },
+                    "label": {
+                        "type": "string",
+                        "example": "La Habana"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "total_amount": {
+                        "description": "SUM de las cuantías del eje (DECIMAL como cadena, dos decimales)",
+                        "type": "string",
+                        "example": "9860.00"
+                    }
+                },
+                "type": "object"
+            },
+            "BankControlReport": {
+                "title": "Reporte de controles bancarios",
+                "description": "RF-REP-003 (Task 87, D-8705): una fila por agencia del catálogo vivo con los controles por marcador de nómina electrónica; con período, los pagos del H-16 por agencia (CINCO buckets + el monto de lo pagado). La lectura del mayor no pasa por payments.enabled (una agencia sin generación responde ceros honestos).",
+                "properties": {
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/BankControlReportRow"
+                        }
+                    },
+                    "period": {
+                        "description": "El período solicitado (null cuando no viajó)",
+                        "properties": {
+                            "year": {
+                                "type": "integer",
+                                "example": 2026
+                            },
+                            "month": {
+                                "type": "integer",
+                                "example": 11
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "BankControlReportRow": {
+                "title": "Fila del reporte de controles bancarios",
+                "properties": {
+                    "agency_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 2
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "BPA-HA-12"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Agencia 4710 Playa"
+                    },
+                    "province": {
+                        "type": "string",
+                        "example": "La Habana",
+                        "nullable": true
+                    },
+                    "controls_total": {
+                        "type": "integer",
+                        "example": 7
+                    },
+                    "electronic_payroll": {
+                        "description": "Controles con el marcador de nómina electrónica",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "manual_payroll": {
+                        "description": "Controles de cobro manual (tarjeta magnética)",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "payments": {
+                        "description": "Los pagos del período (solo cuando year+month viajaron)",
+                        "properties": {
+                            "pending": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "paid": {
+                                "type": "integer",
+                                "example": 4
+                            },
+                            "provitional": {
+                                "type": "integer",
+                                "example": 0
+                            },
+                            "expired": {
+                                "type": "integer",
+                                "example": 0
+                            },
+                            "cancelled": {
+                                "type": "integer",
+                                "example": 0
+                            },
+                            "paid_amount": {
+                                "type": "string",
+                                "example": "9120.00"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "DashboardReport": {
+                "title": "Tablero de indicadores",
+                "description": "RF-REP-005 (Task 87, D-8706): la versión mínima con contadores cacheados (reporting.dashboard_ttl) — carga por oficina (expedientes abiertos), tiempo medio de tramitación (días del nacimiento a la primera aprobación, promedio de los aprobados en la ventana) y tasa de aprobación (aprobados/decisiones de la ventana). Indicadores null = sin evidencia en la ventana, jamás un cero inventado.",
+                "properties": {
+                    "generated_at": {
+                        "description": "El momento del cálculo del snapshot cacheado",
+                        "type": "string",
+                        "example": "2026-11-26 10:15:00"
+                    },
+                    "window": {
+                        "properties": {
+                            "from": {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            "to": {
+                                "type": "string",
+                                "format": "date"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "workload": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DashboardWorkloadRow"
+                        }
+                    },
+                    "global": {
+                        "properties": {
+                            "open_cases": {
+                                "type": "integer",
+                                "example": 7
+                            },
+                            "average_processing_days": {
+                                "type": "string",
+                                "example": "12.4",
+                                "nullable": true
+                            },
+                            "approval_rate": {
+                                "description": "Porcentaje sobre las decisiones de la ventana; null sin decisiones",
+                                "type": "string",
+                                "example": "75.00",
+                                "nullable": true
+                            },
+                            "approved": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "rejected": {
+                                "type": "integer",
+                                "example": 1
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "DashboardWorkloadRow": {
+                "title": "Fila de carga del tablero",
+                "properties": {
+                    "office_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "office_type": {
+                        "type": "string",
+                        "example": "Municipal"
+                    },
+                    "municipality": {
+                        "type": "string",
+                        "example": "Playa"
+                    },
+                    "open_cases": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "average_processing_days": {
+                        "description": "Días promedio del nacimiento a la aprobación; null si la oficina no aprobó nada en la ventana",
+                        "type": "string",
+                        "example": "11.0",
+                        "nullable": true
+                    },
+                    "approval_rate": {
+                        "description": "Porcentaje de aprobación de la ventana; null sin decisiones",
+                        "type": "string",
+                        "example": "66.67",
+                        "nullable": true
+                    },
+                    "approved": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "rejected": {
+                        "type": "integer",
+                        "example": 1
+                    }
+                },
+                "type": "object"
+            },
+            "ReportExportRun": {
+                "title": "Corrida de exportación de reporte",
+                "description": "Una exportación de reporte (RF-REP-004, Task 87): nace `queued` (202 Accepted), el worker la mueve queued→processing→completed/failed (lineal, sin retries — re-exportar crea una corrida NUEVA). La bolsa de filtros viaja congelada: el archivo responde a la forma EXACTA de la consulta que el operador pidió. Al completar sirve records_count + filename.",
+                "properties": {
+                    "id": {
+                        "description": "Wire projection of a report export run (Task 87, RF-REP-004,\nD-8707 — the PayrollExportRunResource mold): the queued export\nthe 202 answers and the worker's evidence — the lineal status,\nthe frozen filter bag (reproducible evidence), the record\ncount and the filename on completion.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "report": {
+                        "description": "El reporte exportado — case-listing es el listado filtrado de expedientes (la dependencia delegada desde la Fase 3)",
+                        "type": "string",
+                        "example": "case-listing",
+                        "enum": [
+                            "cases",
+                            "pensioners",
+                            "bank-controls",
+                            "dashboard",
+                            "case-listing"
+                        ]
+                    },
+                    "format": {
+                        "type": "string",
+                        "example": "xlsx",
+                        "enum": [
+                            "csv",
+                            "xlsx"
+                        ]
+                    },
+                    "filters": {
+                        "description": "La bolsa de filtros congelada al pedir la exportación (evidencia reproducible)",
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "status": {
+                        "description": "Ciclo de vida LINEAL del worker (ReportExportStatus): sin retries — una exportación fallida se re-pide como corrida NUEVA",
+                        "type": "string",
+                        "example": "completed",
+                        "enum": [
+                            "queued",
+                            "processing",
+                            "completed",
+                            "failed"
+                        ]
+                    },
+                    "records_count": {
+                        "description": "Filas de datos del archivo al completar",
+                        "type": "integer",
+                        "example": 523,
+                        "nullable": true
+                    },
+                    "filename": {
+                        "type": "string",
+                        "example": "reporte_case-listing_20261126-101530.xlsx",
+                        "nullable": true
+                    },
+                    "error_message": {
+                        "description": "La causa del failed (terminal de error)",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_by": {
+                        "description": "La cuenta que pidió la exportación",
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "AuditLogEntry": {
                 "title": "Entrada de bitácora",
                 "description": "Registro append-only de una escritura crítica: autor, sujeto, valores previos y nuevos, y contexto de la solicitud (RF-AUD-001).",
@@ -15135,6 +16173,10 @@
         {
             "name": "Pensionados",
             "description": "Pensionados: consulta (directorio filtrable y ficha con la línea de estados derivada de la bitácora — Task 60/SGP-45, S9.2), ciclo de vida del operador — PATCH /status: suspensión, reanudación y extinción con motivo obligatorio (Task 61/SGP-46, S9.3) — y el control bancario del cobro 1:1 anidado — PUT /bank-control: upsert en sitio con número global estable y marcador derivado del tipo de agencia (Task 63/SGP-48, S10.2/S10.3); el alta nace de la aprobación (Task 59/SGP-44) CON su control bancario provisionado de los datos de cobro del expediente — la cuenta puede nacer null, la «cuenta nula/vacía» del D-117 cuando el expediente no trae cuenta utilizable, en cualquier forma de cobro (Task 67/72c/72e; la arista D-119 de la 72d quedó derogada); el control queda pendiente SOLO cuando la agencia de cobro desapareció del catálogo vivo durante la revisión (D-118)"
+        },
+        {
+            "name": "Reportes",
+            "description": "Fase 6 · S11 (Task 87, RF-REP-001..005): los reportes agregados de solo lectura del SGP — expedientes por oficina y estado con el desglose del subárbol de la entidad (D-8703), pensionados por provincia (según control bancario activo)/tipo/régimen con los montos de cuantías (D-8704), controles bancarios por agencia con el marcador de nómina electrónica y los pagos del período (D-8705), el tablero de indicadores cacheado (D-8706) y las fichas PDF de expediente y pensionado (D-8708) — más el CARRIER DE EXPORTACIÓN de RF-REP-004: POST /report-exports (202 + corrida queued, job queue:work, CSV fputcsv / XLSX openspout en streaming, bolsa de filtros congelada como evidencia reproducible, case-listing = el listado filtrado de expedientes delegado desde la Fase 3) con su directorio, estado y descarga. Permiso reports.view / reports.export (admin, director, auditor — D-8702)."
         },
         {
             "name": "Pagos",
