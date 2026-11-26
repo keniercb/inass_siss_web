@@ -1,0 +1,207 @@
+{
+  "index": {
+    "title": "Reports",
+    "description": "Statistical reports and exports",
+    "cards": {
+      "cases": "Cases",
+      "cases_desc": "Cases by office and status",
+      "pensioners": "Pensioners",
+      "pensioners_desc": "Pensioners by province, type and regime",
+      "bank_controls": "Bank controls",
+      "bank_controls_desc": "Controls by agency and electronic payroll",
+      "dashboard": "Dashboard",
+      "dashboard_desc": "Workload, processing and approval indicators",
+      "exports": "Exports",
+      "exports_desc": "Report export runs"
+    }
+  },
+  "nav": {
+    "index": "Home",
+    "cases": "Cases",
+    "pensioners": "Pensioners",
+    "bank_controls": "Bank controls",
+    "dashboard": "Dashboard",
+    "exports": "Exports"
+  },
+  "common": {
+    "filters": "Filters",
+    "apply": "Apply",
+    "clear": "Clear",
+    "from": "From",
+    "to": "To",
+    "year": "Year",
+    "month": "Month",
+    "office": "Office",
+    "office_all": "All offices",
+    "status": "Status",
+    "status_all": "All statuses",
+    "export": "Export",
+    "export_as": "Export as",
+    "format_csv": "CSV",
+    "format_xlsx": "Excel (XLSX)",
+    "ficha_pdf": "PDF sheet",
+    "totals": "Totals",
+    "no_data": "No data for the selected filters",
+    "loading": "Loading",
+    "generated_at": "Generated"
+  },
+  "cases": {
+    "title": "Cases report",
+    "description": "Distribution of cases by office and status",
+    "columns": {
+      "office": "Office",
+      "office_type": "Type",
+      "municipality": "Municipality",
+      "province": "Province",
+      "address": "Address",
+      "status_submitted": "Submitted",
+      "status_under_review": "Under review",
+      "status_approved": "Approved",
+      "status_rejected": "Rejected",
+      "status_deceased": "Deceased",
+      "total": "Total"
+    }
+  },
+  "pensioners": {
+    "title": "Pensioners report",
+    "description": "Distribution of pensioners by province, type and regime",
+    "filters": {
+      "status_active": "Active",
+      "status_suspended": "Suspended",
+      "status_terminated": "Terminated"
+    },
+    "tables": {
+      "by_province": "By province",
+      "by_pension_type": "By pension type",
+      "by_regime": "By regime",
+      "columns": {
+        "label": "Category",
+        "count": "Pensioners",
+        "total_amount": "Total amount"
+      }
+    },
+    "no_breakdown": "(unclassified)"
+  },
+  "bank_controls": {
+    "title": "Bank controls report",
+    "description": "Bank controls by agency and electronic payroll",
+    "columns": {
+      "agency": "Agency",
+      "code": "Code",
+      "name": "Name",
+      "province": "Province",
+      "controls_total": "Controls",
+      "electronic_payroll": "Electronic payroll",
+      "manual_payroll": "Manual collection",
+      "payments": "Period payments"
+    },
+    "payments": {
+      "total": "Total",
+      "paid": "Paid",
+      "pending": "Pending"
+    },
+    "no_period": "No specific period"
+  },
+  "dashboard": {
+    "title": "Indicators dashboard",
+    "description": "Workload, processing and approval by office",
+    "window": "Analysis window",
+    "workload": {
+      "title": "Workload by office",
+      "columns": {
+        "office": "Office",
+        "office_type": "Type",
+        "municipality": "Municipality",
+        "open_cases": "Open cases",
+        "average_processing_days": "Average days",
+        "approval_rate": "Approval rate",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
+    },
+    "global": {
+      "title": "Global indicators",
+      "open_cases": "Open cases",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "average_processing_days": "Global average days",
+      "approval_rate": "Global approval rate"
+    }
+  },
+  "exports": {
+    "title": "Exports",
+    "description": "Report export runs",
+    "new": "Request export",
+    "columns": {
+      "id": "ID",
+      "report": "Report",
+      "format": "Format",
+      "status": "Status",
+      "records": "Records",
+      "filename": "File",
+      "created_at": "Requested"
+    },
+    "status": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "report_types": {
+      "cases": "Cases",
+      "pensioners": "Pensioners",
+      "bank-controls": "Bank controls",
+      "dashboard": "Dashboard",
+      "case-listing": "Case listing"
+    },
+    "download": "Download",
+    "refresh": "Refresh",
+    "pending_hint": "Exports are in progress. They refresh automatically."
+  },
+  "export_create": {
+    "title": "Request export",
+    "report": "Report",
+    "format": "Format",
+    "filters_cases": "Cases report filters",
+    "filters_dashboard": "Dashboard filters",
+    "filters_pensioners": "Pensioners report filters",
+    "filters_bank_controls": "Bank controls report filters",
+    "filters_case_listing": "Case listing filters",
+    "office": "Office",
+    "status": "Status",
+    "year": "Year",
+    "month": "Month",
+    "q": "Search",
+    "number": "Exact number",
+    "applicant_person_id": "Applicant",
+    "parent_case_id": "Parent case",
+    "requested_from": "Requested from",
+    "requested_to": "Requested to",
+    "confirm": "Request",
+    "success": "Export requested successfully",
+    "error": "Could not request the export",
+    "status_active": "Active",
+    "status_suspended": "Suspended",
+    "status_terminated": "Terminated",
+    "status_submitted": "Submitted",
+    "status_under_review": "Under review",
+    "status_approved": "Approved",
+    "status_rejected": "Rejected",
+    "status_deceased": "Deceased"
+  },
+  "ficha": {
+    "case_button": "Case sheet (PDF)",
+    "pensioner_button": "Pensioner sheet (PDF)",
+    "success": "Sheet generated successfully",
+    "error": "Could not generate the sheet",
+    "not_found": "Record not found"
+  },
+  "download": {
+    "success": "File downloaded successfully",
+    "error": "Could not download the file",
+    "not_ready": "The export is not completed yet"
+  },
+  "errors": {
+    "load": "Could not load the report data"
+  }
+}

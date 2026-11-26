@@ -1111,6 +1111,190 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de expedientes por oficina y estado (RF-REP-001)
+         * @description RF-REP-001 (Task 87, D-8703): expedientes por estado y oficina en un rango de fechas (requested_at, inclusivo), con totales y desglose por oficina subordinada — un office_id resuelve el SUBÁRBOL de la jerarquía de oficinas (parent_office_id: la oficina y sus subordinadas); una oficina sin expedientes responde su fila de ceros. Una oficina inexistente o desactivada responde 422 (el filtro del operador es entrada, nunca un reporte vacío silencioso). Las oficinas se identifican por tipo, municipio, provincia y dirección (el modelo no tiene columna de nombre, la doctrina de display del OfficeResource). Los expedientes con borrado lógico quedan fuera (SGP-34). Permiso `reports.view` (admin, director, auditor).
+         */
+        get: operations["reportsCases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/pensioners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de pensionados por provincia, tipo y régimen (RF-REP-002)
+         * @description RF-REP-002 (Task 87, D-8704): pensionados y monto total de cuantías por los tres ejes — provincia SEGÚN CONTROL BANCARIO ACTIVO (la provincia de la agencia del control del cobro; los pensionados sin control viajan en la fila «(sin control)»), tipo de pensión y régimen. El filtro status es el literal exacto de PensionerStatus (opcional). Los montos viajan como cadenas con dos decimales. Permiso `reports.view`.
+         */
+        get: operations["reportsPensioners"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/bank-controls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de controles bancarios por agencia y nómina electrónica (RF-REP-003)
+         * @description RF-REP-003 (Task 87, D-8705): controles bancarios por agencia del catálogo vivo con el marcador de nómina electrónica; con year+month los pagos del período se suman por agencia con los CINCO buckets del H-16 (pending/paid/provitional/expired/cancelled) y el monto de lo efectivamente pagado. La lectura del mayor NO pasa por el flag payments.enabled (el flag gobierra la superficie de escritura, jamás un reporte): una agencia sin generación responde ceros honestos. Permiso `reports.view`.
+         */
+        get: operations["reportsBankControls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tablero de indicadores: carga, tramitación y aprobación (RF-REP-005)
+         * @description RF-REP-005 (Task 87, D-8706): versión mínima con contadores cacheados (reporting.dashboard_ttl, default 300 s, llave por ventana). Carga por oficina (expedientes abiertos: submitted + under_review), tiempo medio de tramitación (días desde created_at del expediente hasta la PRIMERA aprobación, promedio sobre los aprobados dentro de la ventana) y tasa de aprobación (aprobados / decisiones de la ventana — aprobadas y rechazadas del historial). Indicadores NULL = sin evidencia en la ventana, jamás un 0% inventado. Ventana por defecto: los últimos 90 días. Permiso `reports.view`.
+         */
+        get: operations["reportsDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/case-fichas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ficha del expediente en PDF (RF-REP-004)
+         * @description RF-REP-004 (Task 87, D-8708): la ficha del expediente como documento PDF — número, estado, oficina, promovente (identidad y nombre), tipo, régimen, expediente padre y contacto. Registro institucional monoidioma español (D-114) con sello de generación. 404 de expediente inexistente (o con borrado lógico). Permiso `reports.view`.
+         */
+        get: operations["reportsCaseFicha"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/pensioner-fichas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ficha del pensionado en PDF (RF-REP-004)
+         * @description RF-REP-004 (Task 87, D-8708): la ficha del pensionado como documento PDF — persona (identidad y nombre), tipo, régimen, cuantía, estado con motivo, expediente de origen y control bancario del cobro (la cuenta nula del D-117 viaja como «— (cuenta nula)»). Registro institucional monoidioma español (D-114) con sello de generación. 404 de pensionado inexistente (o con borrado lógico). Permiso `reports.view`.
+         */
+        get: operations["reportsPensionerFicha"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/report-exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado de corridas de exportación
+         * @description El directorio de exportaciones de reportes (RF-REP-004, Task 87): las corridas más recientes primero, con su estado lineal (queued/processing/completed/failed), el reporte, el formato, la bolsa de filtros congelada, el conteo de registros al completar y el nombre del archivo. Permiso `reports.export`.
+         */
+        get: operations["reportExportsIndex"];
+        put?: never;
+        /**
+         * Exportación de un reporte: solicitar el archivo
+         * @description RF-REP-004 (Task 87, D-8707): solicita el archivo de un reporte — cases, pensioners, bank-controls, dashboard o case-listing (el listado filtrado de expedientes, la dependencia delegada desde la Fase 3) — en csv o xlsx. Crea la corrida `queued` y responde 202 Accepted — el job en cola (driver `database`, `queue:work`) construye las filas con la MISMA fuente de agregación de los endpoints JSON y escribe el archivo (CSV fputcsv; XLSX con openspout, el escritor OpenXML en STREAMING — decenas de miles de filas con memoria plana, tope reporting.listing_row_cap). La bolsa de filtros viaja congelada en la corrida (evidencia reproducible); una office_id desconocida responde 422 ANTES de crear la corrida. Re-ejecutar crea una corrida NUEVA: los archivos previos jamás se tocan. Permiso `reports.export` (admin, director, auditor).
+         */
+        post: operations["reportExportsStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/report-exports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estado de una corrida de exportación
+         * @description El detalle de la exportación (RF-REP-004, Task 87): el estado del worker, el conteo de registros al completar y la causa del failed cuando corresponde — la «notificación de finalización» de la corrida es el propio estado (el worker la mueve a completed). 404 de corrida inexistente. Permiso `reports.export`.
+         */
+        get: operations["reportExportsShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/report-exports/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Descargar el archivo del reporte generado
+         * @description La descarga del archivo de una exportación COMPLETADA (RF-REP-004, Task 87): el CSV (UTF-8 con BOM) o el XLSX (OpenXML) del reporte con los filtros congelados en la corrida. 409 mientras la corrida no esté `completed` (aún en cola, procesándose o fallida — el detalle de la corrida sirve el error). 404 de corrida inexistente o de archivo perdido. Permiso `reports.export`.
+         */
+        get: operations["reportExportsDownload"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-logs": {
         parameters: {
             query?: never;
@@ -3917,6 +4101,267 @@ export interface components {
              * @example false
              */
             deceased?: boolean;
+        };
+        /**
+         * Reporte de expedientes
+         * @description RF-REP-001 (Task 87, D-8703): la matriz oficina × estado del rango de fechas sobre requested_at — una fila por oficina del alcance (el office_id resuelve el subárbol de la jerarquía de oficinas: «desglose por oficina subordinada») con los CINCO literales del CaseStatus siempre presentes (ceros incluidos) y el total por oficina; el objeto totals acumula el alcance completo. Los expedientes con borrado lógico quedan fuera (SGP-34).
+         */
+        CaseReport: {
+            /**
+             * @description The OpenAPI schemas of the reporting read surface (Task 87,
+             *     Fase 6 · S11, ADR-13: schemas documented with attributes, the
+             *     spec grows with the code). The report VIEWS are plain `data`
+             *     objects (RF-API-002) — bounded aggregates, NOT paginated.
+             */
+            rows?: components["schemas"]["CaseReportRow"][];
+            /** @description Los cinco literales del estado + total */
+            totals?: {
+                /** @example 4 */
+                submitted?: number;
+                /** @example 2 */
+                under_review?: number;
+                /** @example 3 */
+                approved?: number;
+                /** @example 1 */
+                rejected?: number;
+                /** @example 0 */
+                deceased?: number;
+                /** @example 10 */
+                total?: number;
+            };
+        };
+        /**
+         * Fila del reporte de expedientes
+         * @description Una oficina del alcance con sus conteos por estado — identificada por tipo, municipio, provincia y dirección (el modelo de oficinas no tiene columna de nombre).
+         */
+        CaseReportRow: {
+            /**
+             * Format: int64
+             * @example 3
+             */
+            office_id?: number;
+            /** @example Municipal */
+            office_type?: string;
+            /** @example Playa */
+            municipality?: string;
+            /** @example La Habana */
+            province?: string | null;
+            /** @example Calle 42 #7, Playa */
+            address?: string;
+            status_counts?: {
+                /** @example 2 */
+                submitted?: number;
+                /** @example 1 */
+                under_review?: number;
+                /** @example 1 */
+                approved?: number;
+                /** @example 0 */
+                rejected?: number;
+                /** @example 0 */
+                deceased?: number;
+            };
+            /** @example 4 */
+            total?: number;
+        };
+        /**
+         * Reporte de pensionados
+         * @description RF-REP-002 (Task 87, D-8704): los tres ejes de análisis con el conteo y el MONTO TOTAL de cuantías por eje (cadenas de dos decimales), más los totales globales. La provincia se resuelve SEGÚN CONTROL BANCARIO ACTIVO — la provincia de la agencia del control del cobro; los pensionados sin control viajan en la fila «(sin control)» con key null.
+         */
+        PensionerReport: {
+            by_province?: components["schemas"]["PensionerBreakdownRow"][];
+            by_pension_type?: components["schemas"]["PensionerBreakdownRow"][];
+            by_regime?: components["schemas"]["PensionerBreakdownRow"][];
+            totals?: {
+                /** @example 9 */
+                count?: number;
+                /** @example 21730.00 */
+                total_amount?: string;
+            };
+        };
+        /** Fila de desglose de pensionados */
+        PensionerBreakdownRow: {
+            /**
+             * Format: int64
+             * @description La clave del eje (provincia/tipo/régimen); null en la fila «(sin control)»
+             * @example 15
+             */
+            key?: number | null;
+            /** @example La Habana */
+            label?: string;
+            /** @example 4 */
+            count?: number;
+            /**
+             * @description SUM de las cuantías del eje (DECIMAL como cadena, dos decimales)
+             * @example 9860.00
+             */
+            total_amount?: string;
+        };
+        /**
+         * Reporte de controles bancarios
+         * @description RF-REP-003 (Task 87, D-8705): una fila por agencia del catálogo vivo con los controles por marcador de nómina electrónica; con período, los pagos del H-16 por agencia (CINCO buckets + el monto de lo pagado). La lectura del mayor no pasa por payments.enabled (una agencia sin generación responde ceros honestos).
+         */
+        BankControlReport: {
+            rows?: components["schemas"]["BankControlReportRow"][];
+            /** @description El período solicitado (null cuando no viajó) */
+            period?: {
+                /** @example 2026 */
+                year?: number;
+                /** @example 11 */
+                month?: number;
+            } | null;
+        };
+        /** Fila del reporte de controles bancarios */
+        BankControlReportRow: {
+            /**
+             * Format: int64
+             * @example 2
+             */
+            agency_id?: number;
+            /** @example BPA-HA-12 */
+            code?: string;
+            /** @example Agencia 4710 Playa */
+            name?: string;
+            /** @example La Habana */
+            province?: string | null;
+            /** @example 7 */
+            controls_total?: number;
+            /**
+             * @description Controles con el marcador de nómina electrónica
+             * @example 5
+             */
+            electronic_payroll?: number;
+            /**
+             * @description Controles de cobro manual (tarjeta magnética)
+             * @example 2
+             */
+            manual_payroll?: number;
+            /** @description Los pagos del período (solo cuando year+month viajaron) */
+            payments?: {
+                /** @example 1 */
+                pending?: number;
+                /** @example 4 */
+                paid?: number;
+                /** @example 0 */
+                provitional?: number;
+                /** @example 0 */
+                expired?: number;
+                /** @example 0 */
+                cancelled?: number;
+                /** @example 9120.00 */
+                paid_amount?: string;
+            } | null;
+        };
+        /**
+         * Tablero de indicadores
+         * @description RF-REP-005 (Task 87, D-8706): la versión mínima con contadores cacheados (reporting.dashboard_ttl) — carga por oficina (expedientes abiertos), tiempo medio de tramitación (días del nacimiento a la primera aprobación, promedio de los aprobados en la ventana) y tasa de aprobación (aprobados/decisiones de la ventana). Indicadores null = sin evidencia en la ventana, jamás un cero inventado.
+         */
+        DashboardReport: {
+            /**
+             * @description El momento del cálculo del snapshot cacheado
+             * @example 2026-11-26 10:15:00
+             */
+            generated_at?: string;
+            window?: {
+                /** Format: date */
+                from?: string;
+                /** Format: date */
+                to?: string;
+            };
+            workload?: components["schemas"]["DashboardWorkloadRow"][];
+            global?: {
+                /** @example 7 */
+                open_cases?: number;
+                /** @example 12.4 */
+                average_processing_days?: string | null;
+                /**
+                 * @description Porcentaje sobre las decisiones de la ventana; null sin decisiones
+                 * @example 75.00
+                 */
+                approval_rate?: string | null;
+                /** @example 3 */
+                approved?: number;
+                /** @example 1 */
+                rejected?: number;
+            };
+        };
+        /** Fila de carga del tablero */
+        DashboardWorkloadRow: {
+            /**
+             * Format: int64
+             * @example 3
+             */
+            office_id?: number;
+            /** @example Municipal */
+            office_type?: string;
+            /** @example Playa */
+            municipality?: string;
+            /** @example 3 */
+            open_cases?: number;
+            /**
+             * @description Días promedio del nacimiento a la aprobación; null si la oficina no aprobó nada en la ventana
+             * @example 11.0
+             */
+            average_processing_days?: string | null;
+            /**
+             * @description Porcentaje de aprobación de la ventana; null sin decisiones
+             * @example 66.67
+             */
+            approval_rate?: string | null;
+            /** @example 2 */
+            approved?: number;
+            /** @example 1 */
+            rejected?: number;
+        };
+        /**
+         * Corrida de exportación de reporte
+         * @description Una exportación de reporte (RF-REP-004, Task 87): nace `queued` (202 Accepted), el worker la mueve queued→processing→completed/failed (lineal, sin retries — re-exportar crea una corrida NUEVA). La bolsa de filtros viaja congelada: el archivo responde a la forma EXACTA de la consulta que el operador pidió. Al completar sirve records_count + filename.
+         */
+        ReportExportRun: {
+            /**
+             * Format: int64
+             * @description Wire projection of a report export run (Task 87, RF-REP-004,
+             *     D-8707 — the PayrollExportRunResource mold): the queued export
+             *     the 202 answers and the worker's evidence — the lineal status,
+             *     the frozen filter bag (reproducible evidence), the record
+             *     count and the filename on completion.
+             * @example 1
+             */
+            id?: number;
+            /**
+             * @description El reporte exportado — case-listing es el listado filtrado de expedientes (la dependencia delegada desde la Fase 3)
+             * @example case-listing
+             * @enum {string}
+             */
+            report?: "cases" | "pensioners" | "bank-controls" | "dashboard" | "case-listing";
+            /**
+             * @example xlsx
+             * @enum {string}
+             */
+            format?: "csv" | "xlsx";
+            /** @description La bolsa de filtros congelada al pedir la exportación (evidencia reproducible) */
+            filters?: Record<string, never> | null;
+            /**
+             * @description Ciclo de vida LINEAL del worker (ReportExportStatus): sin retries — una exportación fallida se re-pide como corrida NUEVA
+             * @example completed
+             * @enum {string}
+             */
+            status?: "queued" | "processing" | "completed" | "failed";
+            /**
+             * @description Filas de datos del archivo al completar
+             * @example 523
+             */
+            records_count?: number | null;
+            /** @example reporte_case-listing_20261126-101530.xlsx */
+            filename?: string | null;
+            /** @description La causa del failed (terminal de error) */
+            error_message?: string | null;
+            /**
+             * Format: int64
+             * @description La cuenta que pidió la exportación
+             */
+            created_by?: number | null;
+            /** Format: date-time */
+            created_at?: string;
         };
         /**
          * Entrada de bitácora
@@ -8768,6 +9213,368 @@ export interface operations {
                 content?: never;
             };
             422: components["responses"]["ValidationError"];
+        };
+    };
+    reportsCases: {
+        parameters: {
+            query?: {
+                /** @description Inicio del rango sobre requested_at (inclusivo) */
+                from?: string;
+                /** @description Fin del rango sobre requested_at (inclusivo) */
+                to?: string;
+                /** @description Oficina raíz del subárbol (la oficina y sus subordinadas) — 422 si no existe */
+                office_id?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description La matriz oficina × estado con totales */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CaseReport"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    reportsPensioners: {
+        parameters: {
+            query?: {
+                status?: "active" | "suspended" | "terminated";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Los tres desgloses con los totales */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["PensionerReport"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    reportsBankControls: {
+        parameters: {
+            query?: {
+                /** @description Año del período (con month) */
+                year?: number;
+                /** @description Mes del período (con year) */
+                month?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Las agencias con sus controles y (si hay período) los pagos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["BankControlReport"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    reportsDashboard: {
+        parameters: {
+            query?: {
+                /** @description Inicio de la ventana (default: hoy − 90 días) */
+                from?: string;
+                /** @description Fin de la ventana (default: hoy) */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El tablero por oficina y los indicadores globales */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["DashboardReport"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    reportsCaseFicha: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El documento PDF (stream) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reportsPensionerFicha: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El documento PDF (stream) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reportExportsIndex: {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Corridas paginadas (envelope RF-API-002) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    reportExportsStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description El reporte a exportar — case-listing es el listado filtrado de expedientes (RF-EXP/Fase 3)
+                     * @example case-listing
+                     * @enum {string}
+                     */
+                    report: "cases" | "pensioners" | "bank-controls" | "dashboard" | "case-listing";
+                    /**
+                     * @description CSV (fputcsv) o Excel (XLSX OpenXML en streaming)
+                     * @example xlsx
+                     * @enum {string}
+                     */
+                    format: "csv" | "xlsx";
+                    /**
+                     * Format: date
+                     * @description cases/dashboard: inicio del rango de fechas
+                     */
+                    from?: string;
+                    /**
+                     * Format: date
+                     * @description cases/dashboard: fin del rango de fechas
+                     */
+                    to?: string;
+                    /**
+                     * Format: int64
+                     * @description cases: oficina raíz del subárbol de oficinas (422 si no existe)
+                     */
+                    office_id?: number;
+                    /** @description pensioners: active/suspended/terminated · case-listing: submitted/under_review/approved/rejected/deceased */
+                    status?: string;
+                    /**
+                     * @description bank-controls: año del período
+                     * @example 2026
+                     */
+                    year?: number;
+                    /**
+                     * @description bank-controls: mes del período
+                     * @example 11
+                     */
+                    month?: number;
+                    /** @description case-listing: término de búsqueda del listado */
+                    q?: string;
+                    /** @description case-listing: número exacto */
+                    number?: string;
+                    /**
+                     * Format: int64
+                     * @description case-listing: promovente
+                     */
+                    applicant_person_id?: number;
+                    /**
+                     * Format: int64
+                     * @description case-listing: búsqueda inversa del derivado
+                     */
+                    parent_case_id?: number;
+                    /**
+                     * Format: date
+                     * @description case-listing: inicio del rango de solicitud
+                     */
+                    requested_from?: string;
+                    /**
+                     * Format: date
+                     * @description case-listing: fin del rango de solicitud
+                     */
+                    requested_to?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Exportación aceptada: la corrida `queued` que el worker procesará */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["ReportExportRun"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    reportExportsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description La corrida */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reportExportsDownload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El archivo del reporte (stream) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Registro inexistente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La corrida aún no está completed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     auditLogsIndex: {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight, CheckCircle2, XCircle, AlertTriangle, History as HistoryIcon, Users, Lock } from 'lucide-react';
+import { ChevronLeft, FileText, Clock, Calculator, ClipboardList, Plus, Trash2, GitBranch, ArrowRight, CheckCircle2, XCircle, AlertTriangle, History as HistoryIcon, Users, Lock, FileDown } from 'lucide-react';
 import { usePermiso } from '@/hooks/use-permiso';
 import { usePensionCase, usePensionCaseHistory, useCaseCalculation, useCalculationPreview } from '../api/queries';
 import { useAddSalaryRecord, useRemoveSalaryRecord, useAddServiceRecord, useRemoveServiceRecord, useAddWorkCycle, useRemoveWorkCycle, useAddIncomeConceptRecord, useRemoveIncomeConceptRecord, useRemoveEntitledRelative } from '../api/mutations';
@@ -18,6 +18,7 @@ import type { components } from '@/types/api';
 import { DatePickerField } from '@/components/ui/DatePickerField';
 import { CaseTransitionModal } from '../components/CaseTransitionModal';
 import { EntitledRelativeFormModal } from '../components/EntitledRelativeFormModal';
+import { useDownloadCaseFicha } from '@/features/reports/api/mutations';
 
 type Person = components['schemas']['Person'];
 interface EntityItem { id: number; code: string; name?: string; tax_id_number: string; }
@@ -40,6 +41,9 @@ export function PensionCaseDetailPage() {
   const [transitionOpen, setTransitionOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [relativesModal, setRelativesModal] = useState(false);
+
+  const downloadFichaMutation = useDownloadCaseFicha();
+  const { t: tr } = useTranslation('reports');
 
   const { data: pensionCase, isLoading, isError } = usePensionCase(id);
   // Cargar catálogo de conceptos de ingreso para etiquetar las filas
@@ -91,6 +95,16 @@ export function PensionCaseDetailPage() {
           <p className="text-sm text-muted-foreground mt-1">{applicantName} · <span className={`badge ${statusMeta.badgeClass}`}>{t(`list.status.${pensionCase.status}`)}</span></p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Botón Ficha PDF del expediente (RF-REP-004) */}
+          <Button
+            variant="outline"
+            onClick={() => downloadFichaMutation.mutate(id)}
+            disabled={downloadFichaMutation.isPending}
+            title={tr('ficha.case_button')}
+          >
+            <FileDown className="w-4 h-4" />
+            {tr('ficha.case_button')}
+          </Button>
           {/* Botón Vista previa del cálculo — visible si el estado es submitted/under_review + permiso cases.calculate */}
           {canCalculate && (
             <Button variant="outline" onClick={() => setPreviewOpen(true)}>
