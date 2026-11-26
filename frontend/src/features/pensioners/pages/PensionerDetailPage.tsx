@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, Clock, ArrowRight, GitBranch, CreditCard, Wallet } from 'lucide-react';
+import { ChevronLeft, Clock, ArrowRight, GitBranch, CreditCard, Wallet, FileDown } from 'lucide-react';
 import { usePayments } from '@/features/payments/api/queries';
 import { usePensioner, useUpdatePensionerStatus, useUpdateBankControl, useInitialPayments } from '../api/queries';
+import { useDownloadPensionerFicha } from '@/features/reports/api/mutations';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
@@ -44,6 +45,9 @@ export function PensionerDetailPage() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [bankModalOpen, setBankModalOpen] = useState(false);
 
+  const downloadFichaMutation = useDownloadPensionerFicha();
+  const { t: tr } = useTranslation('reports');
+
   const { data: pensioner, isLoading, isError } = usePensioner(id);
   const statusMutation = useUpdatePensionerStatus(id);
   const bankMutation = useUpdateBankControl(id);
@@ -80,22 +84,30 @@ export function PensionerDetailPage() {
           <h1 className="text-2xl font-semibold text-foreground">{personName}</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono">{person?.identity_number ?? '—'} · <span className={cn('badge', STATUS_BADGE[currentStatus] ?? '')}>{t(`list.status.${currentStatus}`)}</span></p>
         </div>
-        {canManage && (
-          <div className="flex items-center gap-2">
-            {availableStatuses.length > 0 && (
-              <Button variant="outline" onClick={() => setStatusModalOpen(true)}>
-                <GitBranch className="w-4 h-4" />
-                {t('status_change.button')}
-              </Button>
-            )}
-            {currentStatus !== 'terminated' && (
-              <Button variant="outline" onClick={() => setBankModalOpen(true)}>
-                <CreditCard className="w-4 h-4" />
-                {t('bank_control.button')}
-              </Button>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Botón Ficha PDF del pensionado (RF-REP-004) */}
+          <Button
+            variant="outline"
+            onClick={() => downloadFichaMutation.mutate(id)}
+            disabled={downloadFichaMutation.isPending}
+            title={tr('ficha.pensioner_button')}
+          >
+            <FileDown className="w-4 h-4" />
+            {tr('ficha.pensioner_button')}
+          </Button>
+          {canManage && availableStatuses.length > 0 && (
+            <Button variant="outline" onClick={() => setStatusModalOpen(true)}>
+              <GitBranch className="w-4 h-4" />
+              {t('status_change.button')}
+            </Button>
+          )}
+          {canManage && currentStatus !== 'terminated' && (
+            <Button variant="outline" onClick={() => setBankModalOpen(true)}>
+              <CreditCard className="w-4 h-4" />
+              {t('bank_control.button')}
+            </Button>
+          )}
+        </div>
       </div>
       <div className="border-b border-border mb-6">
         <nav className="flex gap-4">

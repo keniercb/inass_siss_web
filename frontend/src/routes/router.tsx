@@ -27,6 +27,13 @@ import { PensionerDetailPage } from '@/features/pensioners/pages/PensionerDetail
 import { PaymentsListPage } from '@/features/payments/pages/PaymentsListPage';
 import { PaymentDetailPage } from '@/features/payments/pages/PaymentDetailPage';
 import { PayrollExportsPage } from '@/features/payments/pages/PayrollExportsPage';
+import { ReportsLayout } from '@/features/reports/pages/ReportsLayout';
+import { ReportsIndexPage } from '@/features/reports/pages/ReportsIndexPage';
+import { CasesReportPage } from '@/features/reports/pages/CasesReportPage';
+import { PensionersReportPage } from '@/features/reports/pages/PensionersReportPage';
+import { BankControlsReportPage } from '@/features/reports/pages/BankControlsReportPage';
+import { DashboardReportPage } from '@/features/reports/pages/DashboardReportPage';
+import { ReportExportsPage } from '@/features/reports/pages/ReportExportsPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -250,13 +257,17 @@ export const router = createBrowserRouter([
         path: 'reportes',
         element: (
           <ProtectedRoute permiso="reports.view">
-            <ModulePlaceholder
-              title="Reportes"
-              description="Reportes estadísticos y exportaciones"
-              sprint="FE-S11"
-            />
+            <ReportsLayout />
           </ProtectedRoute>
         ),
+        children: [
+          { index: true, element: <ReportsIndexPage /> },
+          { path: 'expedientes', element: <CasesReportPage /> },
+          { path: 'pensionados', element: <PensionersReportPage /> },
+          { path: 'controles-bancarios', element: <BankControlsReportPage /> },
+          { path: 'tablero', element: <DashboardReportPage /> },
+          { path: 'exportaciones', element: <ReportExportsPage /> },
+        ],
       },
       {
         path: 'auditoria',

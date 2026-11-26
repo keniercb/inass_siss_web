@@ -1,0 +1,207 @@
+{
+  "index": {
+    "title": "Reportes",
+    "description": "Reportes estadísticos y exportaciones",
+    "cards": {
+      "cases": "Expedientes",
+      "cases_desc": "Expedientes por oficina y estado",
+      "pensioners": "Pensionados",
+      "pensioners_desc": "Pensionados por provincia, tipo y régimen",
+      "bank_controls": "Controles bancarios",
+      "bank_controls_desc": "Controles por agencia y nómina electrónica",
+      "dashboard": "Tablero",
+      "dashboard_desc": "Indicadores de carga, tramitación y aprobación",
+      "exports": "Exportaciones",
+      "exports_desc": "Corridas de exportación de reportes"
+    }
+  },
+  "nav": {
+    "index": "Inicio",
+    "cases": "Expedientes",
+    "pensioners": "Pensionados",
+    "bank_controls": "Controles bancarios",
+    "dashboard": "Tablero",
+    "exports": "Exportaciones"
+  },
+  "common": {
+    "filters": "Filtros",
+    "apply": "Aplicar",
+    "clear": "Limpiar",
+    "from": "Desde",
+    "to": "Hasta",
+    "year": "Año",
+    "month": "Mes",
+    "office": "Oficina",
+    "office_all": "Todas las oficinas",
+    "status": "Estado",
+    "status_all": "Todos los estados",
+    "export": "Exportar",
+    "export_as": "Exportar como",
+    "format_csv": "CSV",
+    "format_xlsx": "Excel (XLSX)",
+    "ficha_pdf": "Ficha PDF",
+    "totals": "Totales",
+    "no_data": "No hay datos para los filtros seleccionados",
+    "loading": "Cargando",
+    "generated_at": "Generado"
+  },
+  "cases": {
+    "title": "Reporte de expedientes",
+    "description": "Distribución de expedientes por oficina y estado",
+    "columns": {
+      "office": "Oficina",
+      "office_type": "Tipo",
+      "municipality": "Municipio",
+      "province": "Provincia",
+      "address": "Dirección",
+      "status_submitted": "Presentado",
+      "status_under_review": "En revisión",
+      "status_approved": "Aprobado",
+      "status_rejected": "Rechazado",
+      "status_deceased": "Fallecido",
+      "total": "Total"
+    }
+  },
+  "pensioners": {
+    "title": "Reporte de pensionados",
+    "description": "Distribución de pensionados por provincia, tipo y régimen",
+    "filters": {
+      "status_active": "Activos",
+      "status_suspended": "Suspendidos",
+      "status_terminated": "Extinciones"
+    },
+    "tables": {
+      "by_province": "Por provincia",
+      "by_pension_type": "Por tipo de pensión",
+      "by_regime": "Por régimen",
+      "columns": {
+        "label": "Categoría",
+        "count": "Pensionados",
+        "total_amount": "Monto total"
+      }
+    },
+    "no_breakdown": "(sin clasificar)"
+  },
+  "bank_controls": {
+    "title": "Reporte de controles bancarios",
+    "description": "Controles bancarios por agencia y nómina electrónica",
+    "columns": {
+      "agency": "Agencia",
+      "code": "Código",
+      "name": "Nombre",
+      "province": "Provincia",
+      "controls_total": "Controles",
+      "electronic_payroll": "Nómina electrónica",
+      "manual_payroll": "Cobro manual",
+      "payments": "Pagos del período"
+    },
+    "payments": {
+      "total": "Total",
+      "paid": "Pagados",
+      "pending": "Pendientes"
+    },
+    "no_period": "Sin período específico"
+  },
+  "dashboard": {
+    "title": "Tablero de indicadores",
+    "description": "Carga, tramitación y aprobación por oficina",
+    "window": "Ventana de análisis",
+    "workload": {
+      "title": "Carga por oficina",
+      "columns": {
+        "office": "Oficina",
+        "office_type": "Tipo",
+        "municipality": "Municipio",
+        "open_cases": "Expedientes abiertos",
+        "average_processing_days": "Días promedio",
+        "approval_rate": "Tasa de aprobación",
+        "approved": "Aprobados",
+        "rejected": "Rechazados"
+      }
+    },
+    "global": {
+      "title": "Indicadores globales",
+      "open_cases": "Expedientes abiertos",
+      "approved": "Aprobados",
+      "rejected": "Rechazados",
+      "average_processing_days": "Días promedio global",
+      "approval_rate": "Tasa de aprobación global"
+    }
+  },
+  "exports": {
+    "title": "Exportaciones",
+    "description": "Corridas de exportación de reportes",
+    "new": "Solicitar exportación",
+    "columns": {
+      "id": "ID",
+      "report": "Reporte",
+      "format": "Formato",
+      "status": "Estado",
+      "records": "Registros",
+      "filename": "Archivo",
+      "created_at": "Solicitado"
+    },
+    "status": {
+      "queued": "En cola",
+      "processing": "Procesando",
+      "completed": "Completado",
+      "failed": "Fallido"
+    },
+    "report_types": {
+      "cases": "Expedientes",
+      "pensioners": "Pensionados",
+      "bank-controls": "Controles bancarios",
+      "dashboard": "Tablero",
+      "case-listing": "Listado de expedientes"
+    },
+    "download": "Descargar",
+    "refresh": "Actualizar",
+    "pending_hint": "Hay exportaciones en proceso. Se actualizan automáticamente."
+  },
+  "export_create": {
+    "title": "Solicitar exportación",
+    "report": "Reporte",
+    "format": "Formato",
+    "filters_cases": "Filtros del reporte de expedientes",
+    "filters_dashboard": "Filtros del tablero",
+    "filters_pensioners": "Filtros del reporte de pensionados",
+    "filters_bank_controls": "Filtros del reporte de controles bancarios",
+    "filters_case_listing": "Filtros del listado de expedientes",
+    "office": "Oficina",
+    "status": "Estado",
+    "year": "Año",
+    "month": "Mes",
+    "q": "Búsqueda",
+    "number": "Número exacto",
+    "applicant_person_id": "Promovente",
+    "parent_case_id": "Expediente padre",
+    "requested_from": "Solicitado desde",
+    "requested_to": "Solicitado hasta",
+    "confirm": "Solicitar",
+    "success": "Exportación solicitada correctamente",
+    "error": "No se pudo solicitar la exportación",
+    "status_active": "Activos",
+    "status_suspended": "Suspendidos",
+    "status_terminated": "Extinciones",
+    "status_submitted": "Presentado",
+    "status_under_review": "En revisión",
+    "status_approved": "Aprobado",
+    "status_rejected": "Rechazado",
+    "status_deceased": "Fallecido"
+  },
+  "ficha": {
+    "case_button": "Ficha del expediente (PDF)",
+    "pensioner_button": "Ficha del pensionado (PDF)",
+    "success": "Ficha generada correctamente",
+    "error": "No se pudo generar la ficha",
+    "not_found": "Registro inexistente"
+  },
+  "download": {
+    "success": "Archivo descargado correctamente",
+    "error": "No se pudo descargar el archivo",
+    "not_ready": "La exportación aún no está completada"
+  },
+  "errors": {
+    "load": "No se pudieron cargar los datos del reporte"
+  }
+}

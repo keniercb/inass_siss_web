@@ -101,12 +101,24 @@ Quinto destino de la máquina de estados — `TRANSITION_MATRIX.approved` incluy
 
 En el expediente derivado: `parent_case_id` se muestra en el resumen («Expediente de origen #N»), los subregistros copiados nacen con `derived: true` — la UI muestra distintivo «Copia» + candado en vez del botón de borrar (el DELETE del mock responde 422 como el backend). El índice soporta `parent_case_id` como filtro de búsqueda inversa.
 
+### Módulo Reportes (features/reports/, spec 1.45.0)
+Módulo estadístico y de exportaciones con 5 reportes + fichas PDF + cola de exportaciones asíncrona. Ruta raíz `/reportes` con sub-nav interno (ReportsLayout) — 6 solapas: índice, expedientes, pensionados, controles bancarios, tablero, exportaciones. El sidebar NO se convierte en colapsable: la entrada «Reportes» sigue apuntando a `/reportes` y el resaltado por prefijo del Sidebar ya cubre todas las hijas.
+
+- **GET /reports/cases** (RF-REP-001): filtros `from`/`to`/`office_id` → tabla oficina × 5 estados + fila de totales. `useCasesReport`.
+- **GET /reports/pensioners** (RF-REP-002): filtro `status` (active/suspended/terminated) → 3 tablas (provincia, tipo, régimen) con count + total_amount (formatCUP) + bloque de totales. `usePensionersReport`.
+- **GET /reports/bank-controls** (RF-REP-003): filtros `year`/`month` → tabla agencias con controls_total/electronic_payroll/manual_payroll + payments (solo cuando hay período) + fila de totales. `useBankControlsReport`.
+- **GET /reports/dashboard** (RF-REP-005): filtros `from`/`to` → tabla workload por oficina (open_cases, average_processing_days, approval_rate, approved, rejected) + bloque global. `useDashboardReport`.
+- **GET /reports/case-fichas/{id}** y **GET /reports/pensioner-fichas/{id}** (RF-REP-004): stream PDF. Botones «Ficha PDF» en `PensionCaseDetailPage` y `PensionerDetailPage` (useDownloadCaseFicha / useDownloadPensionerFicha). 404 → toast «Registro inexistente».
+- **POST /report-exports** + **GET /report-exports** + **GET /report-exports/{id}** + **GET /report-exports/{id}/download**: cola asíncrona con ciclo `queued → processing → completed/failed`. `useReportExports` hace polling cada 5s mientras hay items pendientes. `ExportButton` es botón+modal reutilizable: pick `report` (cases/pensioners/bank-controls/dashboard/case-listing) + `format` (csv/xlsx) + campos condicionales según report (from/to/office_id | status | year/month | q+number+applicant_person_id+parent_case_id+requested_from/to+status). El backend valida pares coherentes con 422; el frontend no implementa lógica de negocio. Descarga blob → `URL.createObjectURL` + `<a download>`. 409 → toast «La exportación aún no está completada».
+
+`features/reports/api/schemas.ts` contiene los Zod mirrors de los 9 schemas nuevos (CaseReport/Row, PensionerReport/BreakdownRow, BankControlReport/Row, DashboardReport/WorkloadRow, ReportExportRun). Mocks en `mocks/handlers/reports.ts` con fixtures realistas y `advanceRun()` que simula el worker avanzando el estado en cada acceso.
+
 ---
 
 ## 3. Estado actual
 
 **Rama activa**: `feat/task-85-86-consulta-fuc-declaracion-fallecimiento`
-**Spec OpenAPI consumida**: 1.44.0
+**Spec OpenAPI consumida**: 1.45.0
 **Último commit**: ver `git log --oneline -3`
 
 ### Tareas completadas
@@ -118,6 +130,7 @@ En el expediente derivado: `parent_case_id` se muestra en el resumen («Expedien
 - Task 84 (spec 1.42.0): forced_age_retirement (checkbox «Forzar jubilación por edad» en el bloque de defunción)
 - Task 85 (spec 1.44.0): consulta FUC con autollenado del formulario de persona + UID-P en citizen_card_id
 - Task 86 (spec 1.44.0): declaración de fallecimiento (to=deceased, terminal) con expediente derivado de sobrevivientes + subregistros derivados bloqueados + parent_case_id
+- Task 87 (spec 1.45.0): módulo Reportes — 5 reportes estadísticos (cases/pensioners/bank-controls/dashboard), fichas PDF de expediente y pensionado, cola de exportaciones asíncrona con polling (queued→processing→completed/failed), ExportButton reutilizable con campos condicionales por tipo de reporte
 - modern-web-guidance v1.0.1: scrollbars estándar, toSorted, ES2023, autoComplete en formularios
 - Fixes UX: pago inicial al aprobar, formatDate off-by-one, toast z-index, menú lateral diseases
 - Limpieza i18n: sin referencias a Tasks/Doctrinas en textos user-facing
