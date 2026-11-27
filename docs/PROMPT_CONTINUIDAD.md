@@ -113,12 +113,24 @@ Módulo estadístico y de exportaciones con 5 reportes + fichas PDF + cola de ex
 
 `features/reports/api/schemas.ts` contiene los Zod mirrors de los 9 schemas nuevos (CaseReport/Row, PensionerReport/BreakdownRow, BankControlReport/Row, DashboardReport/WorkloadRow, ReportExportRun). Mocks en `mocks/handlers/reports.ts` con fixtures realistas y `advanceRun()` que simula el worker avanzando el estado en cada acceso.
 
+### Patrón unificado de toasts de error (lib/api-error.ts)
+`useApiError()` expone `toastApiError(err, { title, fallbackDetail?, silent422?, forceErrorVariant? })`. Extrae `message` (y `errors` aplanados en 422) del body y los muestra como detalle del toast; variante por status: 409 → warning (conflicto recuperable), resto 4xx/5xx → error; `silent422: true` silencia el 422 (el formulario maneja vía form.setError); parsea Blob async (axios responseType:blob deja el body como Blob en errores 4xx). Títulos por defecto por status en `common.json` (`errors.conflict/forbidden/not_found/validation/server/client/unknown/network`). Aplicado a 49 mutations en 14 archivos. EXCEPCIONES con lógica propia intactas: `useCaseTransition` (compone status/attempted_to/missing del 422), `useFucPersonLookup` (mapea 404/422/502/503/504), `useRegisterDeath` (409 already_deceased).
+
+### Instrumentos de pago (features/payment-instruments/, spec 1.47.0)
+Módulo de disposición de fondos: «Pago provisional» y «Cheque electrónico» vinculados a un pensionado ACTIVO con una persona beneficiaria. Rutas `/instrumentos` (lista) y `/instrumentos/:id` (ficha), permiso `payments.view` / acciones con `payments.manage`. Sidebar: entrada propia «Instrumentos de pago» entre Pagos y Nóminas.
+
+- Estados (5): `created` → `pending` | `cancelled`; `pending` → `paid` | `expired`; los últimos 3 son terminales. `TRANSITION_MATRIX` en schemas.ts es solo UX — el backend revalida con 422.
+- `amount` acumula los pagos del ledger asociados y se REVIERTE a 0.00 al expirar/anular. `set_expired_at` = creación + month_to_expired (solo provisional); `paid_at` se sella en pending→paid.
+- POST `/payment-instruments/{id}/payments` asocia pagos del ledger (solo en `created`, append-only). El backend puede responder 422/409/428 — el frontend mapea 409/428 con `toast.errorDetail` y hints localizados.
+- Badges: created→badge-submitted, pending→badge-under_review, paid→badge-approved, expired→badge-rejected, cancelled→badge-deceased.
+- Mutations usan el patrón `toastApiError` unificado.
+
 ---
 
 ## 3. Estado actual
 
 **Rama activa**: `feat/task-85-86-consulta-fuc-declaracion-fallecimiento`
-**Spec OpenAPI consumida**: 1.45.0
+**Spec OpenAPI consumida**: 1.47.0
 **Último commit**: ver `git log --oneline -3`
 
 ### Tareas completadas
@@ -131,6 +143,8 @@ Módulo estadístico y de exportaciones con 5 reportes + fichas PDF + cola de ex
 - Task 85 (spec 1.44.0): consulta FUC con autollenado del formulario de persona + UID-P en citizen_card_id
 - Task 86 (spec 1.44.0): declaración de fallecimiento (to=deceased, terminal) con expediente derivado de sobrevivientes + subregistros derivados bloqueados + parent_case_id
 - Task 87 (spec 1.45.0): módulo Reportes — 5 reportes estadísticos (cases/pensioners/bank-controls/dashboard), fichas PDF de expediente y pensionado, cola de exportaciones asíncrona con polling (queued→processing→completed/failed), ExportButton reutilizable con campos condicionales por tipo de reporte
+- Patrón toastApiError (post-Task 87): helper unificado lib/api-error.ts aplicado a 49 mutations — message del body como detalle + variante por status (409 warning)
+- Instrumentos de pago (spec 1.47.0): módulo features/payment-instruments/ — listado con filtros, ficha con associated_payments, creación (pensionado activo + beneficiaria + tipo), asociar pago del ledger, matriz de transición created→pending|cancelled, pending→paid|expired
 - modern-web-guidance v1.0.1: scrollbars estándar, toSorted, ES2023, autoComplete en formularios
 - Fixes UX: pago inicial al aprobar, formatDate off-by-one, toast z-index, menú lateral diseases
 - Limpieza i18n: sin referencias a Tasks/Doctrinas en textos user-facing

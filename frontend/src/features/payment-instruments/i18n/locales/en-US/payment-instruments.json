@@ -1,0 +1,96 @@
+{
+  "list": {
+    "title": "Payment instruments",
+    "description": "Provisional payments and electronic checks linked to pensioners",
+    "new": "New instrument",
+    "empty": "No instruments for the selected filters",
+    "columns": {
+      "id": "ID",
+      "pensioner": "Pensioner",
+      "beneficiary": "Beneficiary",
+      "amount": "Amount",
+      "type": "Type",
+      "status": "Status",
+      "set_expired_at": "Expires",
+      "paid_at": "Paid",
+      "created_at": "Created"
+    },
+    "filters": {
+      "status": "Status",
+      "status_all": "All statuses",
+      "type": "Type",
+      "type_all": "All types"
+    },
+    "status": {
+      "created": "Created",
+      "pending": "In process",
+      "paid": "Paid",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "type": {
+      "provisional_payment": "Provisional payment",
+      "electronic_check": "Electronic check"
+    }
+  },
+  "detail": {
+    "back_to_list": "Back to list",
+    "not_found": "Instrument not found",
+    "title": "Payment instrument",
+    "fields": {
+      "pensioner": "Pensioner",
+      "pensioner_status": "Pensioner status",
+      "beneficiary": "Beneficiary person",
+      "amount": "Accumulated amount",
+      "type": "Type",
+      "status": "Status",
+      "set_expired_at": "Expires",
+      "paid_at": "Payment date",
+      "created_at": "Created",
+      "updated_at": "Updated"
+    },
+    "associated_payments": {
+      "title": "Linked payments",
+      "empty": "No linked payments",
+      "columns": {
+        "id": "ID",
+        "period": "Period",
+        "amount": "Amount",
+        "status": "Status"
+      }
+    },
+    "actions": {
+      "associate": "Link payment",
+      "transition": "Status transition"
+    }
+  },
+  "create": {
+    "title": "New payment instrument",
+    "pensioner": "Pensioner (active)",
+    "pensioner_hint": "Only pensioners in active status are allowed",
+    "beneficiary": "Beneficiary person",
+    "beneficiary_hint": "Any living person in the registry",
+    "type": "Type",
+    "confirm": "Create",
+    "success": "Instrument created successfully",
+    "error": "Could not create the instrument"
+  },
+  "associate": {
+    "title": "Link payment to instrument",
+    "payment": "Ledger payment",
+    "payment_hint": "Only payments whose status is compatible with the instrument type",
+    "confirm": "Link",
+    "success": "Payment linked successfully",
+    "error": "Could not link the payment"
+  },
+  "transition": {
+    "title": "Status transition",
+    "current": "Current status",
+    "target": "New status",
+    "confirm": "Confirm",
+    "success": "Status updated successfully",
+    "error": "Could not update the status",
+    "error_409": "The instrument does not allow that transition in its current status",
+    "error_428": "The request requires evidence or a precondition not fulfilled"
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "list": {
+    "title": "Instrumentos de pago",
+    "description": "Pagos provisionales y cheques electrónicos vinculados a pensionados",
+    "new": "Nuevo instrumento",
+    "empty": "No hay instrumentos para los filtros seleccionados",
+    "columns": {
+      "id": "ID",
+      "pensioner": "Pensionado",
+      "beneficiary": "Beneficiario",
+      "amount": "Importe",
+      "type": "Tipo",
+      "status": "Estado",
+      "set_expired_at": "Vence",
+      "paid_at": "Pagado",
+      "created_at": "Creado"
+    },
+    "filters": {
+      "status": "Estado",
+      "status_all": "Todos los estados",
+      "type": "Tipo",
+      "type_all": "Todos los tipos"
+    },
+    "status": {
+      "created": "Creado",
+      "pending": "En proceso",
+      "paid": "Pagado",
+      "expired": "Vencido",
+      "cancelled": "Anulado"
+    },
+    "type": {
+      "provisional_payment": "Pago provisional",
+      "electronic_check": "Cheque electrónico"
+    }
+  },
+  "detail": {
+    "back_to_list": "Volver al listado",
+    "not_found": "Instrumento no encontrado",
+    "title": "Instrumento de pago",
+    "fields": {
+      "pensioner": "Pensionado",
+      "pensioner_status": "Estado del pensionado",
+      "beneficiary": "Persona beneficiaria",
+      "amount": "Importe acumulado",
+      "type": "Tipo",
+      "status": "Estado",
+      "set_expired_at": "Vence",
+      "paid_at": "Fecha de pago",
+      "created_at": "Creado",
+      "updated_at": "Actualizado"
+    },
+    "associated_payments": {
+      "title": "Pagos vinculados",
+      "empty": "Sin pagos vinculados",
+      "columns": {
+        "id": "ID",
+        "period": "Período",
+        "amount": "Importe",
+        "status": "Estado"
+      }
+    },
+    "actions": {
+      "associate": "Asociar pago",
+      "transition": "Transición de estado"
+    }
+  },
+  "create": {
+    "title": "Nuevo instrumento de pago",
+    "pensioner": "Pensionado (activo)",
+    "pensioner_hint": "Solo se permiten pensionados en estado activo",
+    "beneficiary": "Persona beneficiaria",
+    "beneficiary_hint": "Cualquier persona viva del registro",
+    "type": "Tipo",
+    "confirm": "Crear",
+    "success": "Instrumento creado correctamente",
+    "error": "No se pudo crear el instrumento"
+  },
+  "associate": {
+    "title": "Asociar pago al instrumento",
+    "payment": "Pago del ledger",
+    "payment_hint": "Solo pagos con estado compatible con el tipo del instrumento",
+    "confirm": "Asociar",
+    "success": "Pago asociado correctamente",
+    "error": "No se pudo asociar el pago"
+  },
+  "transition": {
+    "title": "Transición de estado",
+    "current": "Estado actual",
+    "target": "Nuevo estado",
+    "confirm": "Confirmar",
+    "success": "Estado actualizado correctamente",
+    "error": "No se pudo actualizar el estado",
+    "error_409": "El instrumento no admite esa transición en su estado actual",
+    "error_428": "La solicitud requiere evidencia o precondición no cumplida"
+  }
+}

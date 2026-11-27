@@ -18,6 +18,7 @@ import {
   HeartPulse,
   Accessibility,
   Lock,
+  CreditCard,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -104,6 +105,12 @@ export const sidebarConfig: SidebarItem[] = [
     label: 'Pagos',
     path: '/pagos',
     icon: Landmark,
+    permiso: 'payments.view',
+  },
+  {
+    label: 'Instrumentos de pago',
+    path: '/instrumentos',
+    icon: CreditCard,
     permiso: 'payments.view',
   },
   {
