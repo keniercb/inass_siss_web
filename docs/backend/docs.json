@@ -2,11 +2,11 @@
     "openapi": "3.0.0",
     "info": {
         "title": "SGP API",
-        "description": "API del Sistema de Gestión de Pensionados (SGP) del Ministerio de Trabajo. Todos los endpoints viven bajo el prefijo /api/v1. Envelope de respuestas conforme RF-API-002: campo `data` en éxito, `message` para respuestas de un solo mensaje y 422 con errores por campo.",
+        "description": "API del Sistema de Gestión de Pensionados (SGP) del Ministerio de Trabajo. Todos los endpoints viven bajo el prefijo /api/v1. Envelope de respuestas conforme RF-API-002: campo `data` en éxito, `message` para respuestas de un solo mensaje y 422 con errores por campo. Task 88 / Sprint 12 (1.46.0): toda escritura de recurso único exige la cabecera If-Match (409 tipado al desajuste, 428 sin cabecera); los POST con efecto reintegrable aceptan Idempotency-Key opcional; el ámbito territorial de la oficina del usuario oculta (404) las lecturas ajenas y tipa (403) las escrituras; toda respuesta lleva las cabeceras de seguridad y el límite por rol responde 429 con Retry-After. Task 89 (1.47.0): los instrumentos de pago (nuevo requerimiento 2026-11-27) — el vehículo que agrupa pagos del ledger para UNA disposición (pago provisional con ventana / cheque electrónico), la asociación solo en created con el pago→paid y la acumulación del amount, la matriz created→pending|cancelled y pending→paid|expired con la liberación de los pagos al cerrar (provitional|expired según el tipo, amount revertido) y el job de vencimiento diario que expira created Y pending.",
         "contact": {
             "name": "Equipo Backend SGP"
         },
-        "version": "1.45.0"
+        "version": "1.47.0"
     },
     "paths": {
         "/api/v1/agencies": {
@@ -298,6 +298,9 @@
                 "operationId": "agenciesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -308,6 +311,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Agencia desactivada",
                         "content": {
@@ -359,6 +368,9 @@
                 "operationId": "agenciesUpdate",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -393,6 +405,12 @@
                     }
                 },
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Agencia actualizada",
                         "content": {
@@ -863,6 +881,9 @@
                 "operationId": "catalogsDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "type",
                         "in": "path",
                         "required": true,
@@ -882,6 +903,9 @@
                     }
                 ],
                 "responses": {
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Entrada desactivada",
                         "content": {
@@ -948,6 +972,9 @@
                 "description": "Actualiza campos de una entrada (PATCH). El código es inmutable: enviar un código distinto responde 422 (RF-CAT-001).",
                 "operationId": "catalogsUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "type",
                         "in": "path",
@@ -1019,6 +1046,12 @@
                     }
                 },
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Entrada actualizada",
                         "content": {
@@ -1077,6 +1110,9 @@
                 "operationId": "catalogRestore",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "type",
                         "in": "path",
                         "required": true,
@@ -1097,6 +1133,12 @@
                     }
                 ],
                 "responses": {
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Entrada restaurada",
                         "content": {
@@ -1433,6 +1475,9 @@
                 "operationId": "municipalitiesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -1443,6 +1488,9 @@
                     }
                 ],
                 "responses": {
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Municipio desactivado",
                         "content": {
@@ -1510,6 +1558,9 @@
                 "operationId": "municipalitiesUpdate",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -1540,6 +1591,12 @@
                     }
                 },
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Municipio actualizado",
                         "content": {
@@ -2036,6 +2093,9 @@
                 "operationId": "legalBasesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -2046,6 +2106,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Base legal desactivada",
                         "content": {
@@ -2086,6 +2152,9 @@
                 "description": "La terna identidad (tipo, número, fecha de emisión) es inmutable (422 si intenta cambiar). La derogación se fija, corrige o limpia aquí — una edición de fecha auditable con valores previos, nunca una acción destructiva. Las fechas resultantes revalidan RN-006.",
                 "operationId": "legalBasesUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -2146,6 +2215,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
@@ -2440,6 +2515,9 @@
                 "operationId": "signaturesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -2450,6 +2528,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Firma revocada",
                         "content": {
@@ -2490,6 +2574,9 @@
                 "description": "La terna identifica el registro histórico y no es editable (RF-ENT-003: el versionado de firmas es la propia fila con su ventana). Solo viajan las fechas; la ventana resultante revalida el orden RN-006 y la edición queda auditada con valores previos.",
                 "operationId": "signaturesUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -2543,6 +2630,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
@@ -2953,6 +3046,9 @@
                 "operationId": "entitiesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -2963,6 +3059,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Entidad desactivada",
                         "content": {
@@ -3006,6 +3108,9 @@
                 "description": "Edición parcial con auditoría de valores previos (RF-ENT-002). El código y el NIT son inmutables (422 si intentan cambiar); las referencias, la coherencia RN-004 y la aciclicidad RN-003 se revalidan contra el estado resultante.",
                 "operationId": "entitiesUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -3092,6 +3197,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
@@ -3453,6 +3564,9 @@
                 "operationId": "officesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -3463,6 +3577,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Oficina desactivada",
                         "content": {
@@ -3506,6 +3626,9 @@
                 "description": "Edición parcial con auditoría de valores previos. Las referencias y la coherencia RN-004 se revalidan contra el estado resultante, la unicidad por ámbito se recalcula excluyendo la propia oficina y el parent se re-deriva del tipo resultante; los cambios de tipo o territorio se rechazan mientras la oficina tenga hijas activas. Para tipos fuera de la tríada territorial rige la jerarquía opcional acíclica (RN-003).",
                 "operationId": "officesUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -3567,6 +3690,12 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -3592,6 +3721,11 @@
                 "summary": "Pagos periódicos: generación mensual a dos niveles (período AUTOMÁTICO)",
                 "description": "RF-PAG-005/H-16 (Task 64/SGP-49 + Task 68/SGP-52, S10.5; Task 71/SGP-55, D-106/D-108): SIN CUERPO — el período NO se recibe, se resuelve AUTOMÁTICO para el MES SIGUIENTE a la fecha actual contra el reloj compartido. Nivel 1 — crea el `Payment` del período por CADA forma del enum (`tarjeta magnetica` y `nomina electronica`; IDEMPOTENTE por UNIQUE forma×período); nivel 2 — crea una fila `pensioner_payments` por pensionado ACTIVO CON control bancario, asignada al pago cuya forma coincide con el marcador `electronic_payroll` (true → `pending` con `valid_from` = fecha actual; false/tarjeta magnética → `paid` con el cobro por registrar), con la cuantía y la agencia/cuenta CONGELADAS del control (la cuenta puede ser null — la «cuenta nula/vacía» del control nacido de un expediente sin cuenta utilizable, Task 72c/72e/D-117, en cualquier forma de cobro) y el calendario NACE ESTAMPADO: `payment_day` (el día de pago de la configuración ACTIVA sobre el mes/año del pago, D-107) y `set_provitional_at`/`set_expired_at` (Task 70); el activo SIN control se OMITE y se reporta `skipped_no_control` (alcanzable SOLO con la agencia de cobro desaparecida del catálogo vivo, D-118 — la arista D-119 de la Task 72d quedó derogada por la Task 72e); re-generar SALTA los existentes (UNIQUE pensionado+pago) — jamás duplica. Los suspended/terminated no cobran el período. La validación de fecha futura SE ELIMINÓ (D-108): el sistema trabaja un mes por adelantado. Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director).",
                 "operationId": "paymentsGenerate",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKeyHeader"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "La evidencia de la generación idempotente a dos niveles — el período resuelto automáticamente (el mes siguiente)",
@@ -3675,7 +3809,7 @@
                         "description": "Feature flag payments.enabled apagado"
                     },
                     "422": {
-                        "description": "Sin configuración general activa (el calendario del pago no puede estamparse)"
+                        "$ref": "#/components/responses/ValidationError"
                     }
                 },
                 "security": [
@@ -3844,6 +3978,9 @@
                 "operationId": "paymentsUpdateStatus",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -3891,6 +4028,12 @@
                     "401": {
                         "description": "Sin token Sanctum válido"
                     },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "description": "Sin el permiso payments.manage"
                     },
@@ -3898,7 +4041,29 @@
                         "description": "Pago inexistente o feature flag apagado"
                     },
                     "422": {
-                        "description": "Movimiento fuera de la matriz (terminal o mismo estado)"
+                        "description": "Movimiento fuera de la matriz (terminal o mismo estado)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "payment_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "current_status": {
+                                            "type": "string"
+                                        },
+                                        "attempted_status": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -3917,6 +4082,12 @@
                 "description": "RF-PAG-005/H-16 (Task 68/SGP-52, D-88; Task 69/SGP-53): registra el COBRO del pago en la agencia de ventanilla. Sobre una fila `pending` o `provitional` (la ventana abierta) transiciona a `paid` Y sella el cobro ATÓMICAMENTE (una sola operación cubre ambos canales); sobre una fila `paid` (nacida pagada de tarjeta magnética, ya acreditada o corregida desde cancelled) sella SOLO (`paid_at` + `paid_on`); sobre `expired`/`cancelled` responde 422 (el camino de corrección es PATCH /status primero) y una fila YA sellada responde 422 «already collected» — el PRIMER sello gana, la corrección es evidencia de auditoría (P-11). La agencia del body se valida VIVA (no soft-deleted). Los intentos rechazados caen a la bitácora tras el rollback. Tras el feature flag `payments.enabled` y `payments.manage` (admin + director).",
                 "operationId": "paymentsCollect",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKeyHeader"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -3960,6 +4131,12 @@
                     "401": {
                         "description": "Sin token Sanctum válido"
                     },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "description": "Sin el permiso payments.manage"
                     },
@@ -3967,7 +4144,26 @@
                         "description": "Pago inexistente o feature flag apagado"
                     },
                     "422": {
-                        "description": "Fila terminal, cobro ya sellado o agencia no viva"
+                        "description": "Fila terminal, cobro ya sellado o agencia no viva",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "payment_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "reason": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -4144,7 +4340,475 @@
                         "description": "Feature flag payments.enabled apagado"
                     },
                     "422": {
-                        "description": "Calendario inválido"
+                        "description": "Calendario inválido (año y mes viajan enlazados o ausentes)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payment-instruments": {
+            "get": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Listado de instrumentos de pago",
+                "description": "Task 89 (requerimiento 2026-11-27, D-8901): el directorio de instrumentos con todos los datos de la fila — el pensionado (persona y estado), la persona beneficiaria, el amount acumulado, el tipo, el estado, la ventana set_expired_at y el sello paid_at — filtrable por pensionado (id sin sonda: página vacía si no existe), estado (enum exacto created/pending/paid/expired/cancelled) y tipo (provisional_payment/electronic_check), paginado (per_page ≤ 100). Tras el feature flag `payments.enabled` y `payments.view` (admin, director, auditor).",
+                "operationId": "paymentInstrumentsIndex",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created",
+                                "pending",
+                                "paid",
+                                "expired",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "provisional_payment",
+                                "electronic_check"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "pensioner_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Instrumentos paginados (envelope RF-API-002) con la fila completa"
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.view"
+                    },
+                    "404": {
+                        "description": "Feature flag payments.enabled apagado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Instrumentos de pago: creación (pensionado ACTIVO, calendario por tipo)",
+                "description": "Task 89 (requerimiento 2026-11-27, D-8901/D-8902/D-8903): crea el instrumento — {pensioner_id, beneficiary_person_id, type}. El pensionado debe ser ACTIVO (422 si no existe o está suspended/terminated); el «Pago provisional» (provisional_payment) nace con set_expired_at = fecha de creación + month_to_expired de la configuración general ACTIVA (addMonthsNoOverflow; 422 sin configuración publicada — sin default oculto, D-102) y el «Cheque electrónico» (electronic_check) nace SIN ventana (NULL). El instrumento NACE created (el «status new» del requerimiento) con amount 0.00. No se elimina jamás (sin DELETE por diseño). Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director). Idempotencia por Idempotency-Key.",
+                "operationId": "paymentInstrumentsStore",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKeyHeader"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pensioner_id",
+                                    "beneficiary_person_id",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "pensioner_id": {
+                                        "description": "El pensionado — debe ser ACTIVO",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 3
+                                    },
+                                    "beneficiary_person_id": {
+                                        "description": "La persona beneficiaria de la disposición",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 12
+                                    },
+                                    "type": {
+                                        "description": "«Pago provisional» / «Cheque electrónico»",
+                                        "type": "string",
+                                        "enum": [
+                                            "provisional_payment",
+                                            "electronic_check"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "El instrumento nacido created (ficha completa)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PaymentInstrument"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.manage"
+                    },
+                    "404": {
+                        "description": "Feature flag payments.enabled apagado"
+                    },
+                    "422": {
+                        "description": "Pensionado inexistente o no activo, persona beneficiaria inexistente o sin configuración general activa (para el Pago provisional)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "description": "Errores por campo",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payment-instruments/{id}": {
+            "get": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Ficha de un instrumento — todos los datos y los pagos vinculados",
+                "description": "Task 89 (requerimiento 2026-11-27, D-8901): el instrumento con TODOS sus datos — el pensionado (persona), la persona beneficiaria, el amount acumulado, el tipo, el estado, la ventana y el sello — más la lista de los pagos del ledger VINCULADOS (append-only: cada uno con su período, su forma y su estado actual — paid mientras el instrumento lo sostiene, liberado tras expired/cancelled). 404 de instrumento inexistente. Tras el feature flag y `payments.view`.",
+                "operationId": "paymentInstrumentsShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "El instrumento (ficha completa con los pagos vinculados)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PaymentInstrument"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.view"
+                    },
+                    "404": {
+                        "description": "Instrumento inexistente o feature flag apagado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payment-instruments/{id}/payments": {
+            "post": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Asociar un pago del ledger al instrumento (la ventana created)",
+                "description": "Task 89 (requerimiento 2026-11-27, D-8901/D-8905): vincula un PensionerPayment al instrumento. SOLO mientras el instrumento está created; el pago debe pertenecer al pensionado del instrumento; el pensionado debe seguir ACTIVO (la suspensión posterior cierra la puerta a NUEVAS asociaciones, el instrumento subsiste); el ESTADO del ledger que vincula lo decide el TIPO — el «Pago provisional» solo toma pagos provitional y el «Cheque electrónico» solo pagos expired (el criterio de liberación de los vencidos). Al asociar: el pago pasa a paid (el expired→paid del cheque es la vía auditada que NO consulta la matriz operador de pagos, D-8905 — el PATCH de pagos jamás podrá des-expirar) y amount += pago.amount, todo en UNA transacción con ambas filas bloqueadas. La vinculación es append-only: JAMÁS se desasocia. El intento rechazado cae a la bitácora tras el rollback. Tras el feature flag y `payments.manage` (admin + director). If-Match sobre el instrumento + Idempotency-Key.",
+                "operationId": "paymentInstrumentsAssociate",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKeyHeader"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "payment_id"
+                                ],
+                                "properties": {
+                                    "payment_id": {
+                                        "description": "El pago del ledger a vincular — su estado debe coincidir con el tipo del instrumento",
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "example": 42
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "El instrumento con el pago vinculado y el amount acumulado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PaymentInstrument"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.manage"
+                    },
+                    "404": {
+                        "description": "Instrumento o pago inexistente, o feature flag apagado"
+                    },
+                    "422": {
+                        "description": "Instrumento fuera de created, pago ajeno, pensionado inactivo, estado del ledger incompatible con el tipo o par ya vinculado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "instrument_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "reason": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payment-instruments/{id}/status": {
+            "post": {
+                "tags": [
+                    "Pagos"
+                ],
+                "summary": "Transición del instrumento: enviar a proceso, pagar, expirar o anular",
+                "description": "Task 89 (requerimiento 2026-11-27, D-8902): la matriz del instrumento — created→pending (el instrumento armado sale a proceso) y created→cancelled (la retirada); pending→paid (la disposición efectiva: estampa paid_at con HOY vía reloj) y pending→expired (la ventana cerró sin pagar). paid, expired y cancelled son TERMINALES para el operador. Al caer en expired o cancelled los pagos vinculados se LIBERAN (provitional los del «Pago provisional», expired los del «Cheque electrónico» — el criterio para ser usados en NUEVOS instrumentos, vía auditada que NO consulta la matriz operador de pagos, D-8906) y el amount SE REVIERTE a 0.00 (directiva de usuario 2026-11-27). El intento rechazado cae a la bitácora tras el rollback. Tras el feature flag y `payments.manage` (admin + director). If-Match sobre el instrumento + Idempotency-Key.",
+                "operationId": "paymentInstrumentsUpdateStatus",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKeyHeader"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "El destino — solo los movimientos que la matriz del instrumento admite (created→pending|cancelled, pending→paid|expired)",
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "paid",
+                                            "expired",
+                                            "cancelled"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "El instrumento actualizado (ficha completa)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PaymentInstrument"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Sin token Sanctum válido"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
+                    "403": {
+                        "description": "Sin el permiso payments.manage"
+                    },
+                    "404": {
+                        "description": "Instrumento inexistente o feature flag apagado"
+                    },
+                    "422": {
+                        "description": "Movimiento fuera de la matriz (terminal o mismo estado)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "instrument_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "current_status": {
+                                            "type": "string"
+                                        },
+                                        "attempted_status": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -4207,6 +4871,11 @@
                 "summary": "Exportación de nómina electrónica: solicitar la transmisión",
                 "description": "RF-PAG-004 (Task 64/SGP-49, S10.5; Task 71/SGP-55, D-108): solicita el archivo de nómina de una agencia y período para el consumo del banco. Crea la corrida `queued` y responde 202 Accepted — el job en cola (driver `database`, `queue:work`) proyecta los pensionados ACTIVOS con control en la agencia, escribe el CSV con el layout de la agencia (estándar o su override por código — P-05 pendiente de especificación bancaria) y el ARCHIVO DE CONTROL con el conteo y la suma contra la BD. Regla 422: la agencia debe existir en el catálogo VIVO; el período CUALQUIERA desde Task 71 (la puerta de futuro se RETIRÓ: la generación apunta al mes siguiente, así que el archivo del mes que está por pagarse viaja POR ADELANTADO — los pasados re-transmiten). Re-ejecutar el período crea una corrida NUEVA: cada transmisión queda registrada, los archivos previos jamás se tocan. Permiso `payments.export` (admin + director).",
                 "operationId": "payrollExportsStore",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKeyHeader"
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -4263,7 +4932,29 @@
                         "description": "Sin el permiso payments.export"
                     },
                     "422": {
-                        "description": "Agencia inexistente/muerta en el catálogo VIVO"
+                        "description": "Agencia inexistente/muerta en el catálogo VIVO",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "agency_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "year": {
+                                            "type": "integer"
+                                        },
+                                        "month": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -4359,7 +5050,19 @@
                         "description": "Corrida inexistente"
                     },
                     "409": {
-                        "description": "La corrida aún no está completed"
+                        "description": "La corrida aún no está completed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -4512,9 +5215,15 @@
                                             "oneOf": [
                                                 {
                                                     "$ref": "#/components/schemas/CaseCalculation"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        null
+                                                    ]
                                                 }
-                                            ],
-                                            "nullable": true
+                                            ]
                                         }
                                     },
                                     "type": "object"
@@ -4706,6 +5415,11 @@
                 "summary": "Apertura de un expediente",
                 "description": "Alta del expediente (RF-EXP-001, reglas de usuario 0-5/ADR-32/33/34): el expediente ASUME la oficina del usuario que lo registra — office_id no se envía en el POST (422 si llega) — y el número se compone PPMMAACCCCC (códigos de provincia y municipio de la oficina registrante, últimos dos dígitos del año en curso y consecutivo por año/provincia/municipio rellenado con ceros, once dígitos contiguos). El proponente debe estar vivo y activo (RF-SEG-003: 422) y no puede tener otro expediente abierto (409). La serie salarial admite máximo 15 filas (regla 1); el par de Ejército Rebelde exige la fecha de alta cuando el booleano es true y la rechaza cuando es false (regla 4); los conceptos de ingreso se declaran como subregistros anidados (regla 5). Task 37: la marca internacionalista del promovente es booleana OBLIGATORIA (paralelo del par rebelde) y el par de contacto (phone, popular_council) viaja opcional; los subregistros de servicio exigen end_date OBLIGATORIA, estrictamente posterior a start_date y SIN solapamiento entre filas (422 con nada creado). Task 42: el domicilio y cobro del promovente viajan en el alta — dirección actual, provincia y municipio de residencia (coherentes, RN-04), tipo de agencia de cobro, agencia de cobro (del tipo declarado) y cuenta bancaria OBLIGATORIA CONDICIONAL a la forma de pago del tipo de agencia (exigida con tarjeta magnetica, opcional con nomina electronica: 422 sobre bank_account) — y cada concepto de ingreso declarado viaja con su porciento a aplicar (0-100, dos decimales). Los subregistros opcionales se crean en la misma transacción: todo o nada (S5.5). Task 74: cuando el tipo de jubilación del tipo de pensión declarado es invalidez, el BLOQUE DE INVALIDEZ viaja OBLIGATORIO en el alta — enfermedad (id del catálogo diseases, activa), requiere cuidado de otra persona, origen de la enfermedad (comun|profesional|accidente_trabajo|accidente_trayecto), temporal y — solo si temporal=true — la fecha de re-peritaje, estrictamente futura (422 clave por clave si falta; prohibido con cualquier otra rama, D-7408). El techo del año salarial es el año actual+1; los pares año-expediente y concepto-expediente son únicos (422). Las advertencias viajan junto a data.",
                 "operationId": "pensionCasesStore",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKeyHeader"
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -5051,9 +5765,15 @@
                                             "oneOf": [
                                                 {
                                                     "$ref": "#/components/schemas/PensionCase"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        null
+                                                    ]
                                                 }
-                                            ],
-                                            "nullable": true
+                                            ]
                                         },
                                         "case_id": {
                                             "type": "integer",
@@ -5155,6 +5875,9 @@
                 "description": "PUT de edición del expediente (SGP-34, corrección de usuario, RF-EXP-001): edita los campos del expediente propio — el vínculo laboral y la clasificación de la pensión (entidad, cargo, ambos pares de categorías, tipo y régimen), el último salario, la fecha de solicitud y la declaración de imputabilidad de los salarios ausentes (Task 52/S8.8, D-3: missing_salaries_attributable, PATCH — null explícito la limpia) — mientras el PROMOVENTE de la pensión queda INMUTABLE: todo campo de la esfera de la persona (applicant_person_id, filed_by_person_id, el par de Ejército Rebelde, el internacionalista, el par de contacto y la fecha de desvinculación) responde 422 prohibido en vez de derivar silenciosamente al promovente que el registro ya conoce. Los campos de ciclo de vida siguen la misma suerte: office_id respeta la regla 0 del alta (el expediente asume la oficina del usuario que registra) y number/status solo se mueven por sus propios canales (la secuencia del alta, la máquina de transiciones de S6). Semántica PATCH: cada campo es opcional, solo las claves declaradas cambian y la omisión de un campo nunca arranca su valor almacenado. Los probes semánticos espejan el alta (entidad y catálogos activos: 422; fecha de solicitud no futura: 422). La edición solo corre mientras el expediente está en submitted (409 fuera, con el estado actual). Task 42: el grupo de DOMICILIO y COBRO del promovente — dirección actual, provincia y municipio de residencia, tipo de agencia de cobro, agencia de cobro y cuenta bancaria — SÍ es editable (decisión explícita del usuario: pueden modificarse) con probes espejo del alta y la exigencia condicional de la cuenta re-evaluada contra el estado RESULTANTE (cambiar el tipo de agencia de cobro a uno con forma de pago tarjeta magnetica exige la cuenta si acabó en null). Task 74 (D-7407): el BLOQUE DE INVALIDEZ también es editable en submitted contra el estado RESULTANTE — cambiar el tipo de pensión a una rama invalidez exige el bloque completo (422 clave por clave), cambiarlo a una rama no-invalidez exige limpiar el bloque (422 si queda presente; los nulls explícitos limpian, nunca un descarte silencioso). Las advertencias de la serie salarial viajan junto a data.",
                 "operationId": "pensionCasesUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -5390,6 +6113,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -5400,7 +6126,33 @@
                         "description": "Expediente inexistente (o ya eliminado)"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -5417,6 +6169,9 @@
                 "description": "DELETE del expediente (SGP-34, corrección de usuario, RF-EXP-001): eliminación LÓGICA (soft delete) disponible SOLO mientras el expediente está en submitted (estado de solicitud) — fuera de submitted responde 409 con el estado actual. La fila sobrevive con su deleted_at: la evidencia y la pista de auditoría siguen respondiendo (RN-001) con los valores previos (ADR-19), mientras el detalle y el listado públicos dejan de verlo (404). Los subregistros no se tocan: la historia queda física. La reservación de expediente-abierto-por-persona se LIBERA (la columna generada open_case_key pasa a NULL en las filas eliminadas) para que el operador pueda re-capturar al mismo solicitante tras eliminar un registro equivocado.",
                 "operationId": "pensionCasesDestroy",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -5447,6 +6202,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -5454,7 +6212,33 @@
                         "description": "Expediente inexistente (o ya eliminado)"
                     },
                     "409": {
-                        "description": "Expediente fuera de submitted (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
@@ -5532,6 +6316,12 @@
                 "description": "Sprint 6 (RF-EXP-005..010, ADR-07/arquitectura 9.1): UN solo endpoint declarativo para toda la máquina de estados — POST /pension-cases/{id}/transitions con {\"to\", \"note\", \"legal_basis_id\", \"force\"} en lugar de verbos RPC por transición. La decisión corre sobre la FILA BLOQUEADA dentro de una transacción (dos aprobaciones concurrentes del mismo expediente no pueden ocurrir: el segundo actor relee el estado ya resuelto y responde 422) y sigue el orden: la MATRIZ de la sección 2.4 primero (fuera de ella: 422 con el estado actual y el intento aterriza en bitácora), el ROL de la transición después (403: la revisión/devolución exige cases.review del especialista, la aprobación/denegación exige cases.approve/cases.reject del Director, la reapertura exige cases.reopen del Administrador), la EVIDENCIA después (la aprobación exige base legal VIGENTE y nota de resolución — una derogada solo el Administrador puede forzarla con force:true y la advertencia queda en bitácora, RF-LEG-003; la denegación y la reapertura exigen motivo de mínimo 10 caracteres, RF-EXP-008/010) y la COMPLETITUD al entrar en revisión (RF-EXP-006: al menos un servicio, la serie salarial y último salario positivo; 422 con la lista missing). La REAPERTURA administrativa (approved/rejected → under_review, solo Administrador) limpia la evidencia de decisión del expediente — la historia completa queda en las filas append-only — y respeta la reservación de expediente-abierto-por-persona (409 si el promovente ya tiene otro expediente abierto). Cada transición legal persiste from_status, to_status, usuario, fecha y nota en el historial inmutable y la respuesta viaja con el expediente actualizado (proyección completa de subregistros) y el objeto transition de la fila creada. — Task 86 (nuevo requerimiento 2026-11-25): el QUINTO destino `deceased` es la DECLARACIÓN DE FALLECIMIENTO (permiso del Director cases.approve, 403 para el resto): solo desde un expediente APROBADO de rama NO fallecimiento (422 en cualquier otro origen — el intento aterriza en bitácora — y 422 si el expediente YA es de sobrevivientes), lleva en el cuerpo el BLOQUE DE DEFUNCIÓN de cinco claves (causa/tipo de muerte + trío de fechas y certificado, todas obligatorias y con fechas estrictamente pasadas; el switch forced_age_retirement JAMÁS viaja — el sistema lo escribe TRUE) y ejecuta TODO dentro de la misma transacción: nace el EXPEDIENTE DERIVADO de sobrevivientes (la copia verbatim del original INCLUYENDO los subregistros — las copias de salarios/servicios/ciclos nacen «derived» y su DELETE responde 422 —, tipo SOB «Por sobrevivencia» del catálogo, estado solicitud, parent_case_id = el expediente declarado, bloque de defunción del payload y forzar jubilación por edad TRUE inmutable; número territorial nuevo de la MISMA oficina) y la respuesta lo viaja como derived_case; el original pasa a deceased (TERMINAL, jamás reabrible — la reapertura administrativa sigue exclusiva de approved/rejected), la fila del historial aterriza con la nota y el pensionado del expediente declarado TERMINA automáticamente (el muerto no cobra, ADR-20; S10 solo paga active).",
                 "operationId": "pensionCasesTransition",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKeyHeader"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -5663,9 +6453,15 @@
                                             "oneOf": [
                                                 {
                                                     "$ref": "#/components/schemas/PensionCase"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        null
+                                                    ]
                                                 }
                                             ],
-                                            "nullable": true,
                                             "description": "Task 86: solo con to=deceased — el expediente derivado de sobrevivientes (SOB, solicitud, parent_case_id, bloque de defunción, forzar TRUE) con su proyección completa de subregistros"
                                         }
                                     },
@@ -5676,6 +6472,9 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
@@ -5696,9 +6495,15 @@
                                             "oneOf": [
                                                 {
                                                     "$ref": "#/components/schemas/PensionCase"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        null
+                                                    ]
                                                 }
-                                            ],
-                                            "nullable": true
+                                            ]
                                         },
                                         "case_id": {
                                             "type": "integer",
@@ -5802,6 +6607,9 @@
                 "operationId": "pensionCasesAddSalaryRecord",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -5857,6 +6665,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -5867,7 +6678,33 @@
                         "description": "Expediente inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -5886,6 +6723,9 @@
                 "description": "Elimina un año de la serie salarial (RF-EXP-002, altas/bajas de S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).",
                 "operationId": "pensionCasesRemoveSalaryRecord",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -5928,6 +6768,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -5935,7 +6778,33 @@
                         "description": "Expediente o registro inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -5954,6 +6823,9 @@
                 "description": "Añade un vínculo laboral (RF-EXP-003) mientras el expediente está en submitted. Task 37 (corrección de usuario): end_date es OBLIGATORIA, estrictamente posterior a start_date (422) y el período no puede solapar NINGÚN subregistro existente del expediente (422 sobre end_date nombrando los registros cruzados) — los vínculos abiertos y los solapamientos advertidos de Sprint 5 ya no existen. Task 66 (SGP-38, corrección de usuario 2026-10-23): la fila nace con su par DERIVADO de tiempo de trabajo, calculado por el sistema al alta en el mismo momento — worked_years, número DOUBLE TRUNCADO al entero (meses de diferencia divididos por el months_per_year del régimen del expediente; 71/12 = 5.9167 responde 5, la media jamás sube — el redondeo de la Task 48 quedó retirado), y worked_months, entero con los meses TOTALES de diferencia SIN divisor (2000-01-01 → 2005-12-31 responde 71) —; ambos campos JAMÁS se aceptan en el payload (422 si el cliente los envía) y quedan congelados con la fila.",
                 "operationId": "pensionCasesAddServiceRecord",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -6032,6 +6904,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -6042,7 +6917,33 @@
                         "description": "Expediente inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -6061,6 +6962,9 @@
                 "description": "Elimina un vínculo laboral (S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).",
                 "operationId": "pensionCasesRemoveServiceRecord",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -6103,6 +7007,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -6110,7 +7017,33 @@
                         "description": "Expediente o registro inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -6129,6 +7062,9 @@
                 "description": "Añade un ciclo de trabajo (RF-EXP-004: días plan, días reales y cantidad, enteros no negativos) mientras el expediente está en submitted.",
                 "operationId": "pensionCasesAddWorkCycle",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -6190,6 +7126,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -6200,7 +7139,33 @@
                         "description": "Expediente inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -6219,6 +7184,9 @@
                 "description": "Elimina un ciclo de trabajo (S5.4) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).",
                 "operationId": "pensionCasesRemoveWorkCycle",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -6261,6 +7229,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -6268,7 +7239,33 @@
                         "description": "Expediente o registro inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -6287,6 +7284,9 @@
                 "description": "Declara un concepto de ingreso del expediente (regla de usuario 5) mientras el expediente está en submitted. El par concepto-expediente es único (422 semántico) y — desde la Task 42 (corrección de usuario) — el porciento a aplicar es OBLIGATORIO: decimal exacto en el rango 0-100 con dos decimales (422 si se omite, fuera de rango o con tercera decimal). Desde la Task 54 (SGP-39, corrección de usuario) el importe NO existe en el wire: la declaración es SOLO el porciento y el motor v2 deriva el importe — un payload que aún envíe amount responde 422 (D-14 b/D-15 a).",
                 "operationId": "pensionCasesAddIncomeConceptRecord",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -6345,6 +7345,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -6355,7 +7358,33 @@
                         "description": "Expediente inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -6374,6 +7403,9 @@
                 "description": "Elimina el valor declarado de un concepto de ingreso (regla de usuario 5) mientras el expediente está en submitted. La bitácora conserva los valores previos (ADR-19).",
                 "operationId": "pensionCasesRemoveIncomeConceptRecord",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -6416,6 +7448,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -6423,7 +7458,33 @@
                         "description": "Expediente o registro inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -6442,6 +7503,9 @@
                 "description": "Declara un FAMILIAR CON DERECHO del expediente (Task 80, nuevo requerimiento 2026-11-20; Task 81, nuevo requerimiento 2026-11-22 — sin porciento en el alta) mientras está en submitted: la persona beneficiaria, su parentezco (catálogo beneficiary-types) y su punto de cobro propio — la MISMA validación del grupo de cobro del expediente (agencia activa del tipo declarado; la cuenta es OBLIGATORIA cuando la forma de pago del tipo de agencia es tarjeta magnetica, 422) — y el tutor: OBLIGATORIO cuando age(beneficiario.fecha de nacimiento) < age_of_majority de la configuración general ACTIVA (422 si falta), PROHIBIDO en el resto; siempre una persona registrada y activa distinta del beneficiario. El par expediente-beneficiario es único (422). La cuantía asignada NACE en 0.00 y no viaja en el POST: solo el reparto de la aprobación de la rama fallecimiento la escribe (cuantía × porciento de la regla de beneficiario del tamaño de la familia / cantidad de familiares, con el tope del porciento máximo del parentezco cuando existe).",
                 "operationId": "pensionCasesAddEntitledRelative",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -6526,6 +7590,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -6533,10 +7600,36 @@
                         "description": "Expediente inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "422": {
-                        "description": "Sonda semántica: beneficiario/tutor/tipo inactivo, agencia incoherente, cuenta exigida, tutor exigido/prohibido o beneficiario duplicado"
+                        "$ref": "#/components/responses/ValidationError"
                     }
                 },
                 "security": [
@@ -6555,6 +7648,9 @@
                 "description": "Elimina un familiar con derecho del expediente (Task 80) mientras está en submitted. La bitácora conserva los valores previos (ADR-19).",
                 "operationId": "pensionCasesRemoveEntitledRelative",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -6597,6 +7693,9 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -6604,7 +7703,33 @@
                         "description": "Expediente o familiar inexistente"
                     },
                     "409": {
-                        "description": "Expediente ya no editable (devuelve estado actual)"
+                        "description": "Expediente ya no editable (devuelve estado actual)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "case_id": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "submitted",
+                                                "under_review",
+                                                "approved",
+                                                "rejected",
+                                                "deceased"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -6875,6 +8000,9 @@
                 "operationId": "pensionersUpdateStatus",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -6935,6 +8063,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "description": "El rol no porta pensioners.manage (admin + director, D-57)",
@@ -7004,6 +8138,9 @@
                 "operationId": "pensionersUpdateBankControl",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -7062,6 +8199,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "description": "El rol no porta pensioners.manage (admin + director, espejo D-57)",
@@ -7390,9 +8533,15 @@
                                             "oneOf": [
                                                 {
                                                     "$ref": "#/components/schemas/Person"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        null
+                                                    ]
                                                 }
-                                            ],
-                                            "nullable": true
+                                            ]
                                         },
                                         "candidates": {
                                             "type": "array",
@@ -7495,6 +8644,9 @@
                 "operationId": "peopleDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -7505,6 +8657,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Persona desactivada",
                         "content": {
@@ -7545,6 +8703,9 @@
                 "description": "Edición parcial con auditoría de valores previos (RF-PER-002). El carné de identidad es inmutable (RN-001) y la fecha de fallecimiento se registra por su propio endpoint: ambos campos responden 422 si viajan aquí.",
                 "operationId": "peopleUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -7636,6 +8797,12 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -7662,6 +8829,9 @@
                 "description": "Fija (o corrige) la fecha de fallecimiento (RF-PER-003): estrictamente posterior al nacimiento, nunca futura, datable y auditada con valores previos. Persona fallecida queda marcada como deceased en búsquedas y bloquea para nuevos trámites. Desde S9.3 (Task 61/SGP-46, D-56 (a)): cuando la persona tiene un pensionado VIVO (active o suspended), el 200 gana el advisory pensioner_advisory {pensioner_id, status, message} que orienta la baja de la pensión vía PATCH /pensioners/{id}/status — SUGIERE, jamás ejecuta: la terminación sigue siendo decisión del director con motivo (RF-PEN-003); sin pensionado vivo el campo no viaja.",
                 "operationId": "peopleRegisterDeath",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -7735,6 +8905,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
@@ -8341,7 +9517,19 @@
                         "description": "Registro inexistente"
                     },
                     "409": {
-                        "description": "La corrida aún no está completed"
+                        "description": "La corrida aún no está completed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -8453,6 +9641,24 @@
                                             "items": {
                                                 "$ref": "#/components/schemas/AuditLogEntry"
                                             }
+                                        },
+                                        "meta": {
+                                            "description": "La envoltura de paginación RF-API-002 del listado paginado",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -9223,6 +10429,9 @@
                 "operationId": "rolesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -9238,6 +10447,9 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
@@ -9289,6 +10501,9 @@
                 "description": "Actualiza el nombre, la descripción y/o el conjunto completo de permisos (PATCH parcial: lo ausente no cambia; permissions reemplaza el set entero). Los roles institucionales son inmutables (422: sus permisos viven en la matriz, no en la base de datos). El nombre sigue el contrato de slug y la unicidad (422). Requiere roles.manage; la edición y el cambio de concesiones quedan en la bitácora con los valores previos.",
                 "operationId": "rolesUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -9358,6 +10573,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
@@ -9659,6 +10880,9 @@
                 "operationId": "usersDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -9674,6 +10898,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
@@ -9699,6 +10929,9 @@
                 "description": "Actualiza el nombre, la asignación completa de roles y/o la oficina territorial (ADR-29: presente — incluso null — reasigna o limpia; ausente queda intacta). El email es inmutable: enviar uno distinto responde 422. El sistema impide dejarlo sin ningún administrador activo (422). Requiere users.manage; la edición, el cambio de roles y el de oficina quedan en la bitácora con los valores previos.",
                 "operationId": "usersUpdate",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -9773,6 +11006,12 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -9799,6 +11038,9 @@
                 "description": "Restauración exclusiva del Administrador (RF-AUD-004), auditada. Idempotente para una cuenta ya activa (200 sin escritura). Requiere users.manage.",
                 "operationId": "usersRestore",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -9831,6 +11073,12 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -9854,6 +11102,9 @@
                 "description": "Desbloqueo anticipado por el Administrador (RF-SEG-001): limpia el contador y el instante de bloqueo antes de que expire el TTL. Idempotente para una cuenta limpia (200 sin escritura). Requiere users.manage; el desbloqueo queda en la bitácora con el estado previo.",
                 "operationId": "usersUnlock",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -9886,6 +11137,12 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -9909,6 +11166,9 @@
                 "description": "Restablecimiento por el Administrador (RF-SEG-001): la nueva contraseña se valida contra la política, se renueva la línea base de caducidad, se limpia el bloqueo y se revocan TODAS las sesiones de la cuenta. Requiere users.manage; la escritura queda en la bitácora con la contraseña redactada.",
                 "operationId": "usersResetPassword",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -9963,6 +11223,12 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
@@ -9989,6 +11255,9 @@
                 "description": "Asocia la cuenta a una persona registrada para la trazabilidad de acciones (RF-SEG-004). Idempotente para la misma pareja cuenta-persona (200). La persona ya vinculada a otra cuenta responde 409 con la cuenta dueña; las cuentas desactivadas también reservan a su persona. Requiere el permiso users.manage (Administrador) y queda registrada en la bitácora con el valor previo.",
                 "operationId": "usersLinkPerson",
                 "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
                     {
                         "name": "id",
                         "in": "path",
@@ -10040,6 +11309,9 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "description": "Sin permiso users.manage",
@@ -10119,6 +11391,9 @@
                 "operationId": "usersUnlinkPerson",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "description": "Identificador de la cuenta",
@@ -10147,6 +11422,12 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
                     },
                     "403": {
                         "description": "Sin permiso users.manage",
@@ -10419,6 +11700,9 @@
                 "operationId": "beneficiaryRulesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -10429,6 +11713,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Regla eliminada",
                         "content": {
@@ -10480,6 +11770,9 @@
                 "operationId": "beneficiaryRulesUpdate",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -10523,6 +11816,12 @@
                     }
                 },
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Regla actualizada",
                         "content": {
@@ -10818,6 +12117,9 @@
                 "operationId": "disabilityIncrementBracketsDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -10828,6 +12130,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Tramo eliminado",
                         "content": {
@@ -10879,6 +12187,9 @@
                 "operationId": "disabilityIncrementBracketsUpdate",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -10922,6 +12233,12 @@
                     }
                 },
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Tramo actualizado",
                         "content": {
@@ -11208,6 +12525,9 @@
                 "operationId": "disabilityRulesDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -11218,6 +12538,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Regla eliminada",
                         "content": {
@@ -11269,6 +12595,9 @@
                 "operationId": "disabilityRulesUpdate",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -11307,6 +12636,12 @@
                     }
                 },
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Regla actualizada",
                         "content": {
@@ -11998,6 +13333,9 @@
                 "operationId": "specialDisabilityModificationsDestroy",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -12008,6 +13346,12 @@
                     }
                 ],
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Modificación eliminada",
                         "content": {
@@ -12059,6 +13403,9 @@
                 "operationId": "specialDisabilityModificationsUpdate",
                 "parameters": [
                     {
+                        "$ref": "#/components/parameters/IfMatchHeader"
+                    },
+                    {
                         "name": "id",
                         "in": "path",
                         "required": true,
@@ -12094,6 +13441,12 @@
                     }
                 },
                 "responses": {
+                    "409": {
+                        "$ref": "#/components/responses/StaleResource"
+                    },
+                    "428": {
+                        "$ref": "#/components/responses/PreconditionRequired"
+                    },
                     "200": {
                         "description": "Modificación actualizada",
                         "content": {
@@ -12594,6 +13947,12 @@
                         "format": "int64",
                         "example": 3
                     },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "type": {
                         "description": "Tipo de base legal (catálogo)",
                         "properties": {
@@ -12689,6 +14048,12 @@
                         "format": "int64",
                         "example": 9
                     },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "entity": {
                         "description": "Entidad que autoriza",
                         "properties": {
@@ -12778,6 +14143,12 @@
                         "type": "integer",
                         "format": "int64",
                         "example": 1
+                    },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "code": {
                         "description": "Código único; queda reservado tras desactivar",
@@ -12944,6 +14315,12 @@
                         "format": "int64",
                         "example": 3
                     },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "type": {
                         "description": "Tipo de oficina (nacional/provincial/municipal)",
                         "properties": {
@@ -13027,6 +14404,160 @@
                 },
                 "type": "object"
             },
+            "PaymentInstrument": {
+                "title": "Instrumento de pago",
+                "description": "Un instrumento de pago (Task 89, requerimiento 2026-11-27): el vehículo que agrupa pagos del ledger para UNA disposición — «Pago provisional» (provisional_payment, nace con set_expired_at = fecha de creación + month_to_expired de la configuración ACTIVA y vincula pagos provitional) o «Cheque electrónico» (electronic_check, nace SIN ventana y vincula pagos expired). Nace `created` (el «status new» del requerimiento) con amount 0; cada asociación (solo en created) mueve el pago a `paid` y acumula amount; created→pending|cancelled y pending→paid|expired; al caer en expired/cancelled los pagos asociados se LIBERAN (provitional|expired según el tipo — el criterio para usarse en nuevos instrumentos) y el amount SE REVIERTE a 0. No se elimina jamás. Tras el feature flag `payments.enabled`.",
+                "properties": {
+                    "id": {
+                        "description": "Wire projection of a payment instrument — the COMPLETE row\n(«todos los datos del instrumento», Task 89, new requirement\n2026-11-27, D-8901): the pensioner (person projection + status),\nthe beneficiary (person projection), the accumulated amount, the\ntype, the status, the birth schedule (set_expired_at), the paid\nstamp (paid_at) and the BOUND ledger payments with their period —\nthe audit evidence of which instrument paid which payment.",
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 7
+                    },
+                    "pensioner_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 3
+                    },
+                    "pensioner": {
+                        "description": "El pensionado del instrumento — ACTIVO al crear y al asociar",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "person": {
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "full_name": {
+                                        "type": "string",
+                                        "example": "Juan Carlos Pérez Gómez"
+                                    }
+                                },
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "active",
+                                    "suspended",
+                                    "terminated"
+                                ]
+                            },
+                            "amount": {
+                                "type": "string",
+                                "example": "2127.00"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "beneficiary": {
+                        "description": "La persona beneficiaria de la disposición (cualquier persona viva del registro)",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "full_name": {
+                                "type": "string",
+                                "example": "María Elena Pérez Rodríguez"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "amount": {
+                        "description": "La suma de los pagos asociados (DECIMAL(12,2) como cadena, RN-005); se REVIERTE a 0.00 al liberar (expired/cancelled)",
+                        "type": "string",
+                        "example": "4254.00"
+                    },
+                    "type": {
+                        "description": "El tipo — «Pago provisional» / «Cheque electrónico»",
+                        "type": "string",
+                        "enum": [
+                            "provisional_payment",
+                            "electronic_check"
+                        ]
+                    },
+                    "status": {
+                        "description": "Nace created (el «status new»); matriz del operador created→pending|cancelled y pending→paid|expired; el JOB de vencimiento expira created Y pending (directiva de usuario 2026-11-27)",
+                        "type": "string",
+                        "enum": [
+                            "created",
+                            "pending",
+                            "paid",
+                            "expired",
+                            "cancelled"
+                        ]
+                    },
+                    "set_expired_at": {
+                        "description": "La ventana del «Pago provisional» — fecha de creación + month_to_expired de la configuración ACTIVA (addMonthsNoOverflow); NULL para el cheque electrónico",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-27",
+                        "nullable": true
+                    },
+                    "paid_at": {
+                        "description": "El sello de la transición pending→paid (la fecha de HOY vía reloj)",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-11-28",
+                        "nullable": true
+                    },
+                    "associated_payments": {
+                        "description": "Los pagos del ledger vinculados (append-only, jamás se desasocian)",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                },
+                                "amount": {
+                                    "type": "string",
+                                    "example": "2127.00"
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "enum": [
+                                        "pending",
+                                        "paid",
+                                        "expired",
+                                        "provitional",
+                                        "cancelled"
+                                    ]
+                                },
+                                "period": {
+                                    "type": "string",
+                                    "example": "2026-11"
+                                },
+                                "payment_form": {
+                                    "type": "string",
+                                    "enum": [
+                                        "tarjeta magnetica",
+                                        "nomina electronica"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "Payment": {
                 "title": "Pago del período por forma (H-16, dos niveles)",
                 "description": "El objeto de pago de un mes, un año y una forma de pago (tarjeta magnetica / nomina electronica) — el ancla del período del ledger pensioner_payments. Tras el feature flag `payments.enabled`.",
@@ -13036,6 +14567,12 @@
                         "type": "integer",
                         "format": "int64",
                         "example": 101
+                    },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "payment_form": {
                         "description": "La forma de pago del objeto — literales exactos del enum PaymentForm (Task 42)",
@@ -13966,18 +15503,30 @@
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/Person"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ],
-                        "nullable": true,
                         "description": "Task 82 (corrección de usuario 2026-11-22): la persona beneficiaria — proyección COMPLETA (regla de usuario 3) para que el front muestre al familiar sin consultas extra; null — nunca un recurso roto — si la referencia ya no resuelve"
                     },
                     "tutor": {
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/Person"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ],
-                        "nullable": true,
                         "description": "Task 82: la persona tutora — proyección COMPLETA espejo del beneficiary; null cuando el familiar no lleva tutor"
                     },
                     "beneficiary_type": {
@@ -14113,6 +15662,12 @@
                         "type": "integer",
                         "format": "int64",
                         "example": 1
+                    },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "number": {
                         "description": "Número del expediente: PPMMAACCCCC (provincia-municipio-año-consecutivo territorial), único",
@@ -14745,18 +16300,30 @@
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/Person"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ],
-                        "nullable": true,
                         "description": "Persona pensionada: proyección COMPLETA (regla de usuario 3)"
                     },
                     "tutor": {
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/Person"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ],
-                        "nullable": true,
                         "description": "Task 81 (D-8106): la persona tutora del familiar con derecho del que la fila nació — proyección COMPLETA espejo del person; null cuando la fila no lleva tutor"
                     },
                     "pension_type": {
@@ -14960,6 +16527,12 @@
                         "type": "integer",
                         "format": "int64",
                         "example": 1
+                    },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "identity_number": {
                         "description": "Carné de identidad: 11 dígitos (mes 01-12 y día 01-31 validados, sexo por paridad del dígito 10), único e inmutable (RN-001)",
@@ -15631,6 +17204,12 @@
                         "format": "int64",
                         "example": 6
                     },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "name": {
                         "description": "Clave natural (slug minúscula); los nombres institucionales están reservados",
                         "type": "string",
@@ -15670,6 +17249,12 @@
                         "format": "int64",
                         "example": 1
                     },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "name": {
                         "type": "string",
                         "example": "SGP Demo Admin"
@@ -15699,18 +17284,30 @@
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/LinkedPerson"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ],
-                        "nullable": true,
                         "description": "Persona del registro único vinculada a la cuenta (RF-SEG-004); null mientras no exista asociación"
                     },
                     "office": {
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/Office"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ],
-                        "nullable": true,
                         "description": "Oficina territorial de pertenencia (ADR-29): /auth/me y la gestión de cuentas la devuelven; null si la cuenta no pertenece a ninguna oficina activa"
                     },
                     "language": {
@@ -15771,6 +17368,12 @@
                         "format": "int64",
                         "example": 1
                     },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "min_quantity": {
                         "description": "La cantidad MÍNIMA de beneficiarios del rango (inclusive)",
                         "type": "integer",
@@ -15807,6 +17410,12 @@
                         "type": "integer",
                         "format": "int64",
                         "example": 1
+                    },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "disability_rule_id": {
                         "description": "La regla (el origen) a la que el tramo pertenece — inmutable tras el alta (D-7505)",
@@ -15853,6 +17462,12 @@
                         "type": "integer",
                         "format": "int64",
                         "example": 1
+                    },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "origin": {
                         "description": "El origen de la enfermedad (literales del enum DiseaseOrigin de la Task 74) — el eje cerrado de la Task 83 (el quinto literal fallecimiento de la Task 76 murió) — natural key ÚNICA e inmutable tras el alta: un origen, una regla (D-7503)",
@@ -16032,6 +17647,12 @@
                         "format": "int64",
                         "example": 1
                     },
+                    "updated_at": {
+                        "description": "Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "code": {
                         "description": "El código natural de la modificación — único e inmutable tras el alta",
                         "type": "string",
@@ -16062,7 +17683,7 @@
                         "schema": {
                             "properties": {
                                 "message": {
-                                    "description": "Reusable OpenAPI response components (ADR-13).\n\nCentralizes the cross-cutting error shapes of the SGP API so every\nprotected operation references the same component instead of\nduplicating inline definitions: 401 for the Sanctum bearer scheme,\n403 for the RBAC permission guard (RF-SEG-002, ADR-18) and 422 for\nthe per-field validation envelope (RF-API-002).",
+                                    "description": "Reusable OpenAPI response components (ADR-13).\n\nCentralizes the cross-cutting error shapes of the SGP API so every\nprotected operation references the same component instead of\nduplicating inline definitions: 401 for the Sanctum bearer scheme,\n403 for the RBAC permission guard (RF-SEG-002, ADR-18) and 422 for\nthe per-field validation envelope (RF-API-002).\n\nTask 88 (Sprint 12, RF-API-003/RNF-004) adds the S12 contract\nshapes: 404 for the missing (or territorially HIDDEN) resource\n(D-8808), the typed 409 of the optimistic-concurrency guard\n(D-8802), the typed 403 of the territorial policy (D-8808), the\ntyped 428 of the missing If-Match (D-8803), the typed 422 of the\nidempotency conflict (D-8804) and the 429 of the per-role rate\nlimit with Retry-After (D-8811).",
                                     "type": "string",
                                     "example": "Unauthenticated."
                                 }
@@ -16114,6 +17735,171 @@
                             "type": "object"
                         }
                     }
+                }
+            },
+            "NotFound": {
+                "description": "Recurso inexistente — o TERRITORIALMENTE OCULTO: para el usuario de otra oficina el recurso no existe (D-8808)",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "Expediente inexistente o desactivado"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "StaleResource": {
+                "description": "Concurrencia optimista (D-8802): el validador If-Match quedó obsoleto — otro actor escribió primero. El cuerpo lleva el updated_at vigente para releer y decidir",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "El recurso :resource fue modificado por otro actor..."
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "example": "stale_resource"
+                                },
+                                "resource": {
+                                    "type": "string",
+                                    "example": "pension-cases.update"
+                                },
+                                "current_updated_at": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "example": "2026-11-27T10:00:00.000000Z"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "OutsideTerritory": {
+                "description": "Ámbito territorial (D-8808): escritura sobre un recurso del subárbol de otra oficina — el actor merece la verdad (territorio, no ausencia)",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "El recurso :resource pertenece a un territorio ajeno al del usuario actuante."
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "example": "outside_territory"
+                                },
+                                "resource": {
+                                    "type": "string",
+                                    "example": "pension-cases.update"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "PreconditionRequired": {
+                "description": "Concurrencia optimista (D-8803): la escritura exige la cabecera If-Match con el updated_at vigente (o *) — sin cabecera no hay escritura",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "La escritura del recurso :resource exige la cabecera If-Match..."
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "example": "if_match_required"
+                                },
+                                "resource": {
+                                    "type": "string",
+                                    "example": "pension-cases.update"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "IdempotencyKeyConflict": {
+                "description": "Idempotencia (D-8804, V-30): la Idempotency-Key presentada ya fue usada por una solicitud DISTINTA — nunca un descarte silencioso",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "La Idempotency-Key presentada ya fue usada por una solicitud DISTINTA..."
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "example": "idempotency_key_conflict"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "TooManyRequests": {
+                "description": "Rate limiting por rol (D-8811, V-33): se excedió el presupuesto de solicitudes por minuto del rol — reintente tras el intervalo de Retry-After",
+                "headers": {
+                    "Retry-After": {
+                        "description": "Segundos hasta poder reintentar",
+                        "schema": {
+                            "type": "integer",
+                            "example": 61
+                        }
+                    }
+                },
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "Se excedió el límite de solicitudes por minuto del rol..."
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "example": "too_many_requests"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "parameters": {
+            "IfMatchHeader": {
+                "name": "If-Match",
+                "in": "header",
+                "description": "Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual)",
+                "required": true,
+                "schema": {
+                    "type": "string",
+                    "example": "\"2026-11-27T10:00:00.000000Z\""
+                }
+            },
+            "IdempotencyKeyHeader": {
+                "name": "Idempotency-Key",
+                "in": "header",
+                "description": "Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado",
+                "required": false,
+                "schema": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "b7f0f4e2-6c1a-4d3f-9a52-8e0b1c2d3f47"
                 }
             }
         },
