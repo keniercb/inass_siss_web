@@ -27,6 +27,8 @@ import { PensionerDetailPage } from '@/features/pensioners/pages/PensionerDetail
 import { PaymentsListPage } from '@/features/payments/pages/PaymentsListPage';
 import { PaymentDetailPage } from '@/features/payments/pages/PaymentDetailPage';
 import { PayrollExportsPage } from '@/features/payments/pages/PayrollExportsPage';
+import { PaymentInstrumentsListPage } from '@/features/payment-instruments/pages/PaymentInstrumentsListPage';
+import { PaymentInstrumentDetailPage } from '@/features/payment-instruments/pages/PaymentInstrumentDetailPage';
 import { ReportsLayout } from '@/features/reports/pages/ReportsLayout';
 import { ReportsIndexPage } from '@/features/reports/pages/ReportsIndexPage';
 import { CasesReportPage } from '@/features/reports/pages/CasesReportPage';
@@ -250,6 +252,23 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute permiso="payments.export">
             <PayrollExportsPage />
+          </ProtectedRoute>
+        ),
+      },
+      // Instrumentos de pago (pago provisional / cheque electrónico, spec 1.47.0)
+      {
+        path: 'instrumentos',
+        element: (
+          <ProtectedRoute permiso="payments.view">
+            <PaymentInstrumentsListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'instrumentos/:id',
+        element: (
+          <ProtectedRoute permiso="payments.view">
+            <PaymentInstrumentDetailPage />
           </ProtectedRoute>
         ),
       },

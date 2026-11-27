@@ -559,6 +559,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payment-instruments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listado de instrumentos de pago
+         * @description Task 89 (requerimiento 2026-11-27, D-8901): el directorio de instrumentos con todos los datos de la fila — el pensionado (persona y estado), la persona beneficiaria, el amount acumulado, el tipo, el estado, la ventana set_expired_at y el sello paid_at — filtrable por pensionado (id sin sonda: página vacía si no existe), estado (enum exacto created/pending/paid/expired/cancelled) y tipo (provisional_payment/electronic_check), paginado (per_page ≤ 100). Tras el feature flag `payments.enabled` y `payments.view` (admin, director, auditor).
+         */
+        get: operations["paymentInstrumentsIndex"];
+        put?: never;
+        /**
+         * Instrumentos de pago: creación (pensionado ACTIVO, calendario por tipo)
+         * @description Task 89 (requerimiento 2026-11-27, D-8901/D-8902/D-8903): crea el instrumento — {pensioner_id, beneficiary_person_id, type}. El pensionado debe ser ACTIVO (422 si no existe o está suspended/terminated); el «Pago provisional» (provisional_payment) nace con set_expired_at = fecha de creación + month_to_expired de la configuración general ACTIVA (addMonthsNoOverflow; 422 sin configuración publicada — sin default oculto, D-102) y el «Cheque electrónico» (electronic_check) nace SIN ventana (NULL). El instrumento NACE created (el «status new» del requerimiento) con amount 0.00. No se elimina jamás (sin DELETE por diseño). Tras el feature flag `payments.enabled` (404 apagado) y `payments.manage` (admin + director). Idempotencia por Idempotency-Key.
+         */
+        post: operations["paymentInstrumentsStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payment-instruments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ficha de un instrumento — todos los datos y los pagos vinculados
+         * @description Task 89 (requerimiento 2026-11-27, D-8901): el instrumento con TODOS sus datos — el pensionado (persona), la persona beneficiaria, el amount acumulado, el tipo, el estado, la ventana y el sello — más la lista de los pagos del ledger VINCULADOS (append-only: cada uno con su período, su forma y su estado actual — paid mientras el instrumento lo sostiene, liberado tras expired/cancelled). 404 de instrumento inexistente. Tras el feature flag y `payments.view`.
+         */
+        get: operations["paymentInstrumentsShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payment-instruments/{id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Asociar un pago del ledger al instrumento (la ventana created)
+         * @description Task 89 (requerimiento 2026-11-27, D-8901/D-8905): vincula un PensionerPayment al instrumento. SOLO mientras el instrumento está created; el pago debe pertenecer al pensionado del instrumento; el pensionado debe seguir ACTIVO (la suspensión posterior cierra la puerta a NUEVAS asociaciones, el instrumento subsiste); el ESTADO del ledger que vincula lo decide el TIPO — el «Pago provisional» solo toma pagos provitional y el «Cheque electrónico» solo pagos expired (el criterio de liberación de los vencidos). Al asociar: el pago pasa a paid (el expired→paid del cheque es la vía auditada que NO consulta la matriz operador de pagos, D-8905 — el PATCH de pagos jamás podrá des-expirar) y amount += pago.amount, todo en UNA transacción con ambas filas bloqueadas. La vinculación es append-only: JAMÁS se desasocia. El intento rechazado cae a la bitácora tras el rollback. Tras el feature flag y `payments.manage` (admin + director). If-Match sobre el instrumento + Idempotency-Key.
+         */
+        post: operations["paymentInstrumentsAssociate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payment-instruments/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transición del instrumento: enviar a proceso, pagar, expirar o anular
+         * @description Task 89 (requerimiento 2026-11-27, D-8902): la matriz del instrumento — created→pending (el instrumento armado sale a proceso) y created→cancelled (la retirada); pending→paid (la disposición efectiva: estampa paid_at con HOY vía reloj) y pending→expired (la ventana cerró sin pagar). paid, expired y cancelled son TERMINALES para el operador. Al caer en expired o cancelled los pagos vinculados se LIBERAN (provitional los del «Pago provisional», expired los del «Cheque electrónico» — el criterio para ser usados en NUEVOS instrumentos, vía auditada que NO consulta la matriz operador de pagos, D-8906) y el amount SE REVIERTE a 0.00 (directiva de usuario 2026-11-27). El intento rechazado cae a la bitácora tras el rollback. Tras el feature flag y `payments.manage` (admin + director). If-Match sobre el instrumento + Idempotency-Key.
+         */
+        post: operations["paymentInstrumentsUpdateStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payroll-exports": {
         parameters: {
             query?: never;
@@ -2271,6 +2355,11 @@ export interface components {
              * @example 3
              */
             id?: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /** @description Tipo de base legal (catálogo) */
             type?: {
                 /**
@@ -2349,6 +2438,11 @@ export interface components {
              * @example 9
              */
             id?: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /** @description Entidad que autoriza */
             entity?: {
                 /**
@@ -2421,6 +2515,11 @@ export interface components {
              * @example 1
              */
             id?: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /**
              * @description Código único; queda reservado tras desactivar
              * @example ENT-0001
@@ -2525,6 +2624,11 @@ export interface components {
              * @example 3
              */
             id?: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /** @description Tipo de oficina (nacional/provincial/municipal) */
             type?: {
                 /**
@@ -2580,6 +2684,95 @@ export interface components {
             scope_cases_count?: number;
         };
         /**
+         * Instrumento de pago
+         * @description Un instrumento de pago (Task 89, requerimiento 2026-11-27): el vehículo que agrupa pagos del ledger para UNA disposición — «Pago provisional» (provisional_payment, nace con set_expired_at = fecha de creación + month_to_expired de la configuración ACTIVA y vincula pagos provitional) o «Cheque electrónico» (electronic_check, nace SIN ventana y vincula pagos expired). Nace `created` (el «status new» del requerimiento) con amount 0; cada asociación (solo en created) mueve el pago a `paid` y acumula amount; created→pending|cancelled y pending→paid|expired; al caer en expired/cancelled los pagos asociados se LIBERAN (provitional|expired según el tipo — el criterio para usarse en nuevos instrumentos) y el amount SE REVIERTE a 0. No se elimina jamás. Tras el feature flag `payments.enabled`.
+         */
+        PaymentInstrument: {
+            /**
+             * Format: int64
+             * @description Wire projection of a payment instrument — the COMPLETE row
+             *     («todos los datos del instrumento», Task 89, new requirement
+             *     2026-11-27, D-8901): the pensioner (person projection + status),
+             *     the beneficiary (person projection), the accumulated amount, the
+             *     type, the status, the birth schedule (set_expired_at), the paid
+             *     stamp (paid_at) and the BOUND ledger payments with their period —
+             *     the audit evidence of which instrument paid which payment.
+             * @example 7
+             */
+            id?: number;
+            /**
+             * Format: int64
+             * @example 3
+             */
+            pensioner_id?: number;
+            /** @description El pensionado del instrumento — ACTIVO al crear y al asociar */
+            pensioner?: {
+                /** Format: int64 */
+                id?: number;
+                person?: {
+                    /** Format: int64 */
+                    id?: number;
+                    /** @example Juan Carlos Pérez Gómez */
+                    full_name?: string;
+                } | null;
+                /** @enum {string} */
+                status?: "active" | "suspended" | "terminated";
+                /** @example 2127.00 */
+                amount?: string;
+            } | null;
+            /** @description La persona beneficiaria de la disposición (cualquier persona viva del registro) */
+            beneficiary?: {
+                /** Format: int64 */
+                id?: number;
+                /** @example María Elena Pérez Rodríguez */
+                full_name?: string;
+            } | null;
+            /**
+             * @description La suma de los pagos asociados (DECIMAL(12,2) como cadena, RN-005); se REVIERTE a 0.00 al liberar (expired/cancelled)
+             * @example 4254.00
+             */
+            amount?: string;
+            /**
+             * @description El tipo — «Pago provisional» / «Cheque electrónico»
+             * @enum {string}
+             */
+            type?: "provisional_payment" | "electronic_check";
+            /**
+             * @description Nace created (el «status new»); matriz del operador created→pending|cancelled y pending→paid|expired; el JOB de vencimiento expira created Y pending (directiva de usuario 2026-11-27)
+             * @enum {string}
+             */
+            status?: "created" | "pending" | "paid" | "expired" | "cancelled";
+            /**
+             * Format: date
+             * @description La ventana del «Pago provisional» — fecha de creación + month_to_expired de la configuración ACTIVA (addMonthsNoOverflow); NULL para el cheque electrónico
+             * @example 2026-12-27
+             */
+            set_expired_at?: string | null;
+            /**
+             * Format: date
+             * @description El sello de la transición pending→paid (la fecha de HOY vía reloj)
+             * @example 2026-11-28
+             */
+            paid_at?: string | null;
+            /** @description Los pagos del ledger vinculados (append-only, jamás se desasocian) */
+            associated_payments?: {
+                /** Format: int64 */
+                id?: number;
+                /** @example 2127.00 */
+                amount?: string;
+                /** @enum {string} */
+                status?: "pending" | "paid" | "expired" | "provitional" | "cancelled";
+                /** @example 2026-11 */
+                period?: string;
+                /** @enum {string} */
+                payment_form?: "tarjeta magnetica" | "nomina electronica";
+            }[];
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        /**
          * Pago del período por forma (H-16, dos niveles)
          * @description El objeto de pago de un mes, un año y una forma de pago (tarjeta magnetica / nomina electronica) — el ancla del período del ledger pensioner_payments. Tras el feature flag `payments.enabled`.
          */
@@ -2592,6 +2785,11 @@ export interface components {
              * @example 101
              */
             id?: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /**
              * @description La forma de pago del objeto — literales exactos del enum PaymentForm (Task 42)
              * @example nomina electronica
@@ -3235,9 +3433,9 @@ export interface components {
              */
             tutor_person_id?: number | null;
             /** @description Task 82 (corrección de usuario 2026-11-22): la persona beneficiaria — proyección COMPLETA (regla de usuario 3) para que el front muestre al familiar sin consultas extra; null — nunca un recurso roto — si la referencia ya no resuelve */
-            beneficiary?: components["schemas"]["Person"] | null;
+            beneficiary?: components["schemas"]["Person"] | (never | null);
             /** @description Task 82: la persona tutora — proyección COMPLETA espejo del beneficiary; null cuando el familiar no lleva tutor */
-            tutor?: components["schemas"]["Person"] | null;
+            tutor?: components["schemas"]["Person"] | (never | null);
             /** @description Task 82: el parentezco — la MISMA forma del catálogo beneficiary-types (con su maximum_percent cuando está configurado) */
             beneficiary_type?: components["schemas"]["CatalogItem"] | null;
             /** @description Task 82: el tipo de agencia de cobro del familiar con su payment_form — la misma forma del grupo de cobro del expediente */
@@ -3371,6 +3569,11 @@ export interface components {
              * @example 1
              */
             id?: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /**
              * @description Número del expediente: PPMMAACCCCC (provincia-municipio-año-consecutivo territorial), único
              * @example 11032600001
@@ -3893,9 +4096,9 @@ export interface components {
              */
             tutor_person_id?: number | null;
             /** @description Persona pensionada: proyección COMPLETA (regla de usuario 3) */
-            person?: components["schemas"]["Person"] | null;
+            person?: components["schemas"]["Person"] | (never | null);
             /** @description Task 81 (D-8106): la persona tutora del familiar con derecho del que la fila nació — proyección COMPLETA espejo del person; null cuando la fila no lleva tutor */
-            tutor?: components["schemas"]["Person"] | null;
+            tutor?: components["schemas"]["Person"] | (never | null);
             /** @description Tipo de pensión del catálogo */
             pension_type?: {
                 /** Format: int64 */
@@ -4031,6 +4234,11 @@ export interface components {
              * @example 1
              */
             id?: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /**
              * @description Carné de identidad: 11 dígitos (mes 01-12 y día 01-31 validados, sexo por paridad del dígito 10), único e inmutable (RN-001)
              * @example 85061510002
@@ -4482,6 +4690,11 @@ export interface components {
              */
             id?: number;
             /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
+            /**
              * @description Clave natural (slug minúscula); los nombres institucionales están reservados
              * @example supervisor_territorial
              */
@@ -4505,6 +4718,11 @@ export interface components {
              * @example 1
              */
             id?: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /** @example SGP Demo Admin */
             name?: string;
             /**
@@ -4517,9 +4735,9 @@ export interface components {
             /** @description Permisos efectivos (de roles y directos), orden alfabético */
             permissions?: string[];
             /** @description Persona del registro único vinculada a la cuenta (RF-SEG-004); null mientras no exista asociación */
-            person?: components["schemas"]["LinkedPerson"] | null;
+            person?: components["schemas"]["LinkedPerson"] | (never | null);
             /** @description Oficina territorial de pertenencia (ADR-29): /auth/me y la gestión de cuentas la devuelven; null si la cuenta no pertenece a ninguna oficina activa */
-            office?: components["schemas"]["Office"] | null;
+            office?: components["schemas"]["Office"] | (never | null);
             /**
              * @description Idioma seleccionado para los mensajes de la API (Task 72/SGP-56): es institucional por defecto; el middleware SetAppLocale lo aplica a toda respuesta que constituya un mensaje
              * @enum {string}
@@ -4558,6 +4776,11 @@ export interface components {
              */
             id: number;
             /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
+            /**
              * @description La cantidad MÍNIMA de beneficiarios del rango (inclusive)
              * @example 1
              */
@@ -4583,6 +4806,11 @@ export interface components {
              * @example 1
              */
             id: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /**
              * Format: int64
              * @description La regla (el origen) a la que el tramo pertenece — inmutable tras el alta (D-7505)
@@ -4616,6 +4844,11 @@ export interface components {
              * @example 1
              */
             id: number;
+            /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
             /**
              * @description El origen de la enfermedad (literales del enum DiseaseOrigin de la Task 74) — el eje cerrado de la Task 83 (el quinto literal fallecimiento de la Task 76 murió) — natural key ÚNICA e inmutable tras el alta: un origen, una regla (D-7503)
              * @example accidente_trabajo
@@ -4743,6 +4976,11 @@ export interface components {
              */
             id: number;
             /**
+             * Format: date-time
+             * @description Task 88 (D-8802): validador débil de If-Match — la versión actual del recurso, tal cual se sirve
+             */
+            updated_at?: string | null;
+            /**
              * @description El código natural de la modificación — único e inmutable tras el alta
              * @example CUIDADO
              */
@@ -4775,6 +5013,14 @@ export interface components {
                      *     duplicating inline definitions: 401 for the Sanctum bearer scheme,
                      *     403 for the RBAC permission guard (RF-SEG-002, ADR-18) and 422 for
                      *     the per-field validation envelope (RF-API-002).
+                     *
+                     *     Task 88 (Sprint 12, RF-API-003/RNF-004) adds the S12 contract
+                     *     shapes: 404 for the missing (or territorially HIDDEN) resource
+                     *     (D-8808), the typed 409 of the optimistic-concurrency guard
+                     *     (D-8802), the typed 403 of the territorial policy (D-8808), the
+                     *     typed 428 of the missing If-Match (D-8803), the typed 422 of the
+                     *     idempotency conflict (D-8804) and the 429 of the per-role rate
+                     *     limit with Retry-After (D-8811).
                      * @example Unauthenticated.
                      */
                     message?: string;
@@ -4808,8 +5054,108 @@ export interface components {
                 };
             };
         };
+        /** @description Recurso inexistente — o TERRITORIALMENTE OCULTO: para el usuario de otra oficina el recurso no existe (D-8808) */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @example Expediente inexistente o desactivado */
+                    message?: string;
+                };
+            };
+        };
+        /** @description Concurrencia optimista (D-8802): el validador If-Match quedó obsoleto — otro actor escribió primero. El cuerpo lleva el updated_at vigente para releer y decidir */
+        StaleResource: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @example El recurso :resource fue modificado por otro actor... */
+                    message?: string;
+                    /** @example stale_resource */
+                    type?: string;
+                    /** @example pension-cases.update */
+                    resource?: string;
+                    /**
+                     * Format: date-time
+                     * @example 2026-11-27T10:00:00.000000Z
+                     */
+                    current_updated_at?: string;
+                };
+            };
+        };
+        /** @description Ámbito territorial (D-8808): escritura sobre un recurso del subárbol de otra oficina — el actor merece la verdad (territorio, no ausencia) */
+        OutsideTerritory: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @example El recurso :resource pertenece a un territorio ajeno al del usuario actuante. */
+                    message?: string;
+                    /** @example outside_territory */
+                    type?: string;
+                    /** @example pension-cases.update */
+                    resource?: string;
+                };
+            };
+        };
+        /** @description Concurrencia optimista (D-8803): la escritura exige la cabecera If-Match con el updated_at vigente (o *) — sin cabecera no hay escritura */
+        PreconditionRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @example La escritura del recurso :resource exige la cabecera If-Match... */
+                    message?: string;
+                    /** @example if_match_required */
+                    type?: string;
+                    /** @example pension-cases.update */
+                    resource?: string;
+                };
+            };
+        };
+        /** @description Idempotencia (D-8804, V-30): la Idempotency-Key presentada ya fue usada por una solicitud DISTINTA — nunca un descarte silencioso */
+        IdempotencyKeyConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @example La Idempotency-Key presentada ya fue usada por una solicitud DISTINTA... */
+                    message?: string;
+                    /** @example idempotency_key_conflict */
+                    type?: string;
+                };
+            };
+        };
+        /** @description Rate limiting por rol (D-8811, V-33): se excedió el presupuesto de solicitudes por minuto del rol — reintente tras el intervalo de Retry-After */
+        TooManyRequests: {
+            headers: {
+                /** @description Segundos hasta poder reintentar */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @example Se excedió el límite de solicitudes por minuto del rol... */
+                    message?: string;
+                    /** @example too_many_requests */
+                    type?: string;
+                };
+            };
+        };
     };
-    parameters: never;
+    parameters: {
+        /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+        IfMatchHeader: string;
+        /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+        IdempotencyKeyHeader: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -4937,7 +5283,10 @@ export interface operations {
     agenciesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -4970,12 +5319,17 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     agenciesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -5016,7 +5370,9 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     catalogsIndex: {
@@ -5237,7 +5593,10 @@ export interface operations {
     catalogsDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 type: string;
                 id: number;
@@ -5283,12 +5642,16 @@ export interface operations {
                     };
                 };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     catalogsUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 type: string;
                 id: number;
@@ -5344,13 +5707,18 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     catalogRestore: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 type: string;
                 id: number;
@@ -5371,6 +5739,7 @@ export interface operations {
                     };
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description Sin permiso catalogs.manage */
             403: {
                 headers: {
@@ -5407,6 +5776,7 @@ export interface operations {
                     };
                 };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     municipalitiesIndex: {
@@ -5525,7 +5895,10 @@ export interface operations {
     municipalitiesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -5570,12 +5943,16 @@ export interface operations {
                     };
                 };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     municipalitiesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -5615,7 +5992,9 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     fucPeopleShow: {
@@ -5849,7 +6228,10 @@ export interface operations {
     legalBasesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -5878,12 +6260,17 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     legalBasesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -5925,7 +6312,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     signaturesIndex: {
@@ -6062,7 +6451,10 @@ export interface operations {
     signaturesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -6091,12 +6483,17 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     signaturesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -6133,7 +6530,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     entitiesIndex: {
@@ -6321,7 +6720,10 @@ export interface operations {
     entitiesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -6350,13 +6752,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     entitiesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -6402,7 +6809,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     officesIndex: {
@@ -6566,7 +6975,10 @@ export interface operations {
     officesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -6595,13 +7007,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     officesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -6640,13 +7057,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     paymentsGenerate: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -6714,13 +7136,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Sin configuración general activa (el calendario del pago no puede estamparse) */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            422: components["responses"]["ValidationError"];
         };
     };
     paymentsIndex: {
@@ -6816,7 +7232,10 @@ export interface operations {
     paymentsUpdateStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -6868,19 +7287,34 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             /** @description Movimiento fuera de la matriz (terminal o mismo estado) */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        payment_id?: number;
+                        current_status?: string;
+                        attempted_status?: string;
+                    };
+                };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     paymentsCollect: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -6932,13 +7366,22 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             /** @description Fila terminal, cobro ya sellado o agencia no viva */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        payment_id?: number;
+                        reason?: string;
+                    };
+                };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     paymentsReconciliation: {
@@ -7028,13 +7471,342 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Calendario inválido */
+            /** @description Calendario inválido (año y mes viajan enlazados o ausentes) */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    paymentInstrumentsIndex: {
+        parameters: {
+            query?: {
+                status?: "created" | "pending" | "paid" | "expired" | "cancelled";
+                type?: "provisional_payment" | "electronic_check";
+                pensioner_id?: number;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Instrumentos paginados (envelope RF-API-002) con la fila completa */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.view */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Feature flag payments.enabled apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    paymentInstrumentsStore: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: int64
+                     * @description El pensionado — debe ser ACTIVO
+                     * @example 3
+                     */
+                    pensioner_id: number;
+                    /**
+                     * Format: int64
+                     * @description La persona beneficiaria de la disposición
+                     * @example 12
+                     */
+                    beneficiary_person_id: number;
+                    /**
+                     * @description «Pago provisional» / «Cheque electrónico»
+                     * @enum {string}
+                     */
+                    type: "provisional_payment" | "electronic_check";
+                };
+            };
+        };
+        responses: {
+            /** @description El instrumento nacido created (ficha completa) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["PaymentInstrument"];
+                    };
+                };
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.manage */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Feature flag payments.enabled apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pensionado inexistente o no activo, persona beneficiaria inexistente o sin configuración general activa (para el Pago provisional) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** @description Errores por campo */
+                        errors?: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    paymentInstrumentsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El instrumento (ficha completa con los pagos vinculados) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["PaymentInstrument"];
+                    };
+                };
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.view */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Instrumento inexistente o feature flag apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    paymentInstrumentsAssociate: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: int64
+                     * @description El pago del ledger a vincular — su estado debe coincidir con el tipo del instrumento
+                     * @example 42
+                     */
+                    payment_id: number;
+                };
+            };
+        };
+        responses: {
+            /** @description El instrumento con el pago vinculado y el amount acumulado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["PaymentInstrument"];
+                    };
+                };
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.manage */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Instrumento o pago inexistente, o feature flag apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: components["responses"]["StaleResource"];
+            /** @description Instrumento fuera de created, pago ajeno, pensionado inactivo, estado del ledger incompatible con el tipo o par ya vinculado */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        instrument_id?: number;
+                        reason?: string;
+                    };
+                };
+            };
+            428: components["responses"]["PreconditionRequired"];
+        };
+    };
+    paymentInstrumentsUpdateStatus: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description El destino — solo los movimientos que la matriz del instrumento admite (created→pending|cancelled, pending→paid|expired)
+                     * @enum {string}
+                     */
+                    status: "pending" | "paid" | "expired" | "cancelled";
+                };
+            };
+        };
+        responses: {
+            /** @description El instrumento actualizado (ficha completa) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["PaymentInstrument"];
+                    };
+                };
+            };
+            /** @description Sin token Sanctum válido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin el permiso payments.manage */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Instrumento inexistente o feature flag apagado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: components["responses"]["StaleResource"];
+            /** @description Movimiento fuera de la matriz (terminal o mismo estado) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        instrument_id?: number;
+                        current_status?: string;
+                        attempted_status?: string;
+                    };
+                };
+            };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     payrollExportsIndex: {
@@ -7075,7 +7847,10 @@ export interface operations {
     payrollExportsStore: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -7132,7 +7907,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        agency_id?: number;
+                        year?: number;
+                        month?: number;
+                    };
+                };
             };
         };
     };
@@ -7224,7 +8007,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
             };
         };
     };
@@ -7313,7 +8100,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["CaseCalculation"] | null;
+                        data: components["schemas"]["CaseCalculation"] | (never | null);
                     };
                 };
             };
@@ -7382,7 +8169,10 @@ export interface operations {
     pensionCasesStore: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -7608,7 +8398,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         message?: string;
-                        case?: components["schemas"]["PensionCase"] | null;
+                        case?: components["schemas"]["PensionCase"] | (never | null);
                         case_id?: number | null;
                         status?: string | null;
                     };
@@ -7663,7 +8453,10 @@ export interface operations {
     pensionCasesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -7872,15 +8665,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -7909,14 +8714,23 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Expediente fuera de submitted (devuelve estado actual) */
+            /** @description Expediente ya no editable (devuelve estado actual) */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesHistory: {
@@ -7955,7 +8769,12 @@ export interface operations {
     pensionCasesTransition: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8804/D-8805): UUID opcional de reintento seguro — la misma llave con el mismo cuerpo REJUEGA la respuesta congelada (misma firma, sin reejecutar el efecto); la misma llave con otro cuerpo responde 422 tipado */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKeyHeader"];
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -8039,7 +8858,7 @@ export interface operations {
                         data: components["schemas"]["PensionCase"];
                         transition: components["schemas"]["PensionCaseHistory"];
                         /** @description Task 86: solo con to=deceased — el expediente derivado de sobrevivientes (SOB, solicitud, parent_case_id, bloque de defunción, forzar TRUE) con su proyección completa de subregistros */
-                        derived_case?: components["schemas"]["PensionCase"] | null;
+                        derived_case?: components["schemas"]["PensionCase"] | (never | null);
                     };
                 };
             };
@@ -8060,7 +8879,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         message?: string;
-                        case?: components["schemas"]["PensionCase"] | null;
+                        case?: components["schemas"]["PensionCase"] | (never | null);
                         case_id?: number | null;
                         status?: string | null;
                         pensioner_id?: number | null;
@@ -8108,12 +8927,16 @@ export interface operations {
                     };
                 };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesAddSalaryRecord: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -8156,15 +8979,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesRemoveSalaryRecord: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
                 record: number;
@@ -8200,14 +9035,26 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesAddServiceRecord: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -8270,15 +9117,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesRemoveServiceRecord: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
                 record: number;
@@ -8314,14 +9173,26 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesAddWorkCycle: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -8366,15 +9237,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesRemoveWorkCycle: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
                 record: number;
@@ -8410,14 +9293,26 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesAddIncomeConceptRecord: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -8466,15 +9361,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesRemoveIncomeConceptRecord: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
                 record: number;
@@ -8510,14 +9417,26 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesAddEntitledRelative: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -8587,21 +9506,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-            /** @description Sonda semántica: beneficiario/tutor/tipo inactivo, agencia incoherente, cuenta exigida, tutor exigido/prohibido o beneficiario duplicado */
-            422: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
                 };
-                content?: never;
             };
+            422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionCasesRemoveEntitledRelative: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
                 record: number;
@@ -8637,8 +9562,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                        /** Format: int64 */
+                        case_id?: number;
+                        /** @enum {string} */
+                        status?: "submitted" | "under_review" | "approved" | "rejected" | "deceased";
+                    };
+                };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionersIndex: {
@@ -8758,7 +9692,10 @@ export interface operations {
     pensionersUpdateStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -8811,6 +9748,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             /** @description Fuera de la matriz del operador (mensaje + pensioner_id + status + attempted_status) o motivo corto/ausente (errors.status_reason) */
             422: {
                 headers: {
@@ -8829,12 +9767,16 @@ export interface operations {
                     };
                 };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     pensionersUpdateBankControl: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -8891,6 +9833,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             /** @description Pensionado terminated (un extinto no cobra), agencia inexistente o cuenta fuera del formato (el intento queda en bitácora) */
             422: {
                 headers: {
@@ -8907,6 +9850,7 @@ export interface operations {
                     };
                 };
             };
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     peopleIndex: {
@@ -9024,7 +9968,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         message?: string;
-                        person?: components["schemas"]["Person"] | null;
+                        person?: components["schemas"]["Person"] | (never | null);
                         candidates?: {
                             id?: number;
                             identity_number?: string;
@@ -9074,7 +10018,10 @@ export interface operations {
     peopleDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -9103,12 +10050,17 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     peopleUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -9157,13 +10109,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     peopleRegisterDeath: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -9212,7 +10169,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     reportsCases: {
@@ -9573,7 +10532,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
             };
         };
     };
@@ -9608,6 +10571,13 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["AuditLogEntry"][];
+                        /** @description La envoltura de paginación RF-API-002 del listado paginado */
+                        meta?: {
+                            current_page?: number;
+                            last_page?: number;
+                            per_page?: number;
+                            total?: number;
+                        };
                     };
                 };
             };
@@ -10050,7 +11020,10 @@ export interface operations {
     rolesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10097,12 +11070,16 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     rolesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10151,7 +11128,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     usersIndex: {
@@ -10290,7 +11269,10 @@ export interface operations {
     usersDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10314,13 +11296,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     usersUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10374,13 +11361,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     usersRestore: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10408,12 +11400,17 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     usersUnlock: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10441,12 +11438,17 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     usersResetPassword: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10486,13 +11488,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     usersLinkPerson: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 /** @description Identificador de la cuenta */
                 id: number;
@@ -10573,12 +11580,16 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     usersUnlinkPerson: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 /** @description Identificador de la cuenta */
                 id: number;
@@ -10623,6 +11634,8 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     beneficiaryRulesIndex: {
@@ -10743,7 +11756,10 @@ export interface operations {
     beneficiaryRulesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10776,12 +11792,17 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     beneficiaryRulesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10831,7 +11852,9 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     disabilityIncrementBracketsIndex: {
@@ -10959,7 +11982,10 @@ export interface operations {
     disabilityIncrementBracketsDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -10992,12 +12018,17 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     disabilityIncrementBracketsUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -11047,7 +12078,9 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     disabilityRulesIndex: {
@@ -11172,7 +12205,10 @@ export interface operations {
     disabilityRulesDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -11205,12 +12241,17 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     disabilityRulesUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -11258,7 +12299,9 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     generalSettingsIndex: {
@@ -11620,7 +12663,10 @@ export interface operations {
     specialDisabilityModificationsDestroy: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -11653,12 +12699,17 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     specialDisabilityModificationsUpdate: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Task 88 (D-8802/D-8803): validador débil de concurrencia — el updated_at del recurso, tal cual lo sirve el GET (entrecomillado opcional), o * (RFC 9110 §13.1.1: cualquier representación actual) */
+                "If-Match": components["parameters"]["IfMatchHeader"];
+            };
             path: {
                 id: number;
             };
@@ -11702,7 +12753,9 @@ export interface operations {
                     };
                 };
             };
+            409: components["responses"]["StaleResource"];
             422: components["responses"]["ValidationError"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
 }
