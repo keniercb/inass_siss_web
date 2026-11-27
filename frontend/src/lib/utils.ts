@@ -16,6 +16,36 @@ export function formatCUP(amount: number): string {
 }
 
 /**
+ * Fuente de nombre aceptada por personFullName: tanto proyecciones que traen
+ * `full_name` listo (p. ej. el pensionado/beneficiario anidado de un instrumento
+ * de pago, la firma autorizada) como la persona completa (GET /people, person
+ * anidado del pensionado) que trae los componentes sueltos.
+ */
+export interface PersonNameSource {
+  full_name?: string | null;
+  first_name?: string | null;
+  middle_name?: string | null;
+  first_surname?: string | null;
+  second_surname?: string | null;
+}
+
+/**
+ * Nombre completo de una persona a partir de las proyecciones de la API.
+ *
+ * Si la proyección trae `full_name` se usa tal cual; en caso contrario se
+ * compone con la convención de la app (apellidos primero, luego nombres):
+ * primer apellido, segundo apellido, primer nombre, segundo nombre.
+ * Devuelve '' si no hay componentes — el llamador decide el fallback ('—', '#id').
+ */
+export function personFullName(person?: PersonNameSource | null): string {
+  if (!person) return '';
+  if (person.full_name) return person.full_name;
+  return [person.first_surname, person.second_surname, person.first_name, person.middle_name]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
  * Formatea una fecha ISO a DD/MM/YYYY (es-CU por defecto).
  *
  * TRATAMIENTO DE DATE-ONLY vs DATETIME:

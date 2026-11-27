@@ -13,6 +13,7 @@ import type { components } from '@/types/api';
 
 type PensionCase = components['schemas']['PensionCase'];
 import { http } from '@/lib/http';
+import { personFullName } from '@/lib/utils';
 import { DatePickerField } from '@/components/ui/DatePickerField';
 
 interface EntityListItem { id: number; code: string; name?: string; tax_id_number: string; }
@@ -290,7 +291,7 @@ export function PensionCaseFormModal({ pensionCase, onClose }: PensionCaseFormMo
               onChange={(v) => setRequestedByPersonId(v ? Number(v) : null)}
               options={signatures.map((s) => ({
                 value: s.person.id ?? 0,
-                label: s.person.full_name ?? `${s.person.first_name ?? ''} ${s.person.first_surname ?? ''}`.trim() ?? s.person.identity_number ?? '—',
+                label: personFullName(s.person) || s.person.identity_number || '—',
                 secondary: s.position.name,
               }))}
               placeholder={!entityId ? t('form.requested_by_disabled') : isLoadingSignatures ? tc('status.loading') + '…' : signatures.length === 0 ? t('form.requested_by_empty') : tc('actions.select')}

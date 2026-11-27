@@ -6,9 +6,29 @@ import { SearchSelect } from '@/components/ui/SearchSelect';
 import { useCreatePaymentInstrument } from '../api/mutations';
 import { INSTRUMENT_TYPES } from '../api/schemas';
 import { http } from '@/lib/http';
+import { personFullName } from '@/lib/utils';
 
-interface PensionerOption { id: number; full_name: string; status?: string; }
-interface PersonOption { id: number; full_name: string; }
+// Formas reales de la API: GET /pensioners anida la persona completa (sin
+// full_name a nivel de fila) y GET /people devuelve la persona suelta con sus
+// 4 componentes de nombre. El label se compone con personFullName.
+interface PensionerRow {
+  id: number;
+  status?: string;
+  person?: {
+    first_name?: string | null;
+    middle_name?: string | null;
+    first_surname?: string | null;
+    second_surname?: string | null;
+  } | null;
+}
+interface PersonRow {
+  id: number;
+  identity_number?: string | null;
+  first_name?: string | null;
+  middle_name?: string | null;
+  first_surname?: string | null;
+  second_surname?: string | null;
+}
 
 /**
  * Modal de creación de instrumento de pago.
@@ -50,14 +70,24 @@ export function PaymentInstrumentFormModal({ onClose }: { onClose: () => void })
             value={pensionerId || undefined}
             onChange={(v) => setPensionerId(Number(v) || 0)}
             loadOptions={async (q) => {
-              const r = await http.get<{ data: PensionerOption[] }>('/pensioners', {
-                params: { per_page: 100, status: 'active', ...(q && { search: q }) },
+              // GET /pensioners no soporta búsqueda por texto (solo status y
+              // catálogos): se trae el activo lote y se filtra por display aquí,
+              // que es una preocupación de UI, no de negocio.
+              const r = await http.get<{ data: PensionerRow[] }>('/pensioners', {
+                params: { per_page: 100, status: 'active' },
               });
-              return (r.data.data ?? []).map((p) => ({
-                value: p.id,
-                label: p.full_name,
-                secondary: `#${p.id}`,
-              }));
+              const needle = q.trim().toLowerCase();
+              return (r.data.data ?? [])
+                .map((p) => ({
+                  value: p.id,
+                  label: personFullName(p.person) || `#${p.id}`,
+                  secondary: `#${p.id}`,
+                }))
+                .filter((o) =>
+                  !needle ||
+                  o.label.toLowerCase().includes(needle) ||
+                  o.secondary.toLowerCase().includes(needle)
+                );
             }}
             placeholder={tc('actions.select')}
             required
@@ -71,13 +101,20 @@ export function PaymentInstrumentFormModal({ onClose }: { onClose: () => void })
             value={beneficiaryPersonId || undefined}
             onChange={(v) => setBeneficiaryPersonId(Number(v) || 0)}
             loadOptions={async (q) => {
-              const r = await http.get<{ data: PersonOption[] }>('/people', {
-                params: { per_page: 100, ...(q && { search: q }) },
+              // GET /people busca por q (fragmentos de nombre/apellido) y por
+              // identity (prefijo de CI); deceased=false porque la persona
+              // beneficiaria debe estar viva (el backend lo rechaza con 422).
+              const r = await http.get<{ data: PersonRow[] }>('/people', {
+                params: {
+                  per_page: 100,
+                  deceased: false,
+                  ...(q.trim() && { q: q.trim() }),
+                },
               });
               return (r.data.data ?? []).map((p) => ({
                 value: p.id,
-                label: p.full_name,
-                secondary: `#${p.id}`,
+                label: personFullName(p) || `#${p.id}`,
+                secondary: p.identity_number ?? `#${p.id}`,
               }));
             }}
             placeholder={tc('actions.select')}
