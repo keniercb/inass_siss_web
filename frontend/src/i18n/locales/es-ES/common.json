@@ -41,7 +41,9 @@
     "validation": "Hay errores de validación en el formulario",
     "rate_limited": "El servidor está procesando muchas solicitudes. Reintentando…",
     "server": "Error interno del servidor. Contacte al soporte.",
-    "network": "Error de conexión. Verifique su red."
+    "network": "Error de conexión. Verifique su red.",
+    "client": "La solicitud no pudo ser procesada",
+    "unknown": "Ocurrió un error inesperado"
   },
   "pagination": {
     "showing": "Mostrando",

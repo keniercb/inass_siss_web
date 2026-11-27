@@ -2,14 +2,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import type { CreateSettingInput, GeneralSettingVersion } from '../schemas/general-settings.schema';
 
 interface ApiResponse<T> {
   data: T;
-}
-
-interface ConflictResponse {
-  message?: string;
 }
 
 /** Crear nueva vigencia (POST /general-settings) */
@@ -17,6 +14,7 @@ export function useCreateSetting() {
   const queryClient = useQueryClient();
   const { t } = useTranslation('settings');
   const toast = useToast();
+  const { toastApiError } = useApiError();
 
   return useMutation({
     mutationFn: async (input: CreateSettingInput) => {
@@ -32,13 +30,11 @@ export function useCreateSetting() {
       toast.success(t('create.success'));
     },
     onError: (err: unknown) => {
-      const status = (err as { response?: { status?: number; data?: ConflictResponse } })?.response?.status;
-      if (status === 422) return; // handled by form
-      if (status === 409) {
-        toast.error(t('create.conflict'));
-        return;
-      }
-      toast.error(t('create.error'));
+      toastApiError(err, {
+        title: t('create.error'),
+        fallbackDetail: t('create.conflict'),
+        silent422: true,
+      });
     },
   });
 }
@@ -51,6 +47,7 @@ export function useDeleteSetting() {
   const queryClient = useQueryClient();
   const { t } = useTranslation('settings');
   const toast = useToast();
+  const { toastApiError } = useApiError();
 
   return useMutation({
     mutationFn: async (id: number | string) => {
@@ -61,12 +58,10 @@ export function useDeleteSetting() {
       toast.success(t('delete.success'));
     },
     onError: (err: unknown) => {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 409) {
-        toast.error(t('delete.in_effect'));
-        return;
-      }
-      toast.error(t('delete.error'));
+      toastApiError(err, {
+        title: t('delete.error'),
+        fallbackDetail: t('delete.in_effect'),
+      });
     },
   });
 }

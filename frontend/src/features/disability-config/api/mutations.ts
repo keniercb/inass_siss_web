@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import type { components } from '@/types/api';
-import type { AxiosError } from 'axios';
 import type {
   CreateDisabilityRuleInput, UpdateDisabilityRuleInput,
   CreateBracketInput, UpdateBracketInput,
@@ -23,6 +23,7 @@ export function useCreateDisabilityRule() {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: CreateDisabilityRuleInput) => {
       const r = await http.post<ApiResponse<DisabilityRule>>('/disability-rules', input);
@@ -33,12 +34,7 @@ export function useCreateDisabilityRule() {
       toast.success(t('rule.create_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        toast.errorDetail(t('rule.create_error'), Object.values(ae.response.data.errors).flat().join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('rule.create_error'));
+      toastApiError(err, { title: t('rule.create_error'), silent422: true });
     },
   });
 }
@@ -48,6 +44,7 @@ export function useUpdateDisabilityRule(id: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: UpdateDisabilityRuleInput) => {
       const r = await http.patch<ApiResponse<DisabilityRule>>(`/disability-rules/${id}`, input);
@@ -59,12 +56,7 @@ export function useUpdateDisabilityRule(id: number | string) {
       toast.success(t('rule.update_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        toast.errorDetail(t('rule.update_error'), Object.values(ae.response.data.errors).flat().join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('rule.update_error'));
+      toastApiError(err, { title: t('rule.update_error'), silent422: true });
     },
   });
 }
@@ -74,6 +66,7 @@ export function useDeleteDisabilityRule() {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => {
       await http.delete(`/disability-rules/${id}`);
@@ -83,8 +76,7 @@ export function useDeleteDisabilityRule() {
       toast.success(t('rule.delete_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string }>;
-      toast.error(ae.response?.data?.message ?? t('rule.delete_error'));
+      toastApiError(err, { title: t('rule.delete_error') });
     },
   });
 }
@@ -95,7 +87,7 @@ export function useDeleteDisabilityRule() {
 export function useCreateBracket() {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
-  const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: CreateBracketInput) => {
       const r = await http.post<ApiResponse<DisabilityIncrementBracket>>('/disability-increment-brackets', input);
@@ -105,12 +97,7 @@ export function useCreateBracket() {
       qc.invalidateQueries({ queryKey: ['disability-rules'] });
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        toast.errorDetail(t('rule.create_error'), Object.values(ae.response.data.errors).flat().join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('rule.create_error'));
+      toastApiError(err, { title: t('rule.create_error'), silent422: true });
     },
   });
 }
@@ -119,7 +106,7 @@ export function useCreateBracket() {
 export function useUpdateBracket(id: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
-  const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: UpdateBracketInput) => {
       const r = await http.patch<ApiResponse<DisabilityIncrementBracket>>(`/disability-increment-brackets/${id}`, input);
@@ -129,12 +116,7 @@ export function useUpdateBracket(id: number | string) {
       qc.invalidateQueries({ queryKey: ['disability-rules'] });
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        toast.errorDetail(t('rule.update_error'), Object.values(ae.response.data.errors).flat().join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('rule.update_error'));
+      toastApiError(err, { title: t('rule.update_error'), silent422: true });
     },
   });
 }
@@ -143,7 +125,7 @@ export function useUpdateBracket(id: number | string) {
 export function useDeleteBracket() {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
-  const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => {
       await http.delete(`/disability-increment-brackets/${id}`);
@@ -152,8 +134,7 @@ export function useDeleteBracket() {
       qc.invalidateQueries({ queryKey: ['disability-rules'] });
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string }>;
-      toast.error(ae.response?.data?.message ?? t('rule.delete_error'));
+      toastApiError(err, { title: t('rule.delete_error') });
     },
   });
 }
@@ -163,6 +144,7 @@ export function useCreateSpecialModification() {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: CreateSpecialModificationInput) => {
       const r = await http.post<ApiResponse<SpecialDisabilityModification>>('/special-disability-modifications', input);
@@ -173,12 +155,7 @@ export function useCreateSpecialModification() {
       toast.success(t('special.create_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        toast.errorDetail(t('special.create_error'), Object.values(ae.response.data.errors).flat().join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('special.create_error'));
+      toastApiError(err, { title: t('special.create_error'), silent422: true });
     },
   });
 }
@@ -188,6 +165,7 @@ export function useUpdateSpecialModification(id: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: UpdateSpecialModificationInput) => {
       const r = await http.patch<ApiResponse<SpecialDisabilityModification>>(`/special-disability-modifications/${id}`, input);
@@ -198,12 +176,7 @@ export function useUpdateSpecialModification(id: number | string) {
       toast.success(t('special.update_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        toast.errorDetail(t('special.update_error'), Object.values(ae.response.data.errors).flat().join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('special.update_error'));
+      toastApiError(err, { title: t('special.update_error'), silent422: true });
     },
   });
 }
@@ -213,6 +186,7 @@ export function useDeleteSpecialModification() {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => {
       await http.delete(`/special-disability-modifications/${id}`);
@@ -222,8 +196,7 @@ export function useDeleteSpecialModification() {
       toast.success(t('special.delete_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string }>;
-      toast.error(ae.response?.data?.message ?? t('special.delete_error'));
+      toastApiError(err, { title: t('special.delete_error') });
     },
   });
 }
@@ -233,6 +206,7 @@ export function useCreateBeneficiaryRule() {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: CreateBeneficiaryRuleInput) => {
       const r = await http.post<ApiResponse<BeneficiaryRule>>('/beneficiary-rules', input);
@@ -243,12 +217,7 @@ export function useCreateBeneficiaryRule() {
       toast.success(t('beneficiary.create_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        toast.errorDetail(t('beneficiary.create_error'), Object.values(ae.response.data.errors).flat().join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('beneficiary.create_error'));
+      toastApiError(err, { title: t('beneficiary.create_error'), silent422: true });
     },
   });
 }
@@ -258,6 +227,7 @@ export function useUpdateBeneficiaryRule(id: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: UpdateBeneficiaryRuleInput) => {
       const r = await http.patch<ApiResponse<BeneficiaryRule>>(`/beneficiary-rules/${id}`, input);
@@ -268,12 +238,7 @@ export function useUpdateBeneficiaryRule(id: number | string) {
       toast.success(t('beneficiary.update_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        toast.errorDetail(t('beneficiary.update_error'), Object.values(ae.response.data.errors).flat().join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('beneficiary.update_error'));
+      toastApiError(err, { title: t('beneficiary.update_error'), silent422: true });
     },
   });
 }
@@ -283,6 +248,7 @@ export function useDeleteBeneficiaryRule() {
   const qc = useQueryClient();
   const { t } = useTranslation('disability-config');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => {
       await http.delete(`/beneficiary-rules/${id}`);
@@ -292,8 +258,7 @@ export function useDeleteBeneficiaryRule() {
       toast.success(t('beneficiary.delete_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string }>;
-      toast.error(ae.response?.data?.message ?? t('beneficiary.delete_error'));
+      toastApiError(err, { title: t('beneficiary.delete_error') });
     },
   });
 }

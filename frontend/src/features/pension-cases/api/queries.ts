@@ -1,9 +1,8 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { http } from '@/lib/http';
-import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from 'react-i18next';
+import { useApiError } from '@/lib/api-error';
 import type { components } from '@/types/api';
-import type { AxiosError } from 'axios';
 
 type PensionCase = components['schemas']['PensionCase'];
 type PensionCaseHistory = components['schemas']['PensionCaseHistory'];
@@ -88,20 +87,18 @@ export function useCaseCalculation(id?: number | string) {
  * 409 si el expediente está aprobado/rejected (cálculo congelado o no disponible).
  */
 export function useCalculationPreview(caseId: number | string) {
-  const toast = useToast();
   const { t } = useTranslation('pension-cases');
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async () => {
       const r = await http.post<{ data: components['schemas']['CalculationPreview'] }>(`/pension-cases/${caseId}/calculation-preview`);
       return r.data.data;
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string }>;
-      if (ae.response?.status === 409) {
-        toast.error(t('calculation_preview.error_409'));
-        return;
-      }
-      toast.error(t('calculation_preview.error'));
+      toastApiError(err, {
+        title: t('calculation_preview.error'),
+        fallbackDetail: t('calculation_preview.error_409'),
+      });
     },
   });
 }

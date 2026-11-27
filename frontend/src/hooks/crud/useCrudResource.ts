@@ -8,6 +8,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import { usePermiso } from '@/hooks/use-permiso';
 import { uuidv4 } from '@/lib/utils';
 import type { CrudConfig, ListResponse } from '@/types/crud';
@@ -44,6 +45,7 @@ export function useCrudResource<TResource, TCreateInput, TUpdateInput>(
   const queryClient = useQueryClient();
   const { t } = useTranslation(config.resourceKey);
   const { success, error: errorToast } = useToast();
+  const { toastApiError } = useApiError();
   const can = usePermiso();
 
   /** Resuelve un endpoint reemplazando placeholders del context */
@@ -123,13 +125,12 @@ export function useCrudResource<TResource, TCreateInput, TUpdateInput>(
         success(t('create.success'));
       },
       onError: (err: unknown) => {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status === 422) return; // handled by form
-        if (status === 429) {
+        // 422 lo maneja el formulario vía form.setError; el helper lo silencia.
+        // 429 rate-limited → error con mensaje del body si lo hay.
+        const result = toastApiError(err, { title: t('create.error'), silent422: true });
+        if (!result.handled && result.status === 429) {
           errorToast(t('errors.rate_limited'));
-          return;
         }
-        errorToast(t('create.error'));
       },
     });
 
@@ -176,13 +177,12 @@ export function useCrudResource<TResource, TCreateInput, TUpdateInput>(
         success(t('update.success'));
       },
       onError: (err: unknown) => {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status === 422) return; // handled by form
-        if (status === 409) {
-          errorToast(t('update.conflict'));
-          return;
+        // 409 conflicto (optimistic locking o estado incompatible) → warning con body.message.
+        // 422 lo maneja el formulario. 429 se trata aparte con mensaje localizado.
+        const result = toastApiError(err, { title: t('update.error'), fallbackDetail: t('update.conflict'), silent422: true });
+        if (!result.handled && result.status === 429) {
+          errorToast(t('errors.rate_limited'));
         }
-        errorToast(t('update.error'));
       },
     });
 
@@ -211,13 +211,13 @@ export function useCrudResource<TResource, TCreateInput, TUpdateInput>(
         success(t('delete.success'));
       },
       onError: (err: unknown) => {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status === 422) return;
-        if (status === 409) {
-          errorToast(t('delete.has_references'));
-          return;
+        // 409: el recurso tiene referencias y no se puede borrar. Si el backend
+        // envía `message` (p. ej. "No se puede eliminar: 12 pagos asociados")
+        // se usa ese; si no, cae al fallback localizado.
+        const result = toastApiError(err, { title: t('delete.error'), fallbackDetail: t('delete.has_references'), silent422: true });
+        if (!result.handled && result.status === 429) {
+          errorToast(t('errors.rate_limited'));
         }
-        errorToast(t('delete.error'));
       },
     });
 

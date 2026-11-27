@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import type { components } from '@/types/api';
 import type { RoleInput } from '../schemas/role.schema';
-import type { AxiosError } from 'axios';
 
 type Role = components['schemas']['Role'];
 interface ApiResponse<T> { data: T; }
@@ -13,6 +13,7 @@ export function useCreateRole() {
   const qc = useQueryClient();
   const { t } = useTranslation('roles');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: RoleInput) => {
       const r = await http.post<ApiResponse<Role>>('/roles', input);
@@ -20,10 +21,11 @@ export function useCreateRole() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['roles', 'list'] }); toast.success(t('create.success')); },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422) return;
-      if (ae.response?.status === 409) { toast.error(t('create.duplicate')); return; }
-      toast.error(t('create.error'));
+      toastApiError(err, {
+        title: t('create.error'),
+        fallbackDetail: t('create.duplicate'),
+        silent422: true,
+      });
     },
   });
 }
@@ -32,6 +34,7 @@ export function useUpdateRole() {
   const qc = useQueryClient();
   const { t } = useTranslation('roles');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async ({ id, input }: { id: number | string; input: RoleInput }) => {
       const r = await http.patch<ApiResponse<Role>>(`/roles/${id}`, input);
@@ -43,9 +46,10 @@ export function useUpdateRole() {
       toast.success(t('update.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422) return;
-      toast.error(t('update.error'));
+      toastApiError(err, {
+        title: t('update.error'),
+        silent422: true,
+      });
     },
   });
 }
@@ -54,13 +58,15 @@ export function useDeleteRole() {
   const qc = useQueryClient();
   const { t } = useTranslation('roles');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => { await http.delete(`/roles/${id}`); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['roles', 'list'] }); toast.success(t('delete.success')); },
     onError: (err: unknown) => {
-      const ae = err as AxiosError;
-      if (ae.response?.status === 409) { toast.error(t('delete.has_users')); return; }
-      toast.error(t('delete.error'));
+      toastApiError(err, {
+        title: t('delete.error'),
+        fallbackDetail: t('delete.has_users'),
+      });
     },
   });
 }
