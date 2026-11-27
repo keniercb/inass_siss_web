@@ -12,7 +12,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { SearchSelect } from '@/components/ui/SearchSelect';
 import { usePermiso } from '@/hooks/use-permiso';
 import { http } from '@/lib/http';
-import { formatDate, formatCUP, cn } from '@/lib/utils';
+import { formatDate, formatCUP, cn, personFullName } from '@/lib/utils';
 
 type Tab = 'summary' | 'history' | 'payments';
 
@@ -69,7 +69,7 @@ export function PensionerDetailPage() {
   );
 
   const person = pensioner.person;
-  const personName = person ? [person.first_surname, person.second_surname, person.first_name, person.middle_name].filter(Boolean).join(' ') : '—';
+  const personName = personFullName(person) || '—';
   const canManage = can('pensioners.manage');
   const currentStatus = pensioner.status ?? 'active';
   const availableStatuses = STATUS_MATRIX[currentStatus] ?? [];

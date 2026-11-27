@@ -124,6 +124,7 @@ Módulo de disposición de fondos: «Pago provisional» y «Cheque electrónico�
 - POST `/payment-instruments/{id}/payments` asocia pagos del ledger (solo en `created`, append-only). El backend puede responder 422/409/428 — el frontend mapea 409/428 con `toast.errorDetail` y hints localizados.
 - Badges: created→badge-submitted, pending→badge-under_review, paid→badge-approved, expired→badge-rejected, cancelled→badge-deceased.
 - Mutations usan el patrón `toastApiError` unificado.
+- Fix selects del formulario de creación: la API no trae `full_name` a nivel de fila (GET /pensioners anida `person` completo y GET /people devuelve los componentes sueltos) — el helper compartido `personFullName()` en lib/utils.ts compone «apellidos nombres» y acepta proyecciones con `full_name` listo (p. ej. pensioner/beneficiary anidados del instrumento, firmas autorizadas). El select de pensionado ya no envía `search` (el endpoint no lo soporta; filtra por display en cliente) y el de beneficiaria usa `q` + `deceased=false` (contrato real de /people). Regresión: PaymentInstrumentFormModal.test.tsx (4 tests, incluye body del POST).
 
 ---
 
@@ -147,6 +148,7 @@ Módulo de disposición de fondos: «Pago provisional» y «Cheque electrónico�
 - Instrumentos de pago (spec 1.47.0): módulo features/payment-instruments/ — listado con filtros, ficha con associated_payments, creación (pensionado activo + beneficiaria + tipo), asociar pago del ledger, matriz de transición created→pending|cancelled, pending→paid|expired
 - modern-web-guidance v1.0.1: scrollbars estándar, toSorted, ES2023, autoComplete en formularios
 - Fixes UX: pago inicial al aprobar, formatDate off-by-one, toast z-index, menú lateral diseases
+- Fix selects instrumento de pago: labels compuestos con personFullName (lib/utils.ts), q+deceased=false en /people, filtro display en cliente para /pensioners
 - Limpieza i18n: sin referencias a Tasks/Doctrinas en textos user-facing
 
 ---

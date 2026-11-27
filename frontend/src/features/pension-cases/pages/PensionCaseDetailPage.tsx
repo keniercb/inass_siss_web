@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog } from '@/components/ui/Dialog';
 import { SearchSelect } from '@/components/ui/SearchSelect';
-import { formatDate, formatCUP, cn } from '@/lib/utils';
+import { formatDate, formatCUP, cn, personFullName } from '@/lib/utils';
 import { http } from '@/lib/http';
 import { CatalogSearchSelect } from '@/features/catalogs/components/CatalogSearchSelect';
 import type { components } from '@/types/api';
@@ -405,7 +405,7 @@ function SummaryTab({ pensionCase, t, tc }: { pensionCase: import('@/types/api')
           <div className="grid grid-cols-2 gap-x-8 gap-y-4">
             <Field label={tc('people:detail.fields.identity_number')} value={person.identity_number ?? '—'} mono />
             <Field label={tc('people:detail.fields.citizen_card_id')} value={person.citizen_card_id ?? '—'} />
-            <Field label={tc('people:detail.fields.full_name')} value={[person.first_surname, person.second_surname, person.first_name, person.middle_name].filter(Boolean).join(' ')} />
+            <Field label={tc('people:detail.fields.full_name')} value={personFullName(person) || '—'} />
             <Field label={tc('people:detail.fields.sex')} value={person.sex === 'M' ? tc('people:detail.fields.sex_male') : tc('people:detail.fields.sex_female')} />
             <Field label={tc('people:detail.fields.birth_date')} value={person.birth_date ? formatDate(person.birth_date) : '—'} />
             <Field label={tc('people:detail.fields.address')} value={person.address ?? '—'} fullWidth />
