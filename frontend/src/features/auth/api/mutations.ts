@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import { useAuthStore, type AuthUser } from '@/store/auth-store';
-import type { AxiosError } from 'axios';
 
 interface AuthMeResponse { data: AuthUser; }
 
@@ -27,6 +27,7 @@ export function useChangeLanguage() {
   const { t } = useTranslation('common');
   const toast = useToast();
   const setSession = useAuthStore((s) => s.setSession);
+  const { toastApiError } = useApiError();
 
   return useMutation({
     mutationFn: async (language: 'es' | 'en') => {
@@ -41,13 +42,7 @@ export function useChangeLanguage() {
       toast.success(t('language.change_success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const all = Object.values(ae.response.data.errors).flat();
-        toast.errorDetail(t('language.change_error'), all.join(' · '));
-        return;
-      }
-      toast.error(ae.response?.data?.message ?? t('language.change_error'));
+      toastApiError(err, { title: t('language.change_error'), silent422: true });
     },
   });
 }

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import type { components } from '@/types/api';
 import type { CreateCaseInput, UpdateCaseInput, SalaryRecordInput, ServiceRecordInput, WorkCycleInput, IncomeConceptRecordInput, EntitledRelativeInput, TransitionInput } from '../schemas/pension-case.schema';
 import type { AxiosError } from 'axios';
@@ -14,6 +15,7 @@ export function useCreateCase() {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: CreateCaseInput) => {
       const r = await http.post<ApiResponse<PensionCase>>('/pension-cases', input);
@@ -21,13 +23,9 @@ export function useCreateCase() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'list'] }); toast.success(t('create.success')); },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const allMessages = Object.values(ae.response.data.errors).flat();
-        if (allMessages.length > 0) toast.errorDetail(t('create.error'), allMessages.join(' · '));
-        return;
-      }
-      toast.error(t('create.error'));
+      // 422 lo maneja el formulario vía form.setError; el helper lo silencia.
+      // 409 (ej. expediente ya existe para la persona) → warning con body.message.
+      toastApiError(err, { title: t('create.error'), silent422: true });
     },
   });
 }
@@ -36,6 +34,7 @@ export function useUpdateCase() {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async ({ id, input }: { id: number | string; input: UpdateCaseInput }) => {
       const r = await http.put<ApiResponse<PensionCase>>(`/pension-cases/${id}`, input);
@@ -47,13 +46,7 @@ export function useUpdateCase() {
       toast.success(t('update.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const allMessages = Object.values(ae.response.data.errors).flat();
-        if (allMessages.length > 0) toast.errorDetail(t('update.error'), allMessages.join(' · '));
-        return;
-      }
-      toast.error(t('update.error'));
+      toastApiError(err, { title: t('update.error'), silent422: true });
     },
   });
 }
@@ -62,6 +55,7 @@ export function useDeleteCase() {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => {
       await http.delete(`/pension-cases/${id}`);
@@ -71,12 +65,10 @@ export function useDeleteCase() {
       toast.success(t('delete.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError;
-      if (ae.response?.status === 409) {
-        toast.error(t('delete.not_submitted'));
-        return;
-      }
-      toast.error(t('delete.error'));
+      // 409: expediente no está en submitted. Si el backend envía `message` se usa;
+      // si no, cae al fallback localizado. El helper lo muestra como warning
+      // (conflicto de estado de negocio, recuperable).
+      toastApiError(err, { title: t('delete.error'), fallbackDetail: t('delete.not_submitted') });
     },
   });
 }
@@ -85,19 +77,14 @@ export function useAddSalaryRecord(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: SalaryRecordInput) => {
       await http.post(`/pension-cases/${caseId}/salary-records`, input);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('salary.add_success')); },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const allMessages = Object.values(ae.response.data.errors).flat();
-        if (allMessages.length > 0) toast.errorDetail(t('salary.add_error'), allMessages.join(' · '));
-        return;
-      }
-      toast.error(t('salary.add_error'));
+      toastApiError(err, { title: t('salary.add_error'), silent422: true });
     },
   });
 }
@@ -106,12 +93,13 @@ export function useRemoveSalaryRecord(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (recordId: number | string) => {
       await http.delete(`/pension-cases/${caseId}/salary-records/${recordId}`);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('salary.remove_success')); },
-    onError: () => { toast.error(t('salary.remove_error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('salary.remove_error') }); },
   });
 }
 
@@ -119,19 +107,14 @@ export function useAddServiceRecord(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: ServiceRecordInput) => {
       await http.post(`/pension-cases/${caseId}/service-records`, input);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('service.add_success')); },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const allMessages = Object.values(ae.response.data.errors).flat();
-        if (allMessages.length > 0) toast.errorDetail(t('service.add_error'), allMessages.join(' · '));
-        return;
-      }
-      toast.error(t('service.add_error'));
+      toastApiError(err, { title: t('service.add_error'), silent422: true });
     },
   });
 }
@@ -140,12 +123,13 @@ export function useRemoveServiceRecord(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (recordId: number | string) => {
       await http.delete(`/pension-cases/${caseId}/service-records/${recordId}`);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('service.remove_success')); },
-    onError: () => { toast.error(t('service.remove_error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('service.remove_error') }); },
   });
 }
 
@@ -153,19 +137,14 @@ export function useAddWorkCycle(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: WorkCycleInput) => {
       await http.post(`/pension-cases/${caseId}/work-cycles`, input);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('cycle.add_success')); },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const allMessages = Object.values(ae.response.data.errors).flat();
-        if (allMessages.length > 0) toast.errorDetail(t('cycle.add_error'), allMessages.join(' · '));
-        return;
-      }
-      toast.error(t('cycle.add_error'));
+      toastApiError(err, { title: t('cycle.add_error'), silent422: true });
     },
   });
 }
@@ -174,12 +153,13 @@ export function useRemoveWorkCycle(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (recordId: number | string) => {
       await http.delete(`/pension-cases/${caseId}/work-cycles/${recordId}`);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('cycle.remove_success')); },
-    onError: () => { toast.error(t('cycle.remove_error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('cycle.remove_error') }); },
   });
 }
 
@@ -187,19 +167,14 @@ export function useAddIncomeConceptRecord(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: IncomeConceptRecordInput) => {
       await http.post(`/pension-cases/${caseId}/income-concept-records`, input);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('income_concept.add_success')); },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const allMessages = Object.values(ae.response.data.errors).flat();
-        if (allMessages.length > 0) toast.errorDetail(t('income_concept.add_error'), allMessages.join(' · '));
-        return;
-      }
-      toast.error(t('income_concept.add_error'));
+      toastApiError(err, { title: t('income_concept.add_error'), silent422: true });
     },
   });
 }
@@ -208,12 +183,13 @@ export function useRemoveIncomeConceptRecord(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (recordId: number | string) => {
       await http.delete(`/pension-cases/${caseId}/income-concept-records/${recordId}`);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('income_concept.remove_success')); },
-    onError: () => { toast.error(t('income_concept.remove_error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('income_concept.remove_error') }); },
   });
 }
 
@@ -318,19 +294,14 @@ export function useAddEntitledRelative(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: EntitledRelativeInput) => {
       await http.post(`/pension-cases/${caseId}/entitled-relatives`, input);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('entitled_relative.add_success')); },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ errors?: Record<string, string[]> }>;
-      if (ae.response?.status === 422 && ae.response.data?.errors) {
-        const allMessages = Object.values(ae.response.data.errors).flat();
-        if (allMessages.length > 0) toast.errorDetail(t('entitled_relative.add_error'), allMessages.join(' · '));
-        return;
-      }
-      toast.error(t('entitled_relative.add_error'));
+      toastApiError(err, { title: t('entitled_relative.add_error'), silent422: true });
     },
   });
 }
@@ -340,11 +311,12 @@ export function useRemoveEntitledRelative(caseId: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pension-cases');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (recordId: number | string) => {
       await http.delete(`/pension-cases/${caseId}/entitled-relatives/${recordId}`);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pension-cases', 'detail', caseId] }); toast.success(t('entitled_relative.remove_success')); },
-    onError: () => { toast.error(t('entitled_relative.remove_error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('entitled_relative.remove_error') }); },
   });
 }

@@ -2,8 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import type { components } from '@/types/api';
-import type { AxiosError } from 'axios';
 
 type Pensioner = components['schemas']['Pensioner'];
 type InitialPayment = components['schemas']['InitialPayment'];
@@ -68,6 +68,7 @@ export function useUpdatePensionerStatus(id: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pensioners');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: { status: string; status_reason: string }) => {
       const r = await http.patch<{ data: Pensioner }>(`/pensioners/${id}/status`, input);
@@ -79,8 +80,7 @@ export function useUpdatePensionerStatus(id: number | string) {
       toast.success(t('status_change.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string }>;
-      toast.error(ae.response?.data?.message ?? t('status_change.error'));
+      toastApiError(err, { title: t('status_change.error'), silent422: true });
     },
   });
 }
@@ -90,6 +90,7 @@ export function useUpdateBankControl(id: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('pensioners');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: { agency_id: number; account: string }) => {
       const r = await http.put<{ data: Pensioner }>(`/pensioners/${id}/bank-control`, input);
@@ -101,8 +102,7 @@ export function useUpdateBankControl(id: number | string) {
       toast.success(t('bank_control.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string }>;
-      toast.error(ae.response?.data?.message ?? t('bank_control.error'));
+      toastApiError(err, { title: t('bank_control.error'), silent422: true });
     },
   });
 }

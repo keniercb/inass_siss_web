@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import type { components } from '@/types/api';
 import type { PersonInput, DeathRegistrationInput } from '../schemas/person.schema';
 import type { AxiosError } from 'axios';
@@ -12,16 +13,12 @@ interface ApiResponse<T> {
   data: T;
 }
 
-interface ConflictResponse {
-  message?: string;
-  person?: Person;
-}
-
 /** Crear persona (POST /people) */
 export function useCreatePerson() {
   const queryClient = useQueryClient();
   const { t } = useTranslation('people');
   const toast = useToast();
+  const { toastApiError } = useApiError();
 
   return useMutation({
     mutationFn: async (input: PersonInput) => {
@@ -33,15 +30,11 @@ export function useCreatePerson() {
       toast.success(t('create.success'));
     },
     onError: (err: unknown) => {
-      const axiosErr = err as AxiosError<ConflictResponse>;
-      const status = axiosErr.response?.status;
-      if (status === 422) return; // handled by form
-      if (status === 409) {
-        // Duplicado: el backend puede devolver la persona existente
-        toast.error(t('create.duplicate'));
-        return;
-      }
-      toast.error(t('create.error'));
+      toastApiError(err, {
+        title: t('create.error'),
+        fallbackDetail: t('create.duplicate'),
+        silent422: true,
+      });
     },
   });
 }
@@ -51,6 +44,7 @@ export function useUpdatePerson() {
   const queryClient = useQueryClient();
   const { t } = useTranslation('people');
   const toast = useToast();
+  const { toastApiError } = useApiError();
 
   return useMutation({
     mutationFn: async ({ id, input }: { id: number | string; input: PersonInput }) => {
@@ -63,14 +57,11 @@ export function useUpdatePerson() {
       toast.success(t('update.success'));
     },
     onError: (err: unknown) => {
-      const axiosErr = err as AxiosError;
-      const status = axiosErr.response?.status;
-      if (status === 422) return; // handled by form
-      if (status === 409) {
-        toast.error(t('update.conflict'));
-        return;
-      }
-      toast.error(t('update.error'));
+      toastApiError(err, {
+        title: t('update.error'),
+        fallbackDetail: t('update.conflict'),
+        silent422: true,
+      });
     },
   });
 }
@@ -80,6 +71,7 @@ export function useDeletePerson() {
   const queryClient = useQueryClient();
   const { t } = useTranslation('people');
   const toast = useToast();
+  const { toastApiError } = useApiError();
 
   return useMutation({
     mutationFn: async (id: number | string) => {
@@ -90,13 +82,10 @@ export function useDeletePerson() {
       toast.success(t('delete.success'));
     },
     onError: (err: unknown) => {
-      const axiosErr = err as AxiosError;
-      const status = axiosErr.response?.status;
-      if (status === 409) {
-        toast.error(t('delete.has_references'));
-        return;
-      }
-      toast.error(t('delete.error'));
+      toastApiError(err, {
+        title: t('delete.error'),
+        fallbackDetail: t('delete.has_references'),
+      });
     },
   });
 }

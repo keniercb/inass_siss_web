@@ -2,8 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import type { components } from '@/types/api';
-import type { AxiosError } from 'axios';
 
 type PensionerPayment = components['schemas']['PensionerPayment'];
 type PayrollExportRun = components['schemas']['PayrollExportRun'];
@@ -34,12 +34,13 @@ export function useGeneratePayments() {
   const qc = useQueryClient();
   const { t } = useTranslation('payments');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     // Task 71/SGP-55 (D-106): el endpoint NO recibe body — el período se resuelve
     // AUTOMÁTICO al mes siguiente a la fecha actual contra el reloj del servidor.
     mutationFn: async () => { const r = await http.post('/payments/generate'); return r.data; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['payments'] }); toast.success(t('generate.success')); },
-    onError: (err: unknown) => { const ae = err as AxiosError<{ message?: string }>; toast.error(ae.response?.data?.message ?? t('generate.error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('generate.error'), silent422: true }); },
   });
 }
 
@@ -47,10 +48,11 @@ export function useUpdatePaymentStatus(id: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('payments');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: { status: string; paid_at?: string }) => { const r = await http.patch<{ data: PensionerPayment }>(`/payments/${id}/status`, input); return r.data.data; },
     onSuccess: (data) => { qc.setQueryData(['payments', 'detail', id], data); qc.invalidateQueries({ queryKey: ['payments', 'list'] }); toast.success(t('status_change.success')); },
-    onError: (err: unknown) => { const ae = err as AxiosError<{ message?: string }>; toast.error(ae.response?.data?.message ?? t('status_change.error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('status_change.error'), silent422: true }); },
   });
 }
 
@@ -59,10 +61,11 @@ export function useCollectPayment(id: number | string) {
   const qc = useQueryClient();
   const { t } = useTranslation('payments');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: { agency_id: number; paid_at?: string }) => { const r = await http.post<{ data: PensionerPayment }>(`/payments/${id}/collect`, input); return r.data.data; },
     onSuccess: (data) => { qc.setQueryData(['payments', 'detail', id], data); qc.invalidateQueries({ queryKey: ['payments', 'list'] }); toast.success(t('collect.success')); },
-    onError: (err: unknown) => { const ae = err as AxiosError<{ message?: string }>; toast.error(ae.response?.data?.message ?? t('collect.error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('collect.error'), silent422: true }); },
   });
 }
 
@@ -96,9 +99,10 @@ export function useCreatePayrollExport() {
   const qc = useQueryClient();
   const { t } = useTranslation('payments');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: { agency_id: number; year: number; month: number }) => { const r = await http.post('/payroll-exports', input); return r.data; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['payroll-exports'] }); toast.success(t('export_create.success')); },
-    onError: (err: unknown) => { const ae = err as AxiosError<{ message?: string }>; toast.error(ae.response?.data?.message ?? t('export_create.error')); },
+    onError: (err: unknown) => { toastApiError(err, { title: t('export_create.error'), silent422: true }); },
   });
 }

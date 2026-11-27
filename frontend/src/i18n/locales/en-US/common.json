@@ -41,7 +41,9 @@
     "validation": "There are validation errors in the form",
     "rate_limited": "The server is processing too many requests. Retrying…",
     "server": "Internal server error. Contact support.",
-    "network": "Connection error. Check your network."
+    "network": "Connection error. Check your network.",
+    "client": "The request could not be processed",
+    "unknown": "An unexpected error occurred"
   },
   "pagination": {
     "showing": "Showing",

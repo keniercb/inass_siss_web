@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { AxiosError } from 'axios';
 import { http } from '@/lib/http';
 import { useToast } from '@/components/ui/Toast';
+import { useApiError } from '@/lib/api-error';
 import type { ReportExportRun, CreateExportRunInput } from './schemas';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -13,6 +13,7 @@ export function useCreateExportRun() {
   const qc = useQueryClient();
   const { t } = useTranslation('reports');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (input: CreateExportRunInput) => {
       // Filtrar undefined para no enviar campos vacíos.
@@ -28,8 +29,9 @@ export function useCreateExportRun() {
       toast.success(t('export_create.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError<{ message?: string }>;
-      toast.error(ae.response?.data?.message ?? t('export_create.error'));
+      // 422 (p. ej. report+format inválido, filtros incoherentes) → error con body.message.
+      // 403 (sin reports.export) → error con body.message.
+      toastApiError(err, { title: t('export_create.error'), silent422: true });
     },
   });
 }
@@ -42,6 +44,7 @@ export function useCreateExportRun() {
 export function useDownloadExportRun() {
   const { t } = useTranslation('reports');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => {
       const r = await http.get(`/report-exports/${id}/download`, { responseType: 'blob' });
@@ -62,12 +65,9 @@ export function useDownloadExportRun() {
       toast.success(t('download.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError;
-      if (ae.response?.status === 409) {
-        toast.error(t('download.not_ready'));
-      } else {
-        toast.error(t('download.error'));
-      }
+      // 409: la corrida aún no está completed. El helper parsea el Blob del body
+      // (axios responseType:blob) async y muestra el `message` del backend si vino.
+      toastApiError(err, { title: t('download.error'), fallbackDetail: t('download.not_ready') });
     },
   });
 }
@@ -80,6 +80,7 @@ export function useDownloadExportRun() {
 export function useDownloadCaseFicha() {
   const { t } = useTranslation('reports');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => {
       const r = await http.get(`/reports/case-fichas/${id}`, {
@@ -100,12 +101,8 @@ export function useDownloadCaseFicha() {
       toast.success(t('ficha.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError;
-      if (ae.response?.status === 404) {
-        toast.error(t('ficha.not_found'));
-      } else {
-        toast.error(t('ficha.error'));
-      }
+      // 404: registro inexistente. El helper muestra el `message` del body si vino.
+      toastApiError(err, { title: t('ficha.error'), fallbackDetail: t('ficha.not_found') });
     },
   });
 }
@@ -113,6 +110,7 @@ export function useDownloadCaseFicha() {
 export function useDownloadPensionerFicha() {
   const { t } = useTranslation('reports');
   const toast = useToast();
+  const { toastApiError } = useApiError();
   return useMutation({
     mutationFn: async (id: number | string) => {
       const r = await http.get(`/reports/pensioner-fichas/${id}`, {
@@ -133,12 +131,7 @@ export function useDownloadPensionerFicha() {
       toast.success(t('ficha.success'));
     },
     onError: (err: unknown) => {
-      const ae = err as AxiosError;
-      if (ae.response?.status === 404) {
-        toast.error(t('ficha.not_found'));
-      } else {
-        toast.error(t('ficha.error'));
-      }
+      toastApiError(err, { title: t('ficha.error'), fallbackDetail: t('ficha.not_found') });
     },
   });
 }
